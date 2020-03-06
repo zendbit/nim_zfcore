@@ -17,7 +17,33 @@ nimble install zfcore
     Git: https://github.com/zendbit
 ]#
 
-import zendFlow
+#[
+    This module auto export from zendFlow module
+    export
+        ctxReq, -> zfcore module
+        CtxReq, -> zfcore module
+        router, -> zfcore module
+        Router, -> zfcore module
+        route, -> zfcore module
+        Route, -> zfcore module
+        asyncdispatch, -> stdlib module
+        asynchttpserver, -> stdlib module
+        tables, -> stdlib module
+        formData, -> zfcore module
+        FormData, -> zfcore module
+        packedjson, -> zfcore module (unpure)
+        strtabs, -> stdlib module
+        uri3, -> nimble package
+        strutils, -> stdlib module
+        times, -> stdlib module
+        os, -> stdlib module
+        Settings, -> zfcore module
+        settings, -> zfcore module
+        AsyncSocket, -> stdlib module
+        asyncnet -> stdlib module
+]#
+
+import zfcore/zendFlow
 
 # increase the maxBody to handle large upload file
 # value in bytes
@@ -167,8 +193,7 @@ zf.serve()
 
 - zfCore
 
-This folder contain zenflow core engine and project template.
-The zf folder contains .nim file of zendflow building block also contain folder unpure, the unpure folder will contains unpure lib (thirdparty library)
+This folder contain zfcore engine. The zfcore folder contains .nim file of zendflow building block also contain folder unpure, the unpure folder will contains unpure lib (thirdparty library)
 
 zfcore contains:
 1. ctxReq.nim
