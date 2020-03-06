@@ -18,8 +18,7 @@ import
     cookies,
     strutils,
     strtabs,
-    formData,
-    viewRender
+    formData
 
 
 #[
