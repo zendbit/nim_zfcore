@@ -1,2 +1,2 @@
 # zfcore
-zfcore is high performance asynchttpserver and web framework for mim lang
+zfcore is high performance asynchttpserver and web framework for nim lang
