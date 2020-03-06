@@ -163,7 +163,7 @@ zf.r.head("/home/<id>", proc (ctx: CtxReq): Future[void] {.async.} =
 zf.serve()
 ```
 
-## Zendflow Core structure
+## Core structure
 
 - zfCore
 
