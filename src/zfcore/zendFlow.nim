@@ -80,14 +80,14 @@ proc cleanTmpDir(self: ZendFlow, settings: Settings) {.gcsafe.} =
 proc mainHandlerAsync(self: ZendFlow, ctx: Request): Future[void] {.async gcsafe.} =
     if ctx.reqMethod in [HttpGet, HttpPost, HttpPut, HttpPatch,
         HttpDelete, HttpHead, HttpTrace, HttpOptions, HttpConnect]:
-        asyncCheck(sendToRouter(self, ctx))
+        await sendToRouter(self, ctx)
         # Chek cleanup tmp dir
         if not self.isCleanTmpDirExecuted:
             self.isCleanTmpDirExecuted = not self.isCleanTmpDirExecuted
             self.cleanTmpDir(self.settings)
             self.isCleanTmpDirExecuted = not self.isCleanTmpDirExecuted
     else:
-        asyncCheck(httpMethodNotFoundAsync(self, ctx))
+        await httpMethodNotFoundAsync(self, ctx)
 
 #[
     this proc is for start the ZendFlow, this will serve forever :-)
@@ -95,8 +95,12 @@ proc mainHandlerAsync(self: ZendFlow, ctx: Request): Future[void] {.async gcsafe
 proc serve*(self: ZendFlow) =
     echo &"ZendFlow listening your request on {self.settings.address}:{self.settings.port}"
     echo "Enjoy and take a cup of coffe :-)"
-    waitFor self.server.serve(Port(self.settings.port), (ctx: Request) =>
-            self.mainHandlerAsync(ctx), self.settings.address)
+
+    proc cb(ctx: Request): Future[void] {.async gcsafe.} =
+        let context = deepCopy(ctx)
+        await self.mainHandlerAsync(context)
+
+    waitFor self.server.serve(Port(self.settings.port), cb, self.settings.address)
 
 export
     ctxReq,
