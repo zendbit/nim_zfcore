@@ -107,11 +107,6 @@ proc resp*(self: CtxReq, httpCode: HttpCode, jnode: JsonNode): Future[void] {.as
     self.responseHeaders.add("Content-Type", "application/json")
     await respond(self.toRequest(), httpCode, $jnode, self.responseHeaders)
 
-proc render*(self: CtxReq, view: string): Future[void] {.async.} =
-    self.responseHeaders.add("Content-Type", "text/html")
-    await respond(self.toRequest(), Http200, render(self.settings.viewDir, view),
-        self.responseHeaders)
-
 proc respRedirect*(self: CtxReq, redirectTo: string): Future[void] {.async.} =
     self.responseHeaders.add("Location", redirectTo)
     await respond(self.toRequest(), Http303, "Go to " & redirectTo,
