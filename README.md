@@ -162,3 +162,84 @@ zf.r.head("/home/<id>", proc (ctx: CtxReq): Future[void] {.async.} =
 # serve the zendflow
 zf.serve()
 ```
+
+## Zendflow Core structure
+
+- zfCore
+
+This folder contain zenflow core engine and project template.
+The zf folder contains .nim file of zendflow building block also contain folder unpure, the unpure folder will contains unpure lib (thirdparty library)
+
+zfcore contains:
+1. ctxReq.nim
+this will handle request context also contains the response context
+```
+#[
+    The field is widely used the asynchttpserver Request object but we add some field to its:
+        url -> in ZendFlow we user uri3 from the nimble package
+        params -> is table of the captured query string and path segment
+        reParams -> is table of the captured regex match with the segment
+        formData -> is FormData object and will capture if we use the multipart form
+        json -> this will capture the application/json body from the post/put/patch method
+        settings -> this is the shared settings
+        responseHeader -> headers will send on response to user
+]#
+type
+    CtxReq* = ref object
+        client*: AsyncSocket
+        reqMethod*: HttpMethod
+        headers*: HttpHeaders
+        protocol*: tuple[orig: string, major, minor: int]
+        url*: Uri3
+        hostname*: string
+        body*: string
+        params*: Table[string, string]
+        reParams*: Table[string, seq[string]]
+        formData*: FormData
+        json*: JsonNode
+        settings*: Settings
+        responseHeaders*: HttpHeaders
+```
+2. formData.nim
+
+This will handle the formdata multipart and parse the form field and uploaded file
+
+3. middleware.nim
+
+This will handle the middleware of the engine, this contain before route and after route pipeline for filtering
+
+4. mime.nim
+
+This is database of mime file, not all mime file registered here, if the mime file not found then the mime will be application/octet-stream
+
+5. route.nim
+
+This file is model of the route
+
+6. router.nim
+
+This file will handle registered route, for example user register the get, put, push, patch, head, post, options method to the router.
+
+7. settings.nim
+
+This is the settings model for the zenflow application
+
+8. viewRender.nim
+
+This is experimental and should not be used
+
+9. zendflow.nim
+
+The is the starting building block
+
+Thats it, feel free to modify and pull request if you have any idea, also this is the public domain we can share or you can cantact me on my email [amru.rosyada@amil.com](amru.rosyada@amil.com) to discuss further.
+
+This is production ready :-), feel free to send me a bug to solve.
+
+Need todo:
+- ssl support (this not mandatory, we can done to run zendflow under nginx)
+- orm integration
+- websocket
+- rpc
+
+we use packedjson instead of stdlib json, for saving memory [https://github.com/Araq/packedjson](https://github.com/Araq/packedjson)
