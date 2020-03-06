@@ -43,9 +43,10 @@
     zf.serve()
 ]#
 import
-    CtxReq,
     route,
     asyncdispatch
+
+from ctxReq import CtxReq
 
 type
     Middleware* = ref object of RootObj
