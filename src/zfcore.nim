@@ -7,7 +7,7 @@
     Git: https://github.com/zendbit
 ]#
 import
-    zendFlow
+    src/zendFlow
 
 export
     zendFlow,
