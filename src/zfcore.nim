@@ -7,15 +7,16 @@
     Git: https://github.com/zendbit
 ]#
 import
-    zf/zendFlow
+    zfcore
 
 export
     zendFlow,
-    ZendFlow,
     ctxReq,
     CtxReq,
     router,
+    Router,
     route,
+    Route,
     asyncdispatch,
     asynchttpserver,
     tables,
@@ -30,5 +31,4 @@ export
     Settings,
     settings,
     AsyncSocket,
-    asyncnet,
-    zfcore
+    asyncnet
