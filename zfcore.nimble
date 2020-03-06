@@ -9,3 +9,5 @@ srcDir      = "zf"
 # Deps
 [Deps]
 requires "nim >= 0.15"
+requires "uri3"
+requires "packedjson"
