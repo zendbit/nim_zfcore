@@ -30,4 +30,5 @@ export
     Settings,
     settings,
     AsyncSocket,
-    asyncnet
+    asyncnet,
+    zfcore
