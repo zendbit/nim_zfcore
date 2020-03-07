@@ -189,6 +189,45 @@ zf.r.head("/home/<id>", proc (ctx: CtxReq): Future[void] {.async.} =
 zf.serve()
 ```
 
+## Fluent validation
+
+Starting from version 1.0.1 we added fluent validation
+
+```
+let validation = newFluentValidation()
+    validation
+        .add(newFieldData("username", ctx.params["username"])
+            .must("Username is required.")
+            .reMatch("([\w\W]+@[\w\W]+\.[\w])$", "Email format is not valid."))
+        .add(newFieldData("password", ctx.params["password"])
+            .must("Password is required.")
+            .rangeLen(10, 255, "Min password length is 10, max is 255."))
+            
+access the validation result:
+    validation.valids -> contain valids field on validation (Table[string, FieldData])
+    validation.notValids -> contain notValids field on validation (Table[string, FieldDat])
+```
+
+Fluent Validation containts this procedures for validation each FieldData:
+1. must(errMsg: string = "your err msg")
+will return errMsg if value empty
+2. num(errMsg: string = "your err msg")
+will return errMsg if value not a number
+3. rangeNum(min: float64, max: float64, errMsg: string = "your errMsg")
+will return errMsg if the number not in the range (min - max)
+4. minNum(min: float64, errMsg: string = "your errMsg")
+will return errMsg if the value less than min
+5. maxNum(max: float64, errMsg: string = "your errMsg")
+will return errMsg if the value larger than max
+6. minLen(min: int, errMsg: string = "your errMsg")
+will return errMsg if value length less than min
+7. maxLen(max: int, errMsg: string = "your errMsg")
+will return errMsg if value length more than max
+8. rangeLen(min: int, max: int, errMsg: "your errMsg")
+will return errMsg if value length not in range (min - max)
+9. reMatch(regex: string, errMsg: string = "your errMsg")
+eill return errMsg if the value not match with regex match pattern
+
 ## Core structure
 
 - zfCore
@@ -267,4 +306,3 @@ Need todo:
 - websocket
 - rpc
 
-we use packedjson instead of stdlib json, for saving memory [https://github.com/Araq/packedjson](https://github.com/Araq/packedjson)
