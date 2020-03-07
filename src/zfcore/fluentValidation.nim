@@ -13,7 +13,7 @@
     validation
         .add(newFieldData("username", ctx.params["username"])
             .must("Username is required.")
-            .match("([\w\W]+@[\w\W]+\.[\w])$", "Email format is not valid."))
+            .reMatch("([\w\W]+@[\w\W]+\.[\w])$", "Email format is not valid."))
         .add(newFieldData("password", ctx.params["password"])
             .must("Password is required.")
             .rangeLen(10, 255, "Min password length is 10, max is 255."))
