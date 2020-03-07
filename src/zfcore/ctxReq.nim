@@ -13,7 +13,7 @@ import
     uri,
     asyncdispatch,
     asynchttpserver,
-    unpure/packedjson,
+    json,
     settings,
     cookies,
     strutils,

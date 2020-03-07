@@ -16,14 +16,15 @@ import
     ctxReq,
     tables,
     formData,
-    unpure/packedjson,
+    json,
     settings,
     strtabs,
     uri3,
     strutils,
     os,
     times,
-    asyncnet
+    asyncnet,
+    fluentValidation
 
 #[
     ZendFlow object definition
@@ -104,23 +105,19 @@ proc serve*(self: ZendFlow) =
 
 export
     ctxReq,
-    CtxReq,
     router,
-    Router,
     route,
-    Route,
     asyncdispatch,
     asynchttpserver,
     tables,
     formData,
-    FormData,
-    packedjson,
+    json,
     strtabs,
     uri3,
     strutils,
     times,
     os,
-    Settings,
     settings,
     AsyncSocket,
-    asyncnet
+    asyncnet,
+    fluentValidation
