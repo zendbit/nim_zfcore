@@ -1,5 +1,6 @@
 # zfcore
-zfcore is high performance asynchttpserver and web framework for nim lang
+zfcore is high performance http server and web framework for nim lang
+we replace asynchttpserver with zfblast server https://github.com/zendbit/nim.zfblast
 
 # Install from nimble
 ```
@@ -20,8 +21,8 @@ nimble install zfcore
 #[
     This module auto export from zendFlow module
     export
-        ctxReq, -> zfcore module
-        CtxReq, -> zfcore module
+        replaced xxx ctxReq, -> zfcore module
+        replaced xxx CtxReq, -> zfcore module
         router, -> zfcore module
         Router, -> zfcore module
         route, -> zfcore module
@@ -39,22 +40,41 @@ nimble install zfcore
         os, -> stdlib module
         Settings, -> zfcore module
         settings, -> zfcore module
-        AsyncSocket, -> stdlib module
+        replaced xxx AsyncSocket, -> stdlib module
         asyncnet -> stdlib module
+        zfblast -> https://github.com/zendbit/nim.zfblast high performance http server
 ]#
 
 import zfcore/zendFlow
 
 # increase the maxBody to handle large upload file
 # value in bytes
+#[
+# open ssl example
 let zf = newZendFlow(
     newSettings(
         appRootDir = getCurrentDir(),
         port = 8080,
         address = "0.0.0.0",
-        reuseAddr = true,
-        reusePort = false,
-        maxBody = 8388608))
+        debug = false,
+        keepAliveMax = 100,
+        keepAliveTimeout = 15,
+        sslSettings = newSslSettings(
+            certFile = joinPath("ssl", "certificate.pem"),
+            keyFile = joinPath("ssl", "key.pem"),
+            verifyMode = SslCVerifyMode.CVerifyNone,
+            port = Port(8443)
+        )))
+]#
+
+let zf = newZendFlow(
+    newSettings(
+        appRootDir = getCurrentDir(),
+        port = 8080,
+        address = "0.0.0.0",
+        debug = false,
+        keepAliveMax = 100,
+        keepAliveTimeout = 15))
 
 # handle before route middleware
 zf.r.beforeRoute(proc (ctx: CtxReq): Future[bool] {.async.} =
@@ -235,7 +255,7 @@ eill return errMsg if the value not match with regex match pattern
 This folder contain zfcore engine. The zfcore folder contains .nim file of zendflow building block also contain folder unpure, the unpure folder will contains unpure lib (thirdparty library)
 
 zfcore contains:
-1. ctxReq.nim
+1. ctxReq.nim -> replaced with httpCtx.nim
 this will handle request context also contains the response context
 ```
 #[
@@ -248,6 +268,8 @@ this will handle request context also contains the response context
         settings -> this is the shared settings
         responseHeader -> headers will send on response to user
 ]#
+
+CtxReq will not used again and replaced with HttpCtx type
 type
     CtxReq* = ref object
         client*: AsyncSocket
@@ -263,6 +285,34 @@ type
         json*: JsonNode
         settings*: Settings
         responseHeaders*: HttpHeaders
+        
+Replaced with HttpCtx type
+type
+    HttpCtx* = ref object of HttpContext
+        params*: Table[string, string]
+        reParams*: Table[string, seq[string]]
+        formData*: FormData
+        json*: JsonNode
+        settings*: Settings
+        
+Where HttpContext is zfblast context
+type
+    HttpContext* = ref object of RootObj
+        # Request type instance
+        request*: Request
+        # client asyncsocket for communicating to client
+        client*: AsyncSocket
+        # Response type instance
+        response*: Response
+        # send response to client, this is bridge to ZFBlast send()
+        send*: proc (ctx: HttpContext): Future[void]
+        # Keep-Alive header max request with given persistent timeout
+        # read RFC (https://tools.ietf.org/html/rfc2616)
+        # section Keep-Alive and Connection
+        # for improving response performance
+        keepAliveMax*: int
+        # Keep-Alive timeout
+        keepAliveTimeout*: int
 ```
 2. formData.nim
 
@@ -301,8 +351,9 @@ Thats it, feel free to modify and pull request if you have any idea, also this i
 This is production ready :-), feel free to send me a bug to solve.
 
 Need todo:
-- ssl support (this not mandatory, we can done to run zendflow under nginx)
 - orm integration
 - websocket
 - rpc
 
+Done:
+- this is done xxx ssl support (this not mandatory, we can done to run zendflow under nginx)
