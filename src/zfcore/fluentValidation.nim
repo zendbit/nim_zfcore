@@ -37,10 +37,18 @@ type
         value: string
         errorMsg: string
 
-proc newFieldData*(name: string, value: string): FieldData {.discardable.} =
-    return FieldData(name: name.strip(), value: value.strip())
+proc newFieldData*(
+    name: string,
+    value: string): FieldData {.discardable.} =
 
-proc must*(self: FieldData, errMsg: string = ""): FieldData =
+    return FieldData(
+        name: name.strip(),
+        value: value.strip())
+
+proc must*(
+    self: FieldData,
+    errMsg: string = ""): FieldData =
+
     if self.value == "" and self.errorMsg == "":
         if errMsg != "":
             self.errorMsg = errMsg
@@ -49,7 +57,10 @@ proc must*(self: FieldData, errMsg: string = ""): FieldData =
 
     return self
 
-proc num*(self: FieldData, errMsg: string = ""): FieldData {.discardable.} =
+proc num*(
+    self: FieldData,
+    errMsg: string = ""): FieldData {.discardable.} =
+
     if self.errorMsg == "":
         try:
             discard parseFloat(self.value)
@@ -62,8 +73,11 @@ proc num*(self: FieldData, errMsg: string = ""): FieldData {.discardable.} =
 
     return self
 
-proc rangeNum*(self: FieldData, min: float64, max: float64,
-        errMsg: string = ""): FieldData {.discardable.} =
+proc rangeNum*(
+    self: FieldData,
+    min: float64,
+    max: float64,
+    errMsg: string = ""): FieldData {.discardable.} =
 
     if self.errorMsg == "":
         var err = ""
@@ -83,8 +97,11 @@ proc rangeNum*(self: FieldData, min: float64, max: float64,
 
     return self
 
-proc maxNum*(self: FieldData, max: float64, errMsg: string = ""):
-        FieldData {.discardable.} =
+proc maxNum*(
+    self: FieldData,
+    max: float64,
+    errMsg: string = ""): FieldData {.discardable.} =
+
     if self.errorMsg == "":
         var err = ""
         try:
@@ -103,8 +120,11 @@ proc maxNum*(self: FieldData, max: float64, errMsg: string = ""):
 
     return self
 
-proc minNum*(self: FieldData, min: float64, errMsg: string = ""):
-        FieldData {.discardable.} =
+proc minNum*(
+    self: FieldData,
+    min: float64,
+    errMsg: string = ""): FieldData {.discardable.} =
+
     if self.errorMsg == "":
         var err = ""
         try:
@@ -123,8 +143,11 @@ proc minNum*(self: FieldData, min: float64, errMsg: string = ""):
 
     return self
 
-proc minLen*(self: FieldData, min: int, errMsg: string = ""):
-        FieldData {.discardable.} =
+proc minLen*(
+    self: FieldData,
+    min: int,
+    errMsg: string = ""): FieldData {.discardable.} =
+
     if self.value.len < min and self.errorMsg == "":
         if errMsg != "":
             self.errorMsg = errMsg
@@ -133,8 +156,11 @@ proc minLen*(self: FieldData, min: int, errMsg: string = ""):
 
     return self
 
-proc maxLen*(self: FieldData, max: int, errMsg: string = ""):
-        FieldData {.discardable.} =
+proc maxLen*(
+    self: FieldData,
+    max: int,
+    errMsg: string = ""): FieldData {.discardable.} =
+
     if self.value.len > max and self.errorMsg == "":
         if errMsg != "":
             self.errorMsg = errMsg
@@ -143,8 +169,12 @@ proc maxLen*(self: FieldData, max: int, errMsg: string = ""):
 
     return self
 
-proc rangeLen*(self: FieldData, min: int, max: int, errMsg: string = ""):
-        FieldData {.discardable.} =
+proc rangeLen*(
+    self: FieldData,
+    min: int,
+    max: int,
+    errMsg: string = ""): FieldData {.discardable.} =
+
     if (self.value.len > max or self.value.len < min) and self.errorMsg == "":
         if errMsg != "":
             self.errorMsg = errMsg
@@ -153,8 +183,11 @@ proc rangeLen*(self: FieldData, min: int, max: int, errMsg: string = ""):
 
     return self
 
-proc reMatch*(self: FieldData, regex: string, errMsg: string = ""):
-        FieldData {.discardable.} =
+proc reMatch*(
+    self: FieldData,
+    regex: string,
+    errMsg: string = ""): FieldData {.discardable.} =
+
     if not match(self.value, re regex) and self.errorMsg == "":
         if errMsg != "":
             self.errorMsg = errMsg
@@ -176,13 +209,16 @@ type
         notValids*: Table[string, FieldData]
 
 proc newFluentValidation*(): FluentValidation =
+
     var instance = FluentValidation()
     instance.valids = initTable[string, FieldData]()
     instance.notValids = initTable[string, FieldData]()
     return instance
 
-proc add*(self: FluentValidation, fieldData: FieldData):
-        FluentValidation {.discardable.} =
+proc add*(
+    self: FluentValidation,
+    fieldData: FieldData): FluentValidation {.discardable.} =
+
     if fieldData.errorMsg.len != 0:
         self.notValids.add(fieldData.name, fieldData)
     else:

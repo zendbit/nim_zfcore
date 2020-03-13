@@ -9,11 +9,11 @@
 
 from asynchttpserver import HttpMethod
 from asyncdispatch import Future
-from ctxReq import CtxReq
+from httpCtx import HttpCtx
 
 type
     Route* = ref object
         httpMethod*: HttpMethod
         path*: string
-        thenDo*: proc (ctx: CtxReq): Future[void] {.gcsafe.}
+        thenDo*: proc (ctx: HttpCtx): Future[void]
         segments*: seq[string]

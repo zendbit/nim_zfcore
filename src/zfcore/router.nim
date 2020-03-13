@@ -8,11 +8,10 @@
 ]#
 import
     re,
-    ctxReq,
+    httpCtx,
     strutils,
     strformat,
     asyncdispatch,
-    asynchttpserver,
     tables,
     uri3,
     formData,
@@ -22,7 +21,9 @@ import
     os,
     settings,
     streams,
-    mime
+    mime,
+    httpcore,
+    zfblast
 
 #[
     Definition of the Router inherit from the Middleware
@@ -51,12 +52,18 @@ proc newRouter*(): Router =
     params -> will be valued with list of parameter from the query string and path segment
     reParams -> will be valued with regex match if the regex match with the givend definition of the route segment
 ]#
-proc matchesUri(self: Router, pathSeg: seq[string], uriSeg: seq[string]):
-        tuple[success: bool, params: Table[string, string], reParams: Table[string, seq[string]]] =
+proc matchesUri(
+    self: Router,
+    pathSeg: seq[string],
+    uriSeg: seq[string]):
+    tuple[
+        success: bool,
+        params: Table[string, string],
+        reParams: Table[string, seq[string]]] =
 
     var success = true
-    var reParams = initTable[string, seq[string]]()
-    var params = initTable[string, string]()
+    var reParams = initTable[string,seq[string]]()
+    var params = initTable[string,string]()
 
     if pathSeg.len != uriSeg.len:
         success = false
@@ -64,21 +71,30 @@ proc matchesUri(self: Router, pathSeg: seq[string], uriSeg: seq[string]):
         for i in 0..high(pathSeg):
             # check if matches with <tag-param>, ex: /home/<id>/index.html
             var paramTag: array[1, string]
+
             if match(pathSeg[i], re"<([\w\W]+)>$", paramTag):
+
                 # parse uri eith regex without length value to get ex: /home/<ids:re[\\w]>
                 var reParamsTag: array[3, string]
+
                 # parse uri eith regex with length value to get ex: /home/<ids:re[(\\w+)_([0-9]+)]:len[2]>
-                if match(paramTag[0], re"(\w+):re\[([\w\W]*)\]:len\[([0-9]+)\]$", reParamsTag):
+                if match(
+                    paramTag[0],
+                    re"(\w+):re\[([\w\W]*)\]:len\[([0-9]+)\]$",
+                    reParamsTag):
                     var reParamsSegmentTag: seq[string]
                     for i in 0..(parseInt(reParamsTag[2]) - 1):
                         reParamsSegmentTag.add("")
 
                     if match(uriSeg[i], re reParamsTag[1], reParamsSegmentTag):
                         reParams.add(reParamsTag[0], @ reParamsSegmentTag)
+
                     else:
                         success = false
+
                 else:
                     params.add(paramTag[0], uriSeg[i])
+
             elif pathSeg[i] != uriSeg[i]:
                 success = false
 
@@ -91,19 +107,26 @@ proc matchesUri(self: Router, pathSeg: seq[string], uriSeg: seq[string]):
     Will return list of registered routes
 ]#
 proc getRoutes*(self: Router): seq[Route] =
+
     return self.routes
 
 #[
     This proc is private for parsing the path segment
 ]#
-proc parseSegmentsFromPath(self: Router, path: string): seq[string] =
+proc parseSegmentsFromPath(
+    self: Router,
+    path: string): seq[string] =
+
     return parseUri3(path).getPathSegments()
 
 #[
     This proc is private and will parse the uri to table form
     ex: ?ok=true&hello=world will convert to {ok:true, hello:world}
 ]#
-proc parseUriToTable(self: Router, uri: string): Table[string, string] =
+proc parseUriToTable(
+    self: Router,
+    uri: string): Table[string, string] =
+
     var query = initTable[string, string]()
     var uriToParse = uri
     if not uri.contains("?"): uriToParse = &"?{uriToParse}"
@@ -119,15 +142,22 @@ proc parseUriToTable(self: Router, uri: string): Table[string, string] =
     HttpPost, HttpPut, HttpPatch will auto parse and extract the request, including the uploaded files
     uploaded files will save to tmp folder
 ]#
-proc mapContentype(self: Router, ctxReq: CtxReq) =
-    let contentType = $ctxReq.headers.getOrDefault("Content-Type")
-    if ctxReq.reqMethod in [HttpPost, HttpPut, HttpPatch]:
+proc mapContentype(
+    self: Router,
+    ctx: HttpCtx) =
+
+    let contentType = ctx.request.headers.getOrDefault("Content-Type")
+    if ctx.request.httpMethod in [HttpPost, HttpPut, HttpPatch]:
         if contentType.contains("multipart/form-data"):
-            ctxReq.formData = newFormData().parse(ctxReq.body, ctxReq.settings)
+            ctx.formData = newFormData().parse(
+                ctx.request.readBody,
+                ctx.settings)
+
         if contentType.contains("application/x-www-form-urlencoded"):
-            ctxReq.params = self.parseUriToTable(ctxReq.body)
+            ctx.params = self.parseUriToTable(ctx.request.readBody)
+
         if contentType.contains("application/json"):
-            ctxReq.json = parseJson(ctxReq.body)
+            ctx.json = parseJson(ctx.request.readBody)
 
 #[
     Handle static resource, this should be only allow get method
@@ -143,20 +173,25 @@ proc mapContentype(self: Router, ctxReq: CtxReq) =
         /s/img/*.jpg
         etc
 ]#
-proc handleStaticRoute(self: Router, ctxReq: CtxReq):
-        Future[tuple[found: bool, filePath: string, contentType: string]]
-        {.async gcsafe.} =
+proc handleStaticRoute(
+    self: Router,
+    ctx: HttpCtx):
+    Future[tuple[
+            found: bool,
+            filePath: string,
+            contentType: string]] {.async.} =
 
     if not isNil(self.staticRoute):
         # get route from the path
         var routePath = decodeUri(self.staticRoute.path)
         # get static path from the request url
-        var staticPath = decodeUri(ctxReq.url.getPath())
-        if ctxReq.reqMethod == HttpGet:
+        var staticPath = decodeUri(ctx.request.url.getPath())
+        if ctx.request.httpMethod == HttpGet:
             # only if static path from the request url start with the route path
-            if staticPath.startsWith(routePath) and routePath != staticPath:
+            if staticPath.startsWith(routePath) and
+                routePath != staticPath:
                 # static dir will search under staticDir in settings section
-                let staticSearchDir = ctxReq.settings.staticDir & staticPath
+                let staticSearchDir = ctx.settings.staticDir & staticPath
                 if fileExists(staticSearchDir):
                     # define contentType of the file
                     # default is "application/octet-stream"
@@ -165,8 +200,8 @@ proc handleStaticRoute(self: Router, ctxReq: CtxReq):
                     var ext: array[1, string]
                     if match(staticPath, re"[\w\W]+\.([\w]+)$", ext):
                         # if extension is defined then try to search the contentType
-                        let mimeType = newMimeType().getMimeType(("." & ext[
-                                0]).toLower())
+                        let mimeType = newMimeType().getMimeType(
+                            ("." & ext[0]).toLower())
                         # override the contentType if we found it
                         if mimeType != "":
                             contentType = mimeType
@@ -175,77 +210,94 @@ proc handleStaticRoute(self: Router, ctxReq: CtxReq):
                     #let file = newFileStream(staticSearchDir, fmRead)
                     #let ctn = file.readAll()
                     #file.close()
-                    #ctxReq.responseHeaders.add("Content-Type", contentType)
-                    #await ctxReq.resp(Http200, ctn)
-                    return (found: true, filePath: staticSearchDir,
+                    #HttpCtx.responseHeaders.add("Content-Type", contentType)
+                    #await HttpCtx.resp(Http200, ctn)
+                    return (
+                        found: true,
+                        filePath: staticSearchDir,
                         contentType: contentType)
 
 #[
     Handle dynamic route and middleware
 ]#
-proc handleDynamicRoute(self: Router, ctxReq: CtxReq): Future[void] {.async gcsafe.} =
+proc handleDynamicRoute(
+    self: Router,
+    ctx: HttpCtx): Future[void] {.async.} =
 
     # execute middleware before routing
-    if await self.execBeforeRoute(ctxReq): return
+    if await self.execBeforeRoute(ctx): return
 
     # call static route before the dynamic route
-    let handleStatic = await self.handleStaticRoute(ctxReq)
+    let handleStatic = await self.handleStaticRoute(ctx)
 
     # map content type
-    self.mapContentype(ctxReq)
+    self.mapContentype(ctx)
 
     # route to potensial uri
     # also extract the uri parameter
-    let ctxSegments = self.parseSegmentsFromPath(ctxReq.url.getPath())
-    #var exec: proc (ctx: CtxReq): Future[void] {.gcsafe.}
+    let ctxSegments = self.parseSegmentsFromPath(ctx.request.url.getPath())
+    #var exec: proc (ctx: HttpCtx): Future[void] {.gcsafe.}
     var route: Route
     for r in self.routes:
         let matchesUri = self.matchesUri(r.segments, ctxSegments)
-        if r.httpMethod == ctxReq.reqMethod and matchesUri.success:
+        if r.httpMethod == ctx.request.httpMethod and
+            matchesUri.success:
             route = r
             for k, v in matchesUri.params:
-                ctxReq.params.add(k, v)
-            ctxReq.reParams = matchesUri.reParams
+                ctx.params.add(k, v)
+
+            ctx.reParams = matchesUri.reParams
+
             break
 
     if route != nil:
         # execute middleware after routing before respond
-        if await self.execAfterRoute(ctxReq, route): return
+        if await self.execAfterRoute(ctx, route): return
 
         # execute route callback
-        await route.thenDo(ctxReq)
+        await route.thenDo(ctx)
 
     elif handleStatic.found:
         # read the file as stream from the static dir and serve it
         let file = newFileStream(handleStatic.filePath, fmRead)
         let ctn = file.readAll()
         file.close()
-        ctxReq.responseHeaders.add("Content-Type", handleStatic.contentType)
-        await ctxReq.resp(Http200, ctn)
+        ctx.response.headers.add("Content-Type", handleStatic.contentType)
+        await ctx.resp(Http200, ctn)
 
     else:
         # default response if route does not match
-        await ctxReq.resp(Http404, &"Resource not found {ctxReq.url.getPath()}")
+        await ctx.resp(Http404, &"Resource not found {ctx.request.url.getPath()}")
 
 #[
     This proc will execute the registered callback procedure in route list.
-    asynchttpserver Request will convert to CtxReq.
+    asynchttpserver Request will convert to HttpCtx.
     beforeRoute and afterRoute middleware will evaluated here
 ]#
-proc executeProc*(self: Router, ctx: Request, settings: Settings): Future[void] {.async gcsafe.} =
-    var ctxReq = newCtxReq(ctx)
-    ctxReq.settings = settings
+proc executeProc*(
+    self: Router,
+    ctx: HttpContext,
+    settings: Settings): Future[void] {.async.} =
+
+    var httpCtx = newHttpCtx(ctx)
+    httpCtx.settings = settings
 
     try:
-        await self.handleDynamicRoute(ctxReq)
+        await self.handleDynamicRoute(httpCtx)
 
     except Exception as ex:
         let exMsg = ex.msg.replace("\n", "<br />")
-        await ctxReq.resp(Http500, &"Internal server error {exMsg}")
+        await httpCtx.resp(Http500, &"Internal server error {exMsg}")
 
-proc static*(self: Router, path: string) =
-    self.staticRoute = Route(path: path, httpMethod: HttpGet, thenDo: nil,
-            segments: self.parseSegmentsFromPath(path))
+proc static*(
+    self: Router,
+    path: string) =
+
+    self.staticRoute = Route(
+        path: path,
+        httpMethod: HttpGet,
+        thenDo: nil,
+        segments: self.parseSegmentsFromPath(path))
 
 #[
     let zf = newZendFlow()
@@ -256,7 +308,7 @@ proc static*(self: Router, path: string) =
     #### the regex will capture ids -> @["123", "12345"]
     #### the <body> parameter will capture body -> test
     zf.r.get("/home/<ids:re[([0-9]+)_([0-9]+)]:len[2]>/<body>", proc (
-        ctx: CtxReq): Future[void] {.async.} =
+        ctx: HttpCtx): Future[void] {.async.} =
         echo "Welcome home"
         echo $ctx.reParams["ids"]
         echo $ctx.params["body"]
@@ -265,7 +317,7 @@ proc static*(self: Router, path: string) =
     #### without regex
     #### will accept from /home
     zf.r.get("/home", proc (
-        ctx: CtxReq): Future[void] {.async.} =
+        ctx: HttpCtx): Future[void] {.async.} =
 
         #### your code here
 
@@ -274,9 +326,17 @@ proc static*(self: Router, path: string) =
     #### start the server
     zf.serve()
 ]#
-proc get*(self: Router, path: string, thenDo: proc(ctx: CtxReq): Future[void]{.gcsafe.}) =
-    self.routes.add(Route(path: path, httpMethod: HttpGet, thenDo: thenDo,
-        segments: self.parseSegmentsFromPath(path)))
+proc get*(
+    self: Router,
+    path: string,
+    thenDo: proc(ctx: HttpCtx): Future[void]) =
+
+    self.routes.add(
+        Route(
+            path: path,
+            httpMethod: HttpGet,
+            thenDo: thenDo,
+            segments: self.parseSegmentsFromPath(path)))
 
 #[
     let zf = newZendFlow()
@@ -287,7 +347,7 @@ proc get*(self: Router, path: string, thenDo: proc(ctx: CtxReq): Future[void]{.g
     #### the regex will capture ids -> @["123", "12345"]
     #### the <body> parameter will capture body -> test
     zf.r.post("/home/<ids:re[([0-9]+)_([0-9]+)]:len[2]>/<body>", proc (
-        ctx: CtxReq): Future[void] {.async.} =
+        ctx: HttpCtx): Future[void] {.async.} =
         echo "Welcome home"
         echo $ctx.reParams["ids"]
         echo $ctx.params["body"]
@@ -295,7 +355,7 @@ proc get*(self: Router, path: string, thenDo: proc(ctx: CtxReq): Future[void]{.g
 
     #### without regex
     zf.r.post("/home", proc (
-        ctx: CtxReq): Future[void] {.async.} =
+        ctx: HttpCtx): Future[void] {.async.} =
 
         #### your code here
 
@@ -304,9 +364,17 @@ proc get*(self: Router, path: string, thenDo: proc(ctx: CtxReq): Future[void]{.g
     #### start the server
     zf.serve()
 ]#
-proc post*(self: Router, path: string, thenDo: proc(ctx: CtxReq): Future[void]{.gcsafe.}) =
-    self.routes.add(Route(path: path, httpMethod: HttpPost, thenDo: thenDo,
-        segments: self.parseSegmentsFromPath(path)))
+proc post*(
+    self: Router,
+    path: string,
+    thenDo: proc(ctx: HttpCtx): Future[void]) =
+
+    self.routes.add(
+        Route(
+            path: path,
+            httpMethod: HttpPost,
+            thenDo: thenDo,
+            segments: self.parseSegmentsFromPath(path)))
 
 #[
     let zf = newZendFlow()
@@ -317,7 +385,7 @@ proc post*(self: Router, path: string, thenDo: proc(ctx: CtxReq): Future[void]{.
     #### the regex will capture ids -> @["123", "12345"]
     #### the <body> parameter will capture body -> test
     zf.r.put("/home/<ids:re[([0-9]+)_([0-9]+)]:len[2]>/<body>", proc (
-        ctx: CtxReq): Future[void] {.async.} =
+        ctx: HttpCtx): Future[void] {.async.} =
         echo "Welcome home"
         echo $ctx.reParams["ids"]
         echo $ctx.params["body"]
@@ -325,7 +393,7 @@ proc post*(self: Router, path: string, thenDo: proc(ctx: CtxReq): Future[void]{.
 
     #### without regex
     zf.r.put("/home", proc (
-        ctx: CtxReq): Future[void] {.async.} =
+        ctx: HttpCtx): Future[void] {.async.} =
 
         #### your code here
 
@@ -334,9 +402,17 @@ proc post*(self: Router, path: string, thenDo: proc(ctx: CtxReq): Future[void]{.
     #### start the server
     zf.serve()
 ]#
-proc put*(self: Router, path: string, thenDo: proc(ctx: CtxReq): Future[void]{.gcsafe.}) =
-    self.routes.add(Route(path: path, httpMethod: HttpPut, thenDo: thenDo,
-        segments: self.parseSegmentsFromPath(path)))
+proc put*(
+    self: Router,
+    path: string,
+    thenDo: proc(ctx: HttpCtx): Future[void]) =
+
+    self.routes.add(
+        Route(
+            path: path,
+            httpMethod: HttpPut,
+            thenDo: thenDo,
+            segments: self.parseSegmentsFromPath(path)))
 
 #[
     let zf = newZendFlow()
@@ -347,7 +423,7 @@ proc put*(self: Router, path: string, thenDo: proc(ctx: CtxReq): Future[void]{.g
     #### the regex will capture ids -> @["123", "12345"]
     #### the <body> parameter will capture body -> test
     zf.r.delete("/home/<ids:re[([0-9]+)_([0-9]+)]:len[2]>/<body>", proc (
-        ctx: CtxReq): Future[void] {.async.} =
+        ctx: HttpCtx): Future[void] {.async.} =
         echo "Welcome home"
         echo $ctx.reParams["ids"]
         echo $ctx.params["body"]
@@ -355,7 +431,7 @@ proc put*(self: Router, path: string, thenDo: proc(ctx: CtxReq): Future[void]{.g
 
     #### without regex
     zf.r.delete("/home", proc (
-        ctx: CtxReq): Future[void] {.async.} =
+        ctx: HttpCtx): Future[void] {.async.} =
 
         #### your code here
 
@@ -364,9 +440,17 @@ proc put*(self: Router, path: string, thenDo: proc(ctx: CtxReq): Future[void]{.g
     #### start the server
     zf.serve()
 ]#
-proc delete*(self: Router, path: string, thenDo: proc(ctx: CtxReq): Future[void]{.gcsafe.}) =
-    self.routes.add(Route(path: path, httpMethod: HttpDelete, thenDo: thenDo,
-        segments: self.parseSegmentsFromPath(path)))
+proc delete*(
+    self: Router,
+    path: string,
+    thenDo: proc(ctx: HttpCtx): Future[void]) =
+
+    self.routes.add(
+        Route(
+            path: path,
+            httpMethod: HttpDelete,
+            thenDo: thenDo,
+            segments: self.parseSegmentsFromPath(path)))
 
 #[
     let zf = newZendFlow()
@@ -377,7 +461,7 @@ proc delete*(self: Router, path: string, thenDo: proc(ctx: CtxReq): Future[void]
     #### the regex will capture ids -> @["123", "12345"]
     #### the <body> parameter will capture body -> test
     zf.r.patch("/home/<ids:re[([0-9]+)_([0-9]+)]:len[2]>/<body>", proc (
-        ctx: CtxReq): Future[void] {.async.} =
+        ctx: HttpCtx): Future[void] {.async.} =
         echo "Welcome home"
         echo $ctx.reParams["ids"]
         echo $ctx.params["body"]
@@ -385,7 +469,7 @@ proc delete*(self: Router, path: string, thenDo: proc(ctx: CtxReq): Future[void]
 
     #### without regex
     zf.r.patch("/home", proc (
-        ctx: CtxReq): Future[void] {.async.} =
+        ctx: HttpCtx): Future[void] {.async.} =
 
         #### your code here
 
@@ -394,9 +478,17 @@ proc delete*(self: Router, path: string, thenDo: proc(ctx: CtxReq): Future[void]
     #### start the server
     zf.serve()
 ]#
-proc patch*(self: Router, path: string, thenDo: proc(ctx: CtxReq): Future[void]{.gcsafe.}) =
-    self.routes.add(Route(path: path, httpMethod: HttpPatch, thenDo: thenDo,
-        segments: self.parseSegmentsFromPath(path)))
+proc patch*(
+    self: Router,
+    path: string,
+    thenDo: proc(ctx: HttpCtx): Future[void]) =
+
+    self.routes.add(
+        Route(
+            path: path,
+            httpMethod: HttpPatch,
+            thenDo: thenDo,
+            segments: self.parseSegmentsFromPath(path)))
 
 #[
     let zf = newZendFlow()
@@ -407,7 +499,7 @@ proc patch*(self: Router, path: string, thenDo: proc(ctx: CtxReq): Future[void]{
     #### the regex will capture ids -> @["123", "12345"]
     #### the <body> parameter will capture body -> test
     zf.r.head("/home/<ids:re[([0-9]+)_([0-9]+)]:len[2]>/<body>", proc (
-        ctx: CtxReq): Future[void] {.async.} =
+        ctx: HttpCtx): Future[void] {.async.} =
         echo "Welcome home"
         echo $ctx.reParams["ids"]
         echo $ctx.params["body"]
@@ -415,7 +507,7 @@ proc patch*(self: Router, path: string, thenDo: proc(ctx: CtxReq): Future[void]{
 
     #### without regex
     zf.r.head("/home", proc (
-        ctx: CtxReq): Future[void] {.async.} =
+        ctx: HttpCtx): Future[void] {.async.} =
 
         #### your code here
 
@@ -424,21 +516,54 @@ proc patch*(self: Router, path: string, thenDo: proc(ctx: CtxReq): Future[void]{
     #### start the server
     zf.serve()
 ]#
-proc head*(self: Router, path: string, thenDo: proc(ctx: CtxReq): Future[void]{.gcsafe.}) =
-    self.routes.add(Route(path: path, httpMethod: HttpHead, thenDo: thenDo,
-        segments: self.parseSegmentsFromPath(path)))
+proc head*(
+    self: Router,
+    path: string,
+    thenDo: proc(ctx: HttpCtx): Future[void]) =
 
-proc options*(self: Router, path: string, thenDo: proc(ctx: CtxReq): Future[void]{.gcsafe.}) =
-    self.routes.add(Route(path: path, httpMethod: HttpOptions, thenDo: thenDo,
-        segments: self.parseSegmentsFromPath(path)))
+    self.routes.add(
+        Route(
+            path: path,
+            httpMethod: HttpHead,
+            thenDo: thenDo,
+            segments: self.parseSegmentsFromPath(path)))
 
-proc trace*(self: Router, path: string, thenDo: proc(ctx: CtxReq): Future[void]{.gcsafe.}) =
-    self.routes.add(Route(path: path, httpMethod: HttpTrace, thenDo: thenDo,
-        segments: self.parseSegmentsFromPath(path)))
+proc options*(
+    self: Router,
+    path: string,
+    thenDo: proc(ctx: HttpCtx): Future[void]) =
 
-proc connect*(self: Router, path: string, thenDo: proc(ctx: CtxReq): Future[void]{.gcsafe.}) =
-    self.routes.add(Route(path: path, httpMethod: HttpConnect, thenDo: thenDo,
-        segments: self.parseSegmentsFromPath(path)))
+    self.routes.add(
+        Route(
+            path: path,
+            httpMethod: HttpOptions,
+            thenDo: thenDo,
+            segments: self.parseSegmentsFromPath(path)))
+
+proc trace*(
+    self: Router,
+    path: string,
+    thenDo: proc(ctx: HttpCtx): Future[void]) =
+
+    self.routes.add(
+        Route(
+            path: path,
+            httpMethod: HttpTrace,
+            thenDo: thenDo,
+            segments: self.parseSegmentsFromPath(path)))
+
+proc connect*(
+    self: Router,
+    path: string,
+    thenDo: proc(ctx: HttpCtx): Future[void]) =
+
+    self.routes.add(
+        Route(
+            path: path,
+            httpMethod: HttpConnect,
+            thenDo: thenDo,
+            segments: self.parseSegmentsFromPath(path)))
+
 export
     beforeRoute,
     afterRoute

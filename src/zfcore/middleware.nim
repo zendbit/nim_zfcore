@@ -46,28 +46,37 @@ import
     route,
     asyncdispatch
 
-from ctxReq import CtxReq
+from httpCtx import HttpCtx
 
 type
     Middleware* = ref object of RootObj
-        pre: proc (ctx: CtxReq): Future[bool] {.gcsafe.}
-        post: proc (ctxReq: CtxReq, route: Route): Future[bool] {.gcsafe.}
+        pre: proc (ctx: HttpCtx): Future[bool]
+        post: proc (ctx: HttpCtx, route: Route): Future[bool]
 
 proc newMiddleware*(): Middleware =
     return Middleware()
 
-proc beforeRoute*(self: Middleware, pre: proc (ctxReq: CtxReq):
-        Future[bool] {.gcsafe.}) {.gcsafe.} =
+proc beforeRoute*(
+    self: Middleware,
+    pre: proc (ctx: HttpCtx): Future[bool]) =
     self.pre = pre
 
-proc afterRoute*(self: Middleware, post: proc (ctxReq: CtxReq, route: Route):
-        Future[bool] {.gcsafe.}){.gcsafe.} =
+proc afterRoute*(
+    self: Middleware,
+    post: proc (ctx: HttpCtx, route: Route): Future[bool]) =
+
     self.post = post
 
-proc execBeforeRoute*(self: Middleware, ctxReq: CtxReq): Future[bool] {.async.} =
-    if not isNil(self.pre):
-        return await self.pre(ctxReq)
+proc execBeforeRoute*(
+    self: Middleware, ctx: HttpCtx): Future[bool] {.async.} =
 
-proc execAfterRoute*(self: Middleware, ctxReq: CtxReq, route: Route): Future[bool] {.async.} =
+    if not isNil(self.pre):
+        return await self.pre(ctx)
+
+proc execAfterRoute*(
+    self: Middleware,
+    ctx: HttpCtx,
+    route: Route): Future[bool] {.async.} =
+
     if not isNil(self.post):
-        return await self.post(ctxReq, route)
+        return await self.post(ctx, route)

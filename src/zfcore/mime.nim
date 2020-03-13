@@ -219,38 +219,92 @@ proc newMimeType*(): Mime =
             "|.woff2|=font/woff2"
         ])
 
-proc getMimeType(self: Mime, mimeSeq: seq[string], ext: string): string =
+proc getMimeType(
+    self: Mime,
+    mimeSeq: seq[string],
+    ext: string): string =
+
     for m in mimeSeq:
         if m.contains(&"|{ext.toLower()}|"):
             return m.split('=')[1]
 
-proc getMimeType*(self: Mime, ext: string): string =
-    let allMime = self.mimeTxt & self.mimeFont & self.mimeImg & self.mimeApp &
-            self.mimeSnd & self.mimeVid & self.mimeMail & self.mimeVW
+proc getMimeType*(
+    self: Mime,
+    ext: string): string =
+
+    let allMime = self.mimeTxt &
+        self.mimeFont &
+        self.mimeImg &
+        self.mimeApp &
+        self.mimeSnd &
+        self.mimeVid &
+        self.mimeMail &
+        self.mimeVW
+
     for m in allMime:
         if m.contains(&"|{ext.toLower()}|"):
             return m.split('=')[1]
 
-proc getAppMimeType*(self: Mime, ext: string): string =
-    return self.getMimeType(self.mimeApp, ext)
+proc getAppMimeType*(
+    self: Mime,
+    ext: string): string =
 
-proc getFontMimeType*(self: Mime, ext: string): string =
-    return self.getMimeType(self.mimeFont, ext)
+    return self.getMimeType(
+        self.mimeApp,
+        ext)
 
-proc getSndMimeType*(self: Mime, ext: string): string =
-    return self.getMimeType(self.mimeSnd, ext)
+proc getFontMimeType*(
+    self: Mime,
+    ext: string): string =
 
-proc getImgMimeType*(self: Mime, ext: string): string =
-    return self.getMimeType(self.mimeImg, ext)
+    return self.getMimeType(
+        self.mimeFont,
+        ext)
 
-proc getMailMimeType*(self: Mime, ext: string): string =
-    return self.getMimeType(self.mimeMail, ext)
+proc getSndMimeType*(
+    self: Mime,
+    ext: string): string =
 
-proc getTxtMimeType*(self: Mime, ext: string): string =
-    return self.getMimeType(self.mimeTxt, ext)
+    return self.getMimeType(
+        self.mimeSnd,
+        ext)
 
-proc getVidMimeType*(self: Mime, ext: string): string =
-    return self.getMimeType(self.mimeVid, ext)
+proc getImgMimeType*(
+    self: Mime,
+    ext: string): string =
 
-proc getVWMimeType*(self: Mime, ext: string): string =
-    return self.getMimeType(self.mimeVW, ext)
+    return self.getMimeType(
+        self.mimeImg,
+        ext)
+
+proc getMailMimeType*(
+    self: Mime,
+    ext: string): string =
+
+    return self.getMimeType(
+        self.mimeMail,
+        ext)
+
+proc getTxtMimeType*(
+    self: Mime,
+    ext: string): string =
+
+    return self.getMimeType(
+        self.mimeTxt,
+        ext)
+
+proc getVidMimeType*(
+    self: Mime,
+    ext: string): string =
+
+    return self.getMimeType(
+        self.mimeVid,
+        ext)
+
+proc getVWMimeType*(
+    self: Mime,
+    ext: string): string =
+
+    return self.getMimeType(
+        self.mimeVW,
+        ext)

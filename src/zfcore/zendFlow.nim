@@ -8,12 +8,11 @@
 ]#
 import
     asyncdispatch,
-    asynchttpserver,
     strformat,
     sugar,
     router,
     route,
-    ctxReq,
+    httpCtx,
     tables,
     formData,
     json,
@@ -24,7 +23,9 @@ import
     os,
     times,
     asyncnet,
-    fluentValidation
+    fluentValidation,
+    net,
+    zfblast
 
 #[
     ZendFlow object definition
@@ -35,7 +36,9 @@ import
 ]#
 type
     ZendFlow* = ref object
-        server: AsyncHttpServer
+        # port to zfblast server
+        # server: AsyncHttpServer
+        server: ZFBlast
         r*: Router
         settings*: Settings
         isCleanTmpDirExecuted: bool
@@ -45,29 +48,52 @@ type
     default value will run on port 8080, bind address 0.0.0.0 and staticDir point to www folder
 ]#
 proc newZendFlow*(settings: Settings = newSettings()): ZendFlow =
-    return ZendFlow(server: newAsyncHttpServer(
-        reuseAddr = settings.reuseAddr, reusePort = settings.reusePort,
-        maxBody = settings.maxBody), r: newRouter(), settings: settings)
+    return ZendFlow(
+        server: newZFBlast(
+            address = settings.address,
+            port = Port(settings.port),
+            reuseAddress = settings.reuseAddress,
+            reusePort = settings.reusePort,
+            maxBodyLength = settings.maxBodyLength,
+            keepAliveMax = settings.keepAliveMax,
+            keepAliveTimeout = settings.keepAliveTimeout,
+            debug = settings.debug,
+            sslSettings = settings.sslSettings),
+        r: newRouter(),
+        settings: settings)
 
 #[
     this proc is private and will to use if the route not found or not match with router definition
-    the ctx:Request is standard request from asynchttpserver
+    the ctx:HttpContext is standard HttpContext from zfblast
 ]#
-proc httpMethodNotFoundAsync(self: ZendFlow, ctx: Request): Future[void] {.async.} =
-    await ctx.respond(Http500, &"Request method not implemented: {ctx.reqMethod}")
+proc httpMethodNotFoundAsync(
+    self: ZendFlow,
+    ctx: HttpContext): Future[void] {.async.} =
+
+    ctx.response.httpCode = Http500
+    ctx.response.setStringBody(
+        &"Request method not implemented: {ctx.request.httpMethod}")
+
+    await ctx.send(ctx)
 
 #[
     this proc is private for sending request context to router, the request will process and parsed
-    to make decision wich route tobe executed, ctx:Request is standard request from asynchttpserver
+    to make decision wich route tobe executed, ctx:HttpContext is standard HttpContext from zfblast
 ]#
-proc sendToRouter(self: ZendFlow, ctx: Request): Future[void] {.async gcsafe.} =
+proc sendToRouter(
+    self: ZendFlow,
+    ctx: HttpContext): Future[void] {.async.} =
+
     await self.r.executeProc(ctx, self.settings)
 
 #[
     clean Tmp folder may take resource
     todo: should be have better approach for this method
 ]#
-proc cleanTmpDir(self: ZendFlow, settings: Settings) {.gcsafe.} =
+proc cleanTmpDir(
+    self: ZendFlow,
+    settings: Settings) =
+
     for file in walkFiles(settings.tmpDir & "*"):
         # get all files
         let timestamp = splitPath(file)[1].split('_')[0]
@@ -78,8 +104,11 @@ proc cleanTmpDir(self: ZendFlow, settings: Settings) {.gcsafe.} =
 #[
     this proc is private for main dispatch of request
 ]#
-proc mainHandlerAsync(self: ZendFlow, ctx: Request): Future[void] {.async gcsafe.} =
-    if ctx.reqMethod in [HttpGet, HttpPost, HttpPut, HttpPatch,
+proc mainHandlerAsync(
+    self: ZendFlow,
+    ctx: HttpContext): Future[void] {.async.} =
+
+    if ctx.request.httpmethod in [HttpGet, HttpPost, HttpPut, HttpPatch,
         HttpDelete, HttpHead, HttpTrace, HttpOptions, HttpConnect]:
         await sendToRouter(self, ctx)
         # Chek cleanup tmp dir
@@ -87,6 +116,7 @@ proc mainHandlerAsync(self: ZendFlow, ctx: Request): Future[void] {.async gcsafe
             self.isCleanTmpDirExecuted = not self.isCleanTmpDirExecuted
             self.cleanTmpDir(self.settings)
             self.isCleanTmpDirExecuted = not self.isCleanTmpDirExecuted
+
     else:
         await httpMethodNotFoundAsync(self, ctx)
 
@@ -94,21 +124,17 @@ proc mainHandlerAsync(self: ZendFlow, ctx: Request): Future[void] {.async gcsafe
     this proc is for start the ZendFlow, this will serve forever :-)
 ]#
 proc serve*(self: ZendFlow) =
-    echo &"ZendFlow listening your request on {self.settings.address}:{self.settings.port}"
+
     echo "Enjoy and take a cup of coffe :-)"
 
-    proc cb(ctx: Request): Future[void] {.async gcsafe.} =
-        let context = deepCopy(ctx)
-        await self.mainHandlerAsync(context)
-
-    waitFor self.server.serve(Port(self.settings.port), cb, self.settings.address)
+    waitFor self.server.serve(proc (ctx: HttpContext): Future[void] {.async.} =
+        await self.mainHandlerAsync(ctx))
 
 export
-    ctxReq,
+    httpCtx,
     router,
     route,
     asyncdispatch,
-    asynchttpserver,
     tables,
     formData,
     json,
@@ -118,6 +144,7 @@ export
     times,
     os,
     settings,
-    AsyncSocket,
     asyncnet,
-    fluentValidation
+    fluentValidation,
+    zfblast,
+    SslCVerifyMode

@@ -15,20 +15,36 @@
         address:string -> is address to be bind for starting the server
 ]#
 
-import os
+import
+    os
+
+from zfblast import SslSettings
 
 type
+    # port to zfblast ssl setting
+    #SslSettings* = ref object
+    #    certFile*: string
+    #    keyFile*: string
+
     Settings* = ref object
         port*: int
-        staticDir*: string
-        tmpDir*: string
         address*: string
-        reuseAddr*: bool
+        reuseAddress*: bool
         reusePort*: bool
-        maxBody*: int
+        maxBodyLength*: int
         debug*: bool
         appRootDir*: string
-        viewDir*: string
+        sslSettings*: SslSettings
+        # Keep-Alive header max request with given persistent timeout
+        # read RFC (https://tools.ietf.org/html/rfc2616)
+        # section Keep-Alive and Connection
+        # for improving response performance
+        keepAliveMax*: int
+        # Keep-Alive timeout
+        keepAliveTimeout*: int
+        viewDir: string
+        staticDir: string
+        tmpDir: string
 
 #[
     this for instantiate new Settings with default parameter is:
@@ -36,20 +52,43 @@ type
         address -> 0.0.0.0
         staticDir -> www
 ]#
-proc newSettings*(appRootDir:string = "", port: int = 8080, address: string = "0.0.0.0",
-        staticDir: string = "www", tmpDir: string = "tmp", reuseAddr: bool = true,
-        reusePort:bool = false, maxBody:int = 8388608, debug:bool = true, viewDir: string = "views"): Settings =
+proc newSettings*(
+    appRootDir:string = "",
+    port: int = 8080,
+    address: string = "0.0.0.0",
+    reuseAddress: bool = true,
+    reusePort: bool = false,
+    maxBodyLength: int = 268435456,
+    debug: bool = true,
+    keepAliveMax: int = 20,
+    keepAliveTimeout: int = 10,
+    sslSettings: SslSettings = nil): Settings =
 
     var instance = Settings(
         port: port,
         address: address,
-        staticDir: joinPath(appRootDir ,staticDir),
-        tmpDir: joinPath(appRootDir, tmpDir),
-        reuseAddr: reuseAddr,
+        staticDir: joinPath(appRootDir ,"www"),
+        tmpDir: joinPath(appRootDir, "tmp"),
+        reuseAddress: reuseAddress,
         reusePort: reusePort,
-        maxBody: maxBody,
+        maxBodyLength: maxBodyLength,
         debug: debug,
-        viewDir: joinPath(appRootDir, viewDir))
+        keepAliveMax: keepAliveMax,
+        keepAliveTimeout: keepAliveTimeout,
+        viewDir: joinPath(appRootDir, "views"),
+        sslSettings: sslSettings)
+
     return instance
 
-export Settings
+proc staticDir*(self: Settings): string =
+    return self.staticDir
+
+proc tmpDir*(self: Settings): string =
+    return self.tmpDir
+
+proc viewDir*(self: Settings): string =
+    return self.viewDir
+
+export
+    Settings,
+    SslSettings
