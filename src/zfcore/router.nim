@@ -206,16 +206,49 @@ proc handleStaticRoute(
                         if mimeType != "":
                             contentType = mimeType
 
-                    # read the file as stream from the static dir and serve it
-                    #let file = newFileStream(staticSearchDir, fmRead)
-                    #let ctn = file.readAll()
-                    #file.close()
-                    #HttpCtx.responseHeaders.add("Content-Type", contentType)
-                    #await HttpCtx.resp(Http200, ctn)
                     return (
                         found: true,
                         filePath: staticSearchDir,
                         contentType: contentType)
+
+proc handleStaticRoute2(
+    self: Router,
+    ctx: HttpCtx):
+    Future[void] {.async.} =
+
+    if not isNil(self.staticRoute):
+        # get route from the path
+        var routePath = decodeUri(self.staticRoute.path)
+        # get static path from the request url
+        var staticPath = decodeUri(ctx.request.url.getPath())
+        if ctx.request.httpMethod == HttpGet:
+            # only if static path from the request url start with the route path
+            if staticPath.startsWith(routePath) and
+                routePath != staticPath:
+                # static dir will search under staticDir in settings section
+                let staticSearchDir = ctx.settings.staticDir & staticPath
+                if fileExists(staticSearchDir):
+                    # define contentType of the file
+                    # default is "application/octet-stream"
+                    var contentType = "application/octet-stream"
+                    # define extension of the requested file
+                    var ext: array[1, string]
+                    if match(staticPath, re"[\w\W]+\.([\w]+)$", ext):
+                        # if extension is defined then try to search the contentType
+                        let mimeType = newMimeType().getMimeType(
+                            ("." & ext[0]).toLower())
+                        # override the contentType if we found it
+                        if mimeType != "":
+                            contentType = mimeType
+
+                    let file = newFileStream(staticSearchDir, fmRead)
+                    let ctn = file.readAll()
+                    file.close()
+                    ctx.response.headers.add("Content-Type", contentType)
+                    await ctx.resp(Http200, ctn)
+                    return
+
+    await ctx.resp(Http404, &"Resource not found {ctx.request.url.getPath()}")
 
 #[
     Handle dynamic route and middleware
@@ -229,6 +262,8 @@ proc handleDynamicRoute(
 
     # call static route before the dynamic route
     let handleStatic = await self.handleStaticRoute(ctx)
+
+    #asyncCheck self.handleStaticRoute2(ctx)
 
     # map content type
     self.mapContentype(ctx)
