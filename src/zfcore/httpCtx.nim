@@ -92,45 +92,36 @@ proc clearCookie*(
 proc resp*(
     self: HttpCtx,
     httpCode: HttpCode,
-    body: string): Future[void] {.async.} =
-
-    self.response.httpCode = httpCode
-    self.response.setStringBody(body)
-    await self.send(self)
-
-proc resp*(
-    self: HttpCtx,
-    httpCode: HttpCode,
-    body: StringStream): Future[void] {.async.} =
+    body: string,
+    headers: HttpHeaders = nil) =
 
     self.response.httpCode = httpCode
     self.response.body = body
+    if not isNil(headers):
+        for k, v in headers.pairs:
+            self.response.headers[k] = v
 
-    await self.send(self)
-
-proc resp*(
-    self: HttpCtx,
-    httpCode: HttpCode,
-    body: FileStream): Future[void] {.async.} =
-
-    self.response.httpCode = httpCode
-    self.response.setStringBody(body.readAll())
-    await self.send(self)
+    asyncCheck self.send(self)
 
 proc respJson*(
     self: HttpCtx,
     httpCode: HttpCode,
-    body: JsonNode): Future[void] {.async.} =
+    body: JsonNode,
+    headers: HttpHeaders = nil) =
 
     self.response.httpCode = httpCode
     self.response.headers.add("Content-Type", "application/json")
-    self.response.setStringBody($body)
-    await self.send(self)
+    self.response.body = $body
+    if not isNil(headers):
+        for k, v in headers.pairs:
+            self.response.headers[k] = v
+
+    asyncCheck self.send(self)
 
 proc respRedirect*(
     self: HttpCtx,
-    redirectTo: string): Future[void] {.async.} =
+    redirectTo: string) =
 
     self.response.httpCode = Http303
     self.response.headers.add("Location", redirectTo)
-    await self.send(self)
+    asyncCheck self.send(self)

@@ -71,8 +71,8 @@ proc httpMethodNotFoundAsync(
     ctx: HttpContext): Future[void] {.async.} =
 
     ctx.response.httpCode = Http500
-    ctx.response.setStringBody(
-        &"Request method not implemented: {ctx.request.httpMethod}")
+    ctx.response.body =
+        &"Request method not implemented: {ctx.request.httpMethod}"
 
     await ctx.send(ctx)
 
@@ -128,7 +128,7 @@ proc serve*(self: ZendFlow) =
     echo "Enjoy and take a cup of coffe :-)"
 
     waitFor self.server.serve(proc (ctx: HttpContext): Future[void] {.async.} =
-        await self.mainHandlerAsync(ctx))
+        asyncCheck self.mainHandlerAsync(ctx))
 
 export
     httpCtx,

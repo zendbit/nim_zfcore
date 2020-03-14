@@ -20,10 +20,10 @@ import
     route,
     os,
     settings,
-    streams,
     mime,
     httpcore,
-    zfblast
+    zfblast,
+    osproc
 
 #[
     Definition of the Router inherit from the Middleware
@@ -150,14 +150,14 @@ proc mapContentype(
     if ctx.request.httpMethod in [HttpPost, HttpPut, HttpPatch]:
         if contentType.contains("multipart/form-data"):
             ctx.formData = newFormData().parse(
-                ctx.request.readBody,
+                ctx.request.body,
                 ctx.settings)
 
         if contentType.contains("application/x-www-form-urlencoded"):
-            ctx.params = self.parseUriToTable(ctx.request.readBody)
+            ctx.params = self.parseUriToTable(ctx.request.body)
 
         if contentType.contains("application/json"):
-            ctx.json = parseJson(ctx.request.readBody)
+            ctx.json = parseJson(ctx.request.body)
 
 #[
     Handle static resource, this should be only allow get method
@@ -211,45 +211,6 @@ proc handleStaticRoute(
                         filePath: staticSearchDir,
                         contentType: contentType)
 
-proc handleStaticRoute2(
-    self: Router,
-    ctx: HttpCtx):
-    Future[void] {.async.} =
-
-    if not isNil(self.staticRoute):
-        # get route from the path
-        var routePath = decodeUri(self.staticRoute.path)
-        # get static path from the request url
-        var staticPath = decodeUri(ctx.request.url.getPath())
-        if ctx.request.httpMethod == HttpGet:
-            # only if static path from the request url start with the route path
-            if staticPath.startsWith(routePath) and
-                routePath != staticPath:
-                # static dir will search under staticDir in settings section
-                let staticSearchDir = ctx.settings.staticDir & staticPath
-                if fileExists(staticSearchDir):
-                    # define contentType of the file
-                    # default is "application/octet-stream"
-                    var contentType = "application/octet-stream"
-                    # define extension of the requested file
-                    var ext: array[1, string]
-                    if match(staticPath, re"[\w\W]+\.([\w]+)$", ext):
-                        # if extension is defined then try to search the contentType
-                        let mimeType = newMimeType().getMimeType(
-                            ("." & ext[0]).toLower())
-                        # override the contentType if we found it
-                        if mimeType != "":
-                            contentType = mimeType
-
-                    let file = newFileStream(staticSearchDir, fmRead)
-                    let ctn = file.readAll()
-                    file.close()
-                    ctx.response.headers.add("Content-Type", contentType)
-                    await ctx.resp(Http200, ctn)
-                    return
-
-    await ctx.resp(Http404, &"Resource not found {ctx.request.url.getPath()}")
-
 #[
     Handle dynamic route and middleware
 ]#
@@ -294,15 +255,16 @@ proc handleDynamicRoute(
 
     elif handleStatic.found:
         # read the file as stream from the static dir and serve it
-        let file = newFileStream(handleStatic.filePath, fmRead)
-        let ctn = file.readAll()
-        file.close()
         ctx.response.headers.add("Content-Type", handleStatic.contentType)
-        await ctx.resp(Http200, ctn)
+        let file = open(handleStatic.filePath, fmRead)
+        let content = file.readAll()
+        file.close()
+
+        ctx.resp(Http200, content)
 
     else:
         # default response if route does not match
-        await ctx.resp(Http404, &"Resource not found {ctx.request.url.getPath()}")
+        ctx.resp(Http404, &"Resource not found {ctx.request.url.getPath()}")
 
 #[
     This proc will execute the registered callback procedure in route list.
@@ -322,7 +284,7 @@ proc executeProc*(
 
     except Exception as ex:
         let exMsg = ex.msg.replace("\n", "<br />")
-        await httpCtx.resp(Http500, &"Internal server error {exMsg}")
+        httpCtx.resp(Http500, &"Internal server error {exMsg}")
 
 proc static*(
     self: Router,
