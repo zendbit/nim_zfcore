@@ -33,15 +33,25 @@ import
     staticRoutes for handle static file directory resource
 ]#
 type
+    Cache = ref object
+        content: string
+        lastModified: Time
+        contentEncoding: string
+        contentType: string
+
     Router* = ref object of Middleware
         routes: seq[Route]
         staticRoute: Route
+        caches: FutureVar[Table[string, Cache]]
 
 #[
     Create new Router object, with default routes as zero list
 ]#
-proc newRouter*(): Router =
-    return Router(routes: @[])
+proc newRouter*(): Router {.gcsafe.} =
+
+    return Router(
+        routes: @[],
+        caches: newFutureVar[Table[string, Cache]](fromProc = "newRouter"))
 
 #[
     This proc is private and will process and matching the request with the list of the routes
@@ -212,6 +222,118 @@ proc handleStaticRoute(
                         contentType: contentType)
 
 #[
+    Cached data on memory for fast loading
+    only web cache the web resource
+]#
+proc isContentShouldCache(
+    self: Router,
+    contentType: string): bool =
+
+    return contentType in [
+            "application/x-javascript",
+            "application/json",
+            "application/ld+json",
+            "application/xhtml+xml",
+            "application/xml",
+            "text/html",
+            "text/css",
+            "text/javascript"] or
+        contentType.startsWith("font/") or
+        contentType.startsWith("image/")
+
+proc getCache(
+    self: Router,
+    filePath: string): Cache =
+
+    var caches = self.caches.mget()
+    var cache = caches.getOrDefault(filePath)
+    let fileInfo = getFileInfo(filePath)
+
+    # check if modify date of the cached file is valid
+    # if not valid and older then delete from cache
+    if (not isNil(cache)) and
+        (cache.lastModified < fileInfo.lastAccessTime):
+            self.caches.mget().del(filePath)
+            cache = nil
+
+    return cache
+
+proc tryCache(
+    self: Router,
+    filePath: string,
+    content: string,
+    contentType: string,
+    contentEncoding: string) =
+
+    # cache only text, font, application and image
+    if self.isContentShouldCache(contentType):
+        var caches = self.caches.mget()
+        var cache = caches.getOrDefault(filePath)
+
+        # if cache is nil add new one
+        if cache == nil:
+            cache = Cache(
+                content: content,
+                lastModified: getFileInfo(filePath).lastAccessTime,
+                contentEncoding: contentEncoding,
+                contentType: contentType)
+
+            self.caches.mget().add(
+                filePath,
+                cache)
+
+#[
+    compress with gzip if available
+    only compress web resource
+]#
+proc isContentShouldCompress(
+    self:Router,
+    contentType: string): bool =
+
+    return contentType in [
+            "application/x-javascript",
+            "application/json",
+            "application/ld+json",
+            "application/xhtml+xml",
+            "application/xml",
+            "text/html",
+            "text/css",
+            "text/javascript"] or
+        contentType.startsWith("font/") or
+        contentType.startsWith("image/svg")
+
+
+proc tryCompress(
+    self: Router,
+    ctx: HttpCtx,
+    filePath: string,
+    contentType: string):
+    tuple[
+        compressed:bool,
+        content: string,
+        contentEncoding: string] =
+
+    let file = open(filePath, fmRead)
+    let fileContent = file.readAll
+    file.close
+
+    if self.isContentShouldCompress(contentType):
+        var (output, exitCode) = execCmdEx(
+            &"gzip -1 -q --to-stdout {filePath}")
+
+        if exitCode == 0:
+            return (
+                compressed: true,
+                content: output,
+                contentEncoding: "gzip")
+
+    return (
+        compressed: false,
+        content: fileContent,
+        contentEncoding: "")
+
+
+#[
     Handle dynamic route and middleware
 ]#
 proc handleDynamicRoute(
@@ -222,7 +344,8 @@ proc handleDynamicRoute(
     if await self.execBeforeRoute(ctx): return
 
     # call static route before the dynamic route
-    let handleStatic = await self.handleStaticRoute(ctx)
+    let (staticFound, staticFilePath, staticContentType) =
+        await self.handleStaticRoute(ctx)
 
     #asyncCheck self.handleStaticRoute2(ctx)
 
@@ -253,14 +376,40 @@ proc handleDynamicRoute(
         # execute route callback
         await route.thenDo(ctx)
 
-    elif handleStatic.found:
-        # read the file as stream from the static dir and serve it
-        ctx.response.headers.add("Content-Type", handleStatic.contentType)
-        let file = open(handleStatic.filePath, fmRead)
-        let content = file.readAll()
-        file.close()
+    elif staticFound:
+        var body = ""
+        var contentEncoding = ""
+        var contentType = ""
 
-        ctx.resp(Http200, content)
+        var cache = self.getCache(staticFilePath)
+        if isNil(cache):
+            let (isCompressed, compressedCtn, compressedEncoding) =
+                self.tryCompress(
+                    ctx,
+                    staticFilePath,
+                    staticContentType)
+
+            self.tryCache(
+                staticFilePath,
+                compressedCtn,
+                staticContentType,
+                compressedEncoding)
+
+            body = compressedCtn
+            contentEncoding = compressedEncoding
+            contentType = staticContentType
+
+        else:
+            body = cache.content
+            contentEncoding = cache.contentEncoding
+            contentType = cache.contentType
+
+        if contentEncoding != "":
+            ctx.response.headers["Content-Encoding"] = contentEncoding
+
+        ctx.response.headers["Content-Type"] = contentType
+
+        ctx.resp(Http200, body)
 
     else:
         # default response if route does not match
