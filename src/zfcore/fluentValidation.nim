@@ -225,7 +225,7 @@ proc add*(
         self.valids.add(fieldData.name, fieldData)
     return self
 
-#proc validate*(self: FluentValidation):
-#        tuple[valids: Table[string, FieldData],
-#            notValids: Table[string, FieldData]] =
-#    return (valids: self.valids, notValids: self.notValids)
+proc clear*(self: FluentValidation) =
+
+    clear(self.valids)
+    clear(self.notValids)
