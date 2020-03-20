@@ -29,47 +29,57 @@ import
     FieldData is object model of field to be validated
     name is field name
     value is the value of the field
-    errorMsg is valued when the validation contain an error
+    msg is valued when the validation contain an error
 ]#
 type
     FieldData* = ref object
         name: string
         value: string
-        errorMsg: string
+        msg: string
 
 proc newFieldData*(
     name: string,
-    value: string): FieldData {.discardable.} =
+    value: string,
+    msg: string = "",
+    okMsg:string = ""): FieldData {.discardable.} =
 
     return FieldData(
         name: name.strip(),
-        value: value.strip())
+        value: value.strip(),
+        msg: msg.strip())
 
 proc must*(
     self: FieldData,
-    errMsg: string = ""): FieldData =
+    errMsg: string = "",
+    okMsg:string = ""): FieldData =
 
-    if self.value == "" and self.errorMsg == "":
-        if errMsg != "":
-            self.errorMsg = errMsg
+    if self.msg == "":
+        if self.value == "":
+            if errMsg != "":
+                self.msg = errMsg
+            else:
+                self.msg =  "Value is required."
+
         else:
-            self.errorMsg =  "Value is required."
+            self.msg = okMsg
 
     return self
 
 proc num*(
     self: FieldData,
-    errMsg: string = ""): FieldData {.discardable.} =
+    errMsg: string = "",
+    okMsg:string = ""): FieldData {.discardable.} =
 
-    if self.errorMsg == "":
+    if self.msg == "":
         try:
             discard parseFloat(self.value)
+            self.msg = okMsg
 
         except Exception:
             if errMsg != "":
-                self.errorMsg = errMsg
+                self.msg = errMsg
             else:
-                self.errorMsg = "Value is not valid number."
+                self.msg = "Value is not valid number."
 
     return self
 
@@ -77,9 +87,10 @@ proc rangeNum*(
     self: FieldData,
     min: float64,
     max: float64,
-    errMsg: string = ""): FieldData {.discardable.} =
+    errMsg: string = "",
+    okMsg:string = ""): FieldData {.discardable.} =
 
-    if self.errorMsg == "":
+    if self.msg == "":
         var err = ""
         try:
             let num = parseFloat(self.value)
@@ -89,20 +100,25 @@ proc rangeNum*(
                 else:
                     err = &"Value is not in range. ({min}-{max})"
 
+            else:
+                self.msg = okMsg
+
+
         except Exception:
             err = &"Value is not in range. ({min}-{max})"
 
         if err != "":
-            self.errorMsg = err
+            self.msg = err
 
     return self
 
 proc maxNum*(
     self: FieldData,
     max: float64,
-    errMsg: string = ""): FieldData {.discardable.} =
+    errMsg: string = "",
+    okMsg:string = ""): FieldData {.discardable.} =
 
-    if self.errorMsg == "":
+    if self.msg == "":
         var err = ""
         try:
             let num = parseFloat(self.value)
@@ -112,20 +128,24 @@ proc maxNum*(
                 else:
                     err = &"Larger value not allowed. (>{max})"
 
+            else:
+                self.msg = okMsg
+
         except Exception:
             err = &"Larger value not allowed. (>{max})"
 
         if err != "":
-            self.errorMsg = err
+            self.msg = err
 
     return self
 
 proc minNum*(
     self: FieldData,
     min: float64,
-    errMsg: string = ""): FieldData {.discardable.} =
+    errMsg: string = "",
+    okMsg:string = ""): FieldData {.discardable.} =
 
-    if self.errorMsg == "":
+    if self.msg == "":
         var err = ""
         try:
             let num = parseFloat(self.value)
@@ -135,37 +155,66 @@ proc minNum*(
                 else:
                     err = &"Lower value not allowed. (<{min})"
 
+            else:
+                self.msg = okMsg
+
         except Exception:
             err = &"Lower value not allowed. (<{min})"
 
         if err != "":
-            self.errorMsg = err
+            self.msg = err
+
+    return self
+
+proc customErr*(
+    self: FieldData,
+    errMsg: string = ""): FieldData =
+
+    self.msg =  errMsg
+
+    return self
+
+proc customOk*(
+    self: FieldData,
+    okMsg: string = ""): FieldData =
+
+    self.msg =  okMsg
 
     return self
 
 proc minLen*(
     self: FieldData,
     min: int,
-    errMsg: string = ""): FieldData {.discardable.} =
+    errMsg: string = "",
+    okMsg: string = ""): FieldData {.discardable.} =
 
-    if self.value.len < min and self.errorMsg == "":
-        if errMsg != "":
-            self.errorMsg = errMsg
+    if self.msg == "":
+        if self.value.len < min:
+            if errMsg != "":
+                self.msg = errMsg
+            else:
+                self.msg = &"Lower value length not allowed. (<{min})"
+
         else:
-            self.errorMsg = &"Lower value length not allowed. (<{min})"
+            self.msg = okMsg
 
     return self
 
 proc maxLen*(
     self: FieldData,
     max: int,
-    errMsg: string = ""): FieldData {.discardable.} =
+    errMsg: string = "",
+    okMsg: string = ""): FieldData {.discardable.} =
 
-    if self.value.len > max and self.errorMsg == "":
-        if errMsg != "":
-            self.errorMsg = errMsg
+    if self.msg == "":
+        if self.value.len > max:
+            if errMsg != "":
+                self.msg = errMsg
+            else:
+                self.msg = &"Larger value length not allowed. (>{max})"
+
         else:
-            self.errorMsg = &"Larger value length not allowed. (>{max})"
+            self.msg = okMsg
 
     return self
 
@@ -173,26 +222,36 @@ proc rangeLen*(
     self: FieldData,
     min: int,
     max: int,
-    errMsg: string = ""): FieldData {.discardable.} =
+    errMsg: string = "",
+    okMsg: string = ""): FieldData {.discardable.} =
 
-    if (self.value.len > max or self.value.len < min) and self.errorMsg == "":
-        if errMsg != "":
-            self.errorMsg = errMsg
+    if self.msg == "":
+        if (self.value.len > max or self.value.len < min):
+            if errMsg != "":
+                self.msg = errMsg
+            else:
+                self.msg = &"Value length not in range. ({min}-{max})"
+
         else:
-            self.errorMsg = &"Value length not in range. ({min}-{max})"
+            self.msg = okMsg
 
     return self
 
 proc reMatch*(
     self: FieldData,
     regex: string,
-    errMsg: string = ""): FieldData {.discardable.} =
+    errMsg: string = "",
+    okMsg: string = ""): FieldData {.discardable.} =
 
-    if not match(self.value, re regex) and self.errorMsg == "":
-        if errMsg != "":
-            self.errorMsg = errMsg
+    if self.msg == "":
+        if not match(self.value, re regex):
+            if errMsg != "":
+                self.msg = errMsg
+            else:
+                self.msg = &"Value not match with pattern. ({regex})"
+
         else:
-            self.errorMsg = &"Value not match with pattern. ({regex})"
+            self.msg = okMsg
 
     return self
 
@@ -219,7 +278,7 @@ proc add*(
     self: FluentValidation,
     fieldData: FieldData): FluentValidation {.discardable.} =
 
-    if fieldData.errorMsg.len != 0:
+    if fieldData.msg.len != 0:
         self.notValids.add(fieldData.name, fieldData)
     else:
         self.valids.add(fieldData.name, fieldData)
@@ -229,3 +288,7 @@ proc clear*(self: FluentValidation) =
 
     clear(self.valids)
     clear(self.notValids)
+
+proc isValid*(self: FluentValidation): bool =
+
+    return self.notValids.len == 0
