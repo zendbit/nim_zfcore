@@ -103,7 +103,7 @@ proc resp*(
 
     asyncCheck self.send(self)
 
-proc respJson*(
+proc resp*(
     self: HttpCtx,
     httpCode: HttpCode,
     body: JsonNode,
