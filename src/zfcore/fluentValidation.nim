@@ -36,17 +36,15 @@ type
         name: string
         value: string
         msg: string
+        isValid: bool
 
 proc newFieldData*(
     name: string,
-    value: string,
-    msg: string = "",
-    okMsg:string = ""): FieldData {.discardable.} =
+    value: string): FieldData {.discardable.} =
 
     return FieldData(
         name: name.strip(),
-        value: value.strip(),
-        msg: msg.strip())
+        value: value.strip())
 
 proc must*(
     self: FieldData,
@@ -61,6 +59,7 @@ proc must*(
                 self.msg =  "Value is required."
 
         else:
+            self.isValid = true
             self.msg = okMsg
 
     return self
@@ -73,6 +72,7 @@ proc num*(
     if self.msg == "":
         try:
             discard parseFloat(self.value)
+            self.isValid = true
             self.msg = okMsg
 
         except Exception:
@@ -101,6 +101,7 @@ proc rangeNum*(
                     err = &"Value is not in range. ({min}-{max})"
 
             else:
+                self.isValid = true
                 self.msg = okMsg
 
 
@@ -129,6 +130,7 @@ proc maxNum*(
                     err = &"Larger value not allowed. (>{max})"
 
             else:
+                self.isValid = true
                 self.msg = okMsg
 
         except Exception:
@@ -156,6 +158,7 @@ proc minNum*(
                     err = &"Lower value not allowed. (<{min})"
 
             else:
+                self.isValid = true
                 self.msg = okMsg
 
         except Exception:
@@ -179,6 +182,7 @@ proc customOk*(
     okMsg: string = ""): FieldData =
 
     self.msg =  okMsg
+    self.isValid = true
 
     return self
 
@@ -196,6 +200,7 @@ proc minLen*(
                 self.msg = &"Lower value length not allowed. (<{min})"
 
         else:
+            self.isValid = true
             self.msg = okMsg
 
     return self
@@ -214,6 +219,7 @@ proc maxLen*(
                 self.msg = &"Larger value length not allowed. (>{max})"
 
         else:
+            self.isValid = true
             self.msg = okMsg
 
     return self
@@ -233,6 +239,7 @@ proc rangeLen*(
                 self.msg = &"Value length not in range. ({min}-{max})"
 
         else:
+            self.isValid = true
             self.msg = okMsg
 
     return self
@@ -251,6 +258,7 @@ proc reMatch*(
                 self.msg = &"Value not match with pattern. ({regex})"
 
         else:
+            self.isValid = true
             self.msg = okMsg
 
     return self
@@ -278,7 +286,7 @@ proc add*(
     self: FluentValidation,
     fieldData: FieldData): FluentValidation {.discardable.} =
 
-    if fieldData.msg.len != 0:
+    if not fieldData.isValid:
         self.notValids.add(fieldData.name, fieldData)
     else:
         self.valids.add(fieldData.name, fieldData)
