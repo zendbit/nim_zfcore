@@ -4,6 +4,10 @@ we replace asynchttpserver with zfblast server https://github.com/zendbit/nim.zf
 
 # Install from nimble
 ```
+use develop mode for the latest version:
+nimble develop zfcore
+
+or use the nimble version but not guarantee point to the latest version:
 nimble install zfcore
 ```
 
