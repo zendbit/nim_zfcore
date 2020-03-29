@@ -110,7 +110,7 @@ proc resp*(
     headers: HttpHeaders = nil) =
 
     self.response.httpCode = httpCode
-    self.response.headers.add("Content-Type", "application/json")
+    self.response.headers["Content-Type"] = @["application/json"]
     self.response.body = $body
     if not isNil(headers):
         for k, v in headers.pairs:
@@ -123,5 +123,5 @@ proc respRedirect*(
     redirectTo: string) =
 
     self.response.httpCode = Http303
-    self.response.headers.add("Location", redirectTo)
+    self.response.headers["Location"] = @[redirectTo]
     asyncCheck self.send(self)
