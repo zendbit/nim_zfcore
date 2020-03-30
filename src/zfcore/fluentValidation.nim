@@ -273,6 +273,23 @@ proc reMatch*(
 
     return self
 
+proc email*(
+    self: FieldData,
+    errMsg: string = "",
+    okMsg: string = ""): FieldData {.discardable.} =
+
+    if self.msg == "":
+        var localErrMsg = errMsg
+        if localErrMsg != "":
+            localErrMsg = "Email address format is not valid."
+
+        self.reMatch(
+            fmt"([\w\.\-]+@[\w\.\-]+\.[\w\.\-]+)$",
+            localErrMsg,
+            okMsg)
+
+    return self
+
 #[
     Fluent validation model
     this will handle and register FieldData model
