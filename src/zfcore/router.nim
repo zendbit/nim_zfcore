@@ -139,7 +139,7 @@ proc parseUriToTable(
 
     var query = initTable[string, string]()
     var uriToParse = uri
-    if not uri.contains("?"): uriToParse = &"?{uriToParse}"
+    if uri.find("?") == -1: uriToParse = &"?{uriToParse}"
     for q in parseUri3(uriToParse).getAllQueries():
         if (q.len == 2):
             query.add(q[0], q[1])
@@ -158,15 +158,15 @@ proc mapContentype(
 
     let contentType = ctx.request.headers.getOrDefault("Content-Type")
     if ctx.request.httpMethod in [HttpPost, HttpPut, HttpPatch]:
-        if contentType.contains("multipart/form-data"):
+        if contentType.find("multipart/form-data") != -1:
             ctx.formData = newFormData().parse(
                 ctx.request.body,
                 ctx.settings)
 
-        if contentType.contains("application/x-www-form-urlencoded"):
+        if contentType.find("application/x-www-form-urlencoded") != -1:
             ctx.params = self.parseUriToTable(ctx.request.body)
 
-        if contentType.contains("application/json"):
+        if contentType.find("application/json") != -1:
             ctx.json = parseJson(ctx.request.body)
 
 #[

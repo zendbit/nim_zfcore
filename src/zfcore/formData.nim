@@ -226,7 +226,7 @@ proc parse*(
                     # should define when read first line of header contein filename or not
                     # if contein fileneme set parstType to file
                     if parseType == ParseType.none:
-                        if lineStrip.contains("filename="):
+                        if lineStrip.find("filename=") != -1:
                             parseType = ParseType.file
 
                         else:
@@ -239,13 +239,13 @@ proc parse*(
                             # parse to file if parseType is file from previous readline
                             var hinfoSplit: seq[string] = @[]
                             # parse content information header
-                            if hinfoStrip.contains("Content-Disposition:") or
-                                hinfoStrip.contains("Content-Type:"):
+                            if hinfoStrip.find("Content-Disposition:") != -1 or
+                                hinfoStrip.find("Content-Type:") != -1:
                                 hinfoSplit = hinfoStrip.split(':')
 
                             # parse content name and value
-                            elif hinfoStrip.contains("name=") or
-                                hinfoStrip.contains("filename="):
+                            elif hinfoStrip.find("name=") != -1 or
+                                hinfoStrip.find("filename=") != -1:
                                 hinfoSplit = hinfoStrip.split('=')
 
                             if hinfoSplit.len == 2:
