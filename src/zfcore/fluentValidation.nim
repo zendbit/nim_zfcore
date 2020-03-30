@@ -53,6 +53,7 @@ proc must*(
 
     if self.msg == "":
         if self.value == "":
+            self.isValid = false
             if errMsg != "":
                 self.msg = errMsg
             else:
@@ -76,6 +77,7 @@ proc num*(
             self.msg = okMsg
 
         except Exception:
+            self.isValid = false
             if errMsg != "":
                 self.msg = errMsg
             else:
@@ -95,6 +97,7 @@ proc rangeNum*(
         try:
             let num = parseFloat(self.value)
             if num < min or num > max:
+                self.isValid = false
                 if errMsg != "":
                     err = errMsg
                 else:
@@ -124,6 +127,7 @@ proc maxNum*(
         try:
             let num = parseFloat(self.value)
             if num > max:
+                self.isValid = false
                 if errMsg != "":
                     err = errMsg
                 else:
@@ -152,6 +156,7 @@ proc minNum*(
         try:
             let num = parseFloat(self.value)
             if num < min:
+                self.isValid = false
                 if errMsg != "":
                     err = errMsg
                 else:
@@ -174,6 +179,7 @@ proc customErr*(
     errMsg: string = ""): FieldData =
 
     self.msg =  errMsg
+    self.isValid = false
 
     return self
 
@@ -194,6 +200,7 @@ proc minLen*(
 
     if self.msg == "":
         if self.value.len < min:
+            self.isValid = false
             if errMsg != "":
                 self.msg = errMsg
             else:
@@ -213,6 +220,7 @@ proc maxLen*(
 
     if self.msg == "":
         if self.value.len > max:
+            self.isValid = false
             if errMsg != "":
                 self.msg = errMsg
             else:
@@ -233,6 +241,7 @@ proc rangeLen*(
 
     if self.msg == "":
         if (self.value.len > max or self.value.len < min):
+            self.isValid = false
             if errMsg != "":
                 self.msg = errMsg
             else:
@@ -252,6 +261,7 @@ proc reMatch*(
 
     if self.msg == "":
         if not match(self.value, re regex):
+            self.isValid = false
             if errMsg != "":
                 self.msg = errMsg
             else:
