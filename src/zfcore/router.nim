@@ -319,7 +319,7 @@ proc tryCompress(
 
     if self.isContentShouldCompress(contentType):
         var (output, exitCode) = execCmdEx(
-            &"gzip -5 --to-stdout {filePath}")
+            &"gzip -3 --to-stdout {filePath}")
 
         if exitCode == 0:
             return (
@@ -347,8 +347,6 @@ proc handleDynamicRoute(
     let (staticFound, staticFilePath, staticContentType) =
         await self.handleStaticRoute(ctx)
 
-    #asyncCheck self.handleStaticRoute2(ctx)
-
     # map content type
     self.mapContentype(ctx)
 
@@ -364,6 +362,10 @@ proc handleDynamicRoute(
             route = r
             for k, v in matchesUri.params:
                 ctx.params.add(k, v)
+
+            for qStr in ctx.request.url.getAllQueries():
+                if qStr.len == 2:
+                    ctx.params.add(qStr[0], qStr[1])
 
             ctx.reParams = matchesUri.reParams
 
