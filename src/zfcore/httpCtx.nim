@@ -99,7 +99,12 @@ proc resp*(
     self.response.body = body
     if not isNil(headers):
         for k, v in headers.pairs:
-            self.response.headers[k] = v
+            if k.toLower == "content-type" and
+                v.toLower.find("utf-8") == -1:
+                self.response.headers[k] = v & "; utf-8"                
+
+            else:
+                self.response.headers[k] = v
 
     asyncCheck self.send(self)
 
@@ -110,7 +115,7 @@ proc resp*(
     headers: HttpHeaders = nil) =
 
     self.response.httpCode = httpCode
-    self.response.headers["Content-Type"] = @["application/json"]
+    self.response.headers["Content-Type"] = @["application/json", "utf-8"]
     self.response.body = $body
     if not isNil(headers):
         for k, v in headers.pairs:

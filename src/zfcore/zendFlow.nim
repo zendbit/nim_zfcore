@@ -110,6 +110,9 @@ proc mainHandlerAsync(
 
     if ctx.request.httpmethod in [HttpGet, HttpPost, HttpPut, HttpPatch,
         HttpDelete, HttpHead, HttpTrace, HttpOptions, HttpConnect]:
+        # set default headers content type
+        ctx.response.headers["Content-Type"] = "text/plain; utf-8"
+        
         await sendToRouter(self, ctx)
         # Chek cleanup tmp dir
         if not self.isCleanTmpDirExecuted:

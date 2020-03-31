@@ -82,7 +82,10 @@ proc matchesUri(
             # check if matches with <tag-param>, ex: /home/<id>/index.html
             var paramTag: array[1, string]
 
-            if match(pathSeg[i], re"<([\w\W]+)>$", paramTag):
+            let currentPathSeg = decodeUri(pathSeg[i])
+            let currentUriSeg = decodeUri(uriSeg[i])
+
+            if match(currentPathSeg, re"<([\w\W]+)>$", paramTag):
 
                 # parse uri eith regex without length value to get ex: /home/<ids:re[\\w]>
                 var reParamsTag: array[3, string]
@@ -96,16 +99,16 @@ proc matchesUri(
                     for i in 0..(parseInt(reParamsTag[2]) - 1):
                         reParamsSegmentTag.add("")
 
-                    if match(uriSeg[i], re reParamsTag[1], reParamsSegmentTag):
+                    if match(currentUriSeg, re reParamsTag[1], reParamsSegmentTag):
                         reParams.add(reParamsTag[0], @ reParamsSegmentTag)
 
                     else:
                         success = false
 
                 else:
-                    params.add(paramTag[0], uriSeg[i])
+                    params.add(paramTag[0], currentUriSeg)
 
-            elif pathSeg[i] != uriSeg[i]:
+            elif currentPathSeg != currentUriSeg:
                 success = false
 
             # break and continue if current route not match
@@ -142,7 +145,7 @@ proc parseUriToTable(
     if uri.find("?") == -1: uriToParse = &"?{uriToParse}"
     for q in parseUri3(uriToParse).getAllQueries():
         if (q.len == 2):
-            query.add(q[0], q[1])
+            query.add(q[0], decodeUri(q[1]))
 
     if query.len > 0:
         return query
@@ -365,7 +368,7 @@ proc handleDynamicRoute(
 
             for qStr in ctx.request.url.getAllQueries():
                 if qStr.len == 2:
-                    ctx.params.add(qStr[0], qStr[1])
+                    ctx.params.add(qStr[0], decodeUri(qStr[1]))
 
             ctx.reParams = matchesUri.reParams
 
@@ -409,7 +412,7 @@ proc handleDynamicRoute(
         if contentEncoding != "":
             ctx.response.headers["Content-Encoding"] = contentEncoding
 
-        ctx.response.headers["Content-Type"] = contentType
+        ctx.response.headers["Content-Type"] = contentType & "; utf-8"
 
         ctx.resp(Http200, body)
 
