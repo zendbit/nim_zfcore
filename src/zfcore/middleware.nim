@@ -59,6 +59,7 @@ proc newMiddleware*(): Middleware =
 proc beforeRoute*(
     self: Middleware,
     pre: proc (ctx: HttpCtx): Future[bool]) =
+
     self.pre = pre
 
 proc afterRoute*(
