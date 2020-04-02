@@ -101,7 +101,7 @@ proc resp*(
         for k, v in headers.pairs:
             if k.toLower == "content-type" and
                 v.toLower.find("utf-8") == -1:
-                self.response.headers[k] = v & "; utf-8"                
+                self.response.headers[k] = v & "; charset=utf-8"                
 
             else:
                 self.response.headers[k] = v
@@ -115,7 +115,7 @@ proc resp*(
     headers: HttpHeaders = nil) =
 
     self.response.httpCode = httpCode
-    self.response.headers["Content-Type"] = @["application/json", "utf-8"]
+    self.response.headers["Content-Type"] = @["application/json", "charset=utf-8"]
     self.response.body = $body
     if not isNil(headers):
         for k, v in headers.pairs:

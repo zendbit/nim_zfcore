@@ -412,7 +412,7 @@ proc handleDynamicRoute(
         if contentEncoding != "":
             ctx.response.headers["Content-Encoding"] = contentEncoding
 
-        ctx.response.headers["Content-Type"] = contentType & "; utf-8"
+        ctx.response.headers["Content-Type"] = contentType & "; charset=utf-8"
 
         ctx.resp(Http200, body)
 
