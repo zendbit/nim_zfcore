@@ -101,7 +101,7 @@ proc resp*(
         for k, v in headers.pairs:
             if k.toLower == "content-type" and
                 v.toLower.find("utf-8") == -1:
-                self.response.headers[k] = v & "; charset=utf-8"                
+                self.response.headers[k] = v & "; charset=utf-8"
 
             else:
                 self.response.headers[k] = v
