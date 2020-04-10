@@ -66,7 +66,9 @@ let zf = newZendFlow(
         sslSettings = newSslSettings(
             certFile = joinPath("ssl", "certificate.pem"),
             keyFile = joinPath("ssl", "key.pem"),
-            verifyMode = SslCVerifyMode.CVerifyNone,
+            #verifyMode = SslCVerifyMode.CVerifyNone,
+            #verifyMode changed to verify flag
+            verify = false,
             port = Port(8443)
         )))
 ]#
