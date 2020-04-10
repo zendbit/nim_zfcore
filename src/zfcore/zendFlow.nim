@@ -149,5 +149,4 @@ export
     settings,
     asyncnet,
     fluentValidation,
-    zfblast,
-    SslCVerifyMode
+    zfblast

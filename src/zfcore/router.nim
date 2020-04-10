@@ -322,7 +322,7 @@ proc tryCompress(
 
     if self.isContentShouldCompress(contentType):
         var (output, exitCode) = execCmdEx(
-            &"gzip -3 --to-stdout {filePath}")
+            &"gzip -1 --to-stdout {filePath}")
 
         if exitCode == 0:
             return (
@@ -342,14 +342,11 @@ proc tryCompress(
 proc handleDynamicRoute(
     self: Router,
     ctx: HttpCtx): Future[void] {.async.} =
-
     # execute middleware before routing
     if await self.execBeforeRoute(ctx): return
-
     # call static route before the dynamic route
     let (staticFound, staticFilePath, staticContentType) =
         await self.handleStaticRoute(ctx)
-
     # map content type
     self.mapContentype(ctx)
 
@@ -718,3 +715,4 @@ proc connect*(
 export
     beforeRoute,
     afterRoute
+
