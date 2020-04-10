@@ -322,7 +322,7 @@ proc tryCompress(
 
     if self.isContentShouldCompress(contentType):
         var (output, exitCode) = execCmdEx(
-            &"gzip -9 --to-stdout {filePath}")
+            &"gzip -3 --to-stdout {filePath}")
 
         if exitCode == 0:
             return (
