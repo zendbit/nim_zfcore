@@ -125,8 +125,6 @@ proc mainHandlerAsync(
             await httpMethodNotFoundAsync(self, ctx)
 
     except Exception as ex:
-        echo ">>>>>>>>>>"
-        echo "Exception...."
         if self.settings.debug:
             asyncCheck dbg(proc () =
                 echo ""
@@ -145,7 +143,7 @@ proc serve*(self: ZendFlow) =
     echo "Enjoy and take a cup of coffe :-)"
 
     waitFor self.server.serve(proc (ctx: HttpContext): Future[void] {.async.} =
-        asyncCheck self.mainHandlerAsync(deepCopy(ctx)))
+        await self.mainHandlerAsync(ctx))
 
 export
     httpCtx,
