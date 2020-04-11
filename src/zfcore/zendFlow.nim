@@ -142,7 +142,7 @@ proc serve*(self: ZendFlow) =
     echo "Enjoy and take a cup of coffe :-)"
 
     waitFor self.server.serve(proc (ctx: HttpContext): Future[void] {.async.} =
-        asyncCheck self.mainHandlerAsync(ctx))
+        await self.mainHandlerAsync(ctx))
 
 export
     httpCtx,
