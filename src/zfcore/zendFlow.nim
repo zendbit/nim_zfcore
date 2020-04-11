@@ -124,13 +124,14 @@ proc mainHandlerAsync(
         else:
             await httpMethodNotFoundAsync(self, ctx)
 
-    except:
+    except Exception as ex:
         if self.settings.debug:
             asyncCheck dbg(proc () =
                 echo ""
                 echo "#== start"
                 echo "#== zfcore debuger"
                 echo "Failed handle client request."
+                echo ex.msg
                 echo "#== end"
                 echo "")
 
