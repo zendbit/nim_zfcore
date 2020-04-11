@@ -108,20 +108,31 @@ proc mainHandlerAsync(
     self: ZendFlow,
     ctx: HttpContext): Future[void] {.async.} =
 
-    if ctx.request.httpmethod in [HttpGet, HttpPost, HttpPut, HttpPatch,
-        HttpDelete, HttpHead, HttpTrace, HttpOptions, HttpConnect]:
-        # set default headers content type
-        ctx.response.headers["Content-Type"] = "text/plain; utf-8"
-        
-        await sendToRouter(self, ctx)
-        # Chek cleanup tmp dir
-        if not self.isCleanTmpDirExecuted:
-            self.isCleanTmpDirExecuted = not self.isCleanTmpDirExecuted
-            self.cleanTmpDir(self.settings)
-            self.isCleanTmpDirExecuted = not self.isCleanTmpDirExecuted
+    try:
+        if ctx.request.httpmethod in [HttpGet, HttpPost, HttpPut, HttpPatch,
+            HttpDelete, HttpHead, HttpTrace, HttpOptions, HttpConnect]:
+            # set default headers content type
+            ctx.response.headers["Content-Type"] = "text/plain; utf-8"
+            
+            await sendToRouter(self, ctx)
+            # Chek cleanup tmp dir
+            if not self.isCleanTmpDirExecuted:
+                self.isCleanTmpDirExecuted = not self.isCleanTmpDirExecuted
+                self.cleanTmpDir(self.settings)
+                self.isCleanTmpDirExecuted = not self.isCleanTmpDirExecuted
 
-    else:
-        await httpMethodNotFoundAsync(self, ctx)
+        else:
+            await httpMethodNotFoundAsync(self, ctx)
+
+    except:
+        if self.settings.debug:
+            asyncCheck dbg(proc () =
+                echo ""
+                echo "#== start"
+                echo "#== zfcore debuger"
+                echo "Failed handle client request."
+                echo "#== end"
+                echo "")
 
 #[
     this proc is for start the ZendFlow, this will serve forever :-)

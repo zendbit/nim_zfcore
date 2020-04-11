@@ -430,12 +430,7 @@ proc executeProc*(
     var httpCtx = newHttpCtx(ctx)
     httpCtx.settings = settings
 
-    try:
-        await self.handleDynamicRoute(httpCtx)
-
-    except Exception as ex:
-        let exMsg = ex.msg.replace("\n", "<br />")
-        httpCtx.resp(Http500, &"Internal server error {exMsg}")
+    await self.handleDynamicRoute(httpCtx)
 
 proc static*(
     self: Router,
