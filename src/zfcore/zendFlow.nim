@@ -27,6 +27,8 @@ import
     net,
     zfblast
 
+const ZF_SETTINGS_FILE* = "settings.json"
+
 #[
     ZendFlow object definition
     this contain:
@@ -47,7 +49,7 @@ type
     newZendFlow is for instantiate the zendflow framework contain parameter settings.
     default value will run on port 8080, bind address 0.0.0.0 and staticDir point to www folder
 ]#
-proc newZendFlow*(settings: Settings = newSettings()): ZendFlow =
+proc newZendFlow*(settings: Settings): ZendFlow =
     return ZendFlow(
         server: newZFBlast(
             address = settings.address,
@@ -61,6 +63,62 @@ proc newZendFlow*(settings: Settings = newSettings()): ZendFlow =
             sslSettings = settings.sslSettings),
         r: newRouter(),
         settings: settings)
+
+proc zfJsonSettings*() : JsonNode =
+    try:
+        let sOp = open(ZF_SETTINGS_FILE)
+        let settingsJson = sOp.readAll()
+        sOp.close()
+        return parseJson(settingsJson)
+
+    except:
+        return JsonNode()
+
+
+# read setting from file
+proc newZendFlow*(): ZendFlow =
+    let settingsJson = zfJsonSettings()
+    if settingsJson.len() != 0:
+        let settings = newSettings()
+        settings.sslSettings = SslSettings()
+        settings.appRootDir = settingsJson{"AppRootDir"}.getStr()
+        settings.keepAliveMax = settingsJson{"KeepAliveMax"}.getInt()
+        settings.keepAliveTimeout = settingsJson{"KeepAliveTimeout"}.getInt()
+        settings.maxBodyLength = settingsJson{"MaxBodyLength"}.getInt()
+        settings.debug = settingsJson{"Debug"}.getBool()
+        let httpSettings = settingsJson{"Http"}
+        if not isNil(httpSettings):
+            settings.port = settingsJson{"Port"}.getInt()
+            settings.address = settingsJson{"Address"}.getStr()
+            settings.reuseAddress = settingsJson{"ReuseAddress"}.getBool()
+            settings.reusePort = settingsJson{"ReusePort"}.getBool()
+            let httpsSettings = httpSettings{"Secure"}
+            if not isNil(httpsSettings):
+                settings.sslSettings.port = Port(httpsSettings{"Port"}.getInt())
+                settings.sslSettings.certFile = httpsSettings{"Cert"}.getStr()
+                settings.sslSettings.keyFile = httpsSettings{"Key"}.getStr()
+                settings.sslSettings.verify = httpSettings{"Verify"}.getBool()
+
+
+        return ZendFlow(
+            server: newZFBlast(
+                address = settings.address,
+                port = Port(settings.port),
+                reuseAddress = settings.reuseAddress,
+                reusePort = settings.reusePort,
+                maxBodyLength = settings.maxBodyLength,
+                keepAliveMax = settings.keepAliveMax,
+                keepAliveTimeout = settings.keepAliveTimeout,
+                debug = settings.debug,
+                sslSettings = settings.sslSettings),
+            r: newRouter(),
+            settings: settings)
+
+    else:
+        echo ""
+        echo "Failed to load settings.json, using default settings."
+        echo ""
+        return newZendFlow()
 
 #[
     this proc is private and will to use if the route not found or not match with router definition
