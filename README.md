@@ -1,3 +1,7 @@
+***
+This code will change frequently, please use the stable version from the released list
+***
+
 # zfcore
 zfcore is high performance http server and web framework for nim lang
 we replace asynchttpserver with zfblast server https://github.com/zendbit/nim.zfblast
