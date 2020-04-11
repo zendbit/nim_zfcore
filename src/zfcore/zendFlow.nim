@@ -125,6 +125,8 @@ proc mainHandlerAsync(
             await httpMethodNotFoundAsync(self, ctx)
 
     except Exception as ex:
+        echo ">>>>>>>>>>"
+        echo "Exception...."
         if self.settings.debug:
             asyncCheck dbg(proc () =
                 echo ""
