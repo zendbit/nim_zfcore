@@ -323,17 +323,17 @@ proc tryCompress(
     let file = open(filePath, fmRead)
     let fileContent = file.readAll
     file.close()
-#[
+
     if self.isContentShouldCompress(contentType):
         var (output, exitCode) = execCmdEx(
-            &"gzip --to-stdout {filePath}")
+            &"gzip -1 --to-stdout {filePath}")
 
         if exitCode == 0:
             return (
                 compressed: true,
                 content: output,
                 contentEncoding: "gzip")
-]#
+
     return (
         compressed: false,
         content: fileContent,
