@@ -88,10 +88,10 @@ proc newZendFlow*(): ZendFlow =
         settings.debug = settingsJson{"Debug"}.getBool()
         let httpSettings = settingsJson{"Http"}
         if not isNil(httpSettings):
-            settings.port = settingsJson{"Port"}.getInt()
-            settings.address = settingsJson{"Address"}.getStr()
-            settings.reuseAddress = settingsJson{"ReuseAddress"}.getBool()
-            settings.reusePort = settingsJson{"ReusePort"}.getBool()
+            settings.port = httpSettings{"Port"}.getInt()
+            settings.address = httpSettings{"Address"}.getStr()
+            settings.reuseAddress = httpSettings{"ReuseAddress"}.getBool()
+            settings.reusePort = httpSettings{"ReusePort"}.getBool()
             let httpsSettings = httpSettings{"Secure"}
             if not isNil(httpsSettings):
                 settings.sslSettings.port = Port(httpsSettings{"Port"}.getInt())
