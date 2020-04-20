@@ -118,7 +118,19 @@ proc newZendFlow*(): ZendFlow =
         echo ""
         echo "Failed to load settings.json, using default settings."
         echo ""
-        return newZendFlow()
+        return ZendFlow(
+            server: newZFBlast(
+                address = "0.0.0.0",
+                port = Port(8080),
+                debug = false,
+                reuseAddress = true,
+                reusePort = false,
+                sslSettings = nil,
+                maxBodyLength = 268435456,
+                keepAliveMax = 20,
+                keepAliveTimeout = 10),
+            r: newRouter(),
+            settings: newSettings())
 
 #[
     this proc is private and will to use if the route not found or not match with router definition
@@ -171,7 +183,7 @@ proc mainHandlerAsync(
             HttpDelete, HttpHead, HttpTrace, HttpOptions, HttpConnect]:
             # set default headers content type
             ctx.response.headers["Content-Type"] = "text/plain; utf-8"
-            
+
             await sendToRouter(self, ctx)
             # Chek cleanup tmp dir
             if not self.isCleanTmpDirExecuted:
