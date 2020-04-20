@@ -325,8 +325,16 @@ proc tryCompress(
     file.close()
 
     if self.isContentShouldCompress(contentType):
-        var (output, exitCode) = execCmdEx(
-            &"gzip -2 --to-stdout {filePath}")
+        var output = ""
+        var exitCode = 1
+
+        if ctx.client.isSsl:
+            (output, exitCode) = execCmdEx(
+                &"gzip -2 --to-stdout {filePath}")
+
+        else:
+            (output, exitCode) = execCmdEx(
+                &"gzip -1 --to-stdout {filePath}")
 
         if exitCode == 0:
             return (

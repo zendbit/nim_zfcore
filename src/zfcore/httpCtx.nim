@@ -46,6 +46,7 @@ proc newHttpCtx*(ctx: HttpContext): HttpCtx =
         send: ctx.send,
         keepAliveMax: ctx.keepAliveMax,
         keepAliveTimeout: ctx.keepAliveTimeout,
+        webSocket: ctx.webSocket,
         params: initTable[string, string](),
         reParams: initTable[string, seq[string]](),
         formData: newFormData(),
