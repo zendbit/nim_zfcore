@@ -83,8 +83,8 @@ proc matchesUri(
     for i in 0..high(pathSeg):
       # check if matches with <tag-param>, ex: /home/<id>/index.html
       var paramTag: array[1, string]
-      let currentPathSeg = decodeUri(pathSeg[i])
-      let currentUriSeg = decodeUri(uriSeg[i])
+      let currentPathSeg = decodeUri(pathSeg[i], false)
+      let currentUriSeg = decodeUri(uriSeg[i], false)
 
       if match(currentPathSeg, re"<([\w\W]+)>$", paramTag):
         # parse uri eith regex without length value to get ex: /home/<ids:re[\\w]>

@@ -10,4 +10,4 @@ import
   zfcore/zendFlow
 
 export
-  zendFlow
+  ZendFlow

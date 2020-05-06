@@ -24,7 +24,8 @@ import
   asyncnet,
   fluentValidation,
   net,
-  zfblast
+  zfblast,
+  zfMacros
 
 const ZF_SETTINGS_FILE* = "settings.json"
 
@@ -230,4 +231,6 @@ export
   settings,
   asyncnet,
   fluentValidation,
-  zfblast
+  zfblast,
+  zfMacros
+
