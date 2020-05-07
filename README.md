@@ -56,7 +56,7 @@ zf:
         # return true if we want to break the pipeline
        
     routes:
-        static "/"
+        staticDir "/"
         get "/":
             # ctx instance available here
             respRedirect("/index.html")
@@ -168,7 +168,7 @@ zf:
         # if you custumize the static route for example zf.r.static("/public")
         # it will serve with address:port/public/
         # we can retrieve using address:port/public/style/*.css
-        static "/"
+        staticDir "/"
 
         # web socket example
         get "/ws":
