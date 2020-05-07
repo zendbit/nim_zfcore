@@ -103,7 +103,7 @@ proc genRoutes*(x: NimNode): NimNode =
 
         stmtList.add(routeDef)
 
-      of "staticFile":
+      of "staticDir":
         stmtList.add(
           nnkStmtList.newTree(
             nnkCall.newTree(
