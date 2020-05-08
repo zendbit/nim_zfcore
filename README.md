@@ -264,8 +264,8 @@ zf:
             echo ctx.reParams["ids"]
             # capture <name> value parameter from the url
             echo ctx.params["name"]
-            # we can also set custom header for the response using ctx.responseHeaders.add("header kye", "header value")
-            ctx.responseHeaders.add("Content-Type", "text/plain")
+            # we can also set custom header for the response using ctx.response.headers.add("header kye", "header value")
+            ctx.response.headers.add("Content-Type", "text/plain")
             resp(Http200, "Hello World get request")
 
         get "/":
@@ -407,7 +407,8 @@ this will handle request context also contains the response context
         formData -> is FormData object and will capture if we use the multipart form
         json -> this will capture the application/json body from the post/put/patch method
         settings -> this is the shared settings
-        responseHeader -> headers will send on response to user
+        request -> request context
+        response -> response context
 ]#
 
 CtxReq will not used again and replaced with HttpCtx type
