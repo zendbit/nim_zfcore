@@ -14,7 +14,7 @@ import
   macros,
   strutils
 
-proc genMiddleware*(id: string, stmtList: NimNode): NimNode =
+proc genMiddleware(id: string, stmtList: NimNode): NimNode =
   let formalParams = nnkFormalParams.newTree(
       nnkBracketExpr.newTree(
         newIdentNode("Future"),
@@ -57,7 +57,7 @@ proc genMiddleware*(id: string, stmtList: NimNode): NimNode =
     )
   )
 
-proc genRoutes*(x: NimNode): NimNode =
+proc genRoutes(x: NimNode): NimNode =
   let stmtList = newStmtList()
   for child in x.children():
     if child.kind == nnkCommand and len(child) >= 2:
