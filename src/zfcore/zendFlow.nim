@@ -81,23 +81,23 @@ proc newZendFlow*(): ZendFlow =
   if settingsJson.len() != 0:
     let settings = newSettings()
     settings.sslSettings = SslSettings()
-    settings.appRootDir = settingsJson{"AppRootDir"}.getStr()
-    settings.keepAliveMax = settingsJson{"KeepAliveMax"}.getInt()
-    settings.keepAliveTimeout = settingsJson{"KeepAliveTimeout"}.getInt()
-    settings.maxBodyLength = settingsJson{"MaxBodyLength"}.getInt()
-    settings.debug = settingsJson{"Debug"}.getBool()
-    let httpSettings = settingsJson{"Http"}
+    settings.appRootDir = settingsJson{"appRootDir"}.getStr()
+    settings.keepAliveMax = settingsJson{"keepAliveMax"}.getInt()
+    settings.keepAliveTimeout = settingsJson{"keepAliveTimeout"}.getInt()
+    settings.maxBodyLength = settingsJson{"maxBodyLength"}.getInt()
+    settings.debug = settingsJson{"debug"}.getBool()
+    let httpSettings = settingsJson{"http"}
     if not isNil(httpSettings):
-      settings.port = httpSettings{"Port"}.getInt()
-      settings.address = httpSettings{"Address"}.getStr()
-      settings.reuseAddress = httpSettings{"ReuseAddress"}.getBool()
-      settings.reusePort = httpSettings{"ReusePort"}.getBool()
-      let httpsSettings = httpSettings{"Secure"}
+      settings.port = httpSettings{"port"}.getInt()
+      settings.address = httpSettings{"address"}.getStr()
+      settings.reuseAddress = httpSettings{"reuseAddress"}.getBool()
+      settings.reusePort = httpSettings{"reusePort"}.getBool()
+      let httpsSettings = httpSettings{"secure"}
       if not isNil(httpsSettings):
-        settings.sslSettings.port = Port(httpsSettings{"Port"}.getInt())
-        settings.sslSettings.certFile = httpsSettings{"Cert"}.getStr()
-        settings.sslSettings.keyFile = httpsSettings{"Key"}.getStr()
-        settings.sslSettings.verify = httpSettings{"Verify"}.getBool()
+        settings.sslSettings.port = Port(httpsSettings{"port"}.getInt())
+        settings.sslSettings.certFile = httpsSettings{"cert"}.getStr()
+        settings.sslSettings.keyFile = httpsSettings{"key"}.getStr()
+        settings.sslSettings.verify = httpSettings{"verify"}.getBool()
 
 
     return ZendFlow(
@@ -233,4 +233,3 @@ export
   fluentValidation,
   zfblast,
   zfMacros
-

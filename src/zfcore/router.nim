@@ -217,65 +217,6 @@ proc handleStaticRoute(
             contentType: contentType)
 
 #[
-  compress with gzip if available
-  only compress web resource
-]#
-proc isContentShouldCompress(
-  self:Router,
-  contentType: string): bool =
-
-  return contentType in [
-      "application/x-javascript",
-      "application/json",
-      "application/ld+json",
-      "application/xhtml+xml",
-      "application/xml",
-      "text/html",
-      "text/css",
-      "text/javascript"] or
-    contentType.startsWith("font/") or
-    contentType.startsWith("image/svg")
-
-
-proc tryCompress(
-  self: Router,
-  ctx: HttpCtx,
-  filePath: string,
-  contentType: string):
-  tuple[
-    compressed:bool,
-    content: string,
-    contentEncoding: string] =
-
-  let file = open(filePath, fmRead)
-  let fileContent = file.readAll
-  file.close()
-
-  if self.isContentShouldCompress(contentType):
-    var output = ""
-    var exitCode = 1
-
-    if ctx.client.isSsl:
-      (output, exitCode) = execCmdEx(
-        &"gzip -2 --to-stdout {filePath}")
-
-    else:
-      (output, exitCode) = execCmdEx(
-        &"gzip -1 --to-stdout {filePath}")
-
-    if exitCode == 0:
-      return (
-        compressed: true,
-        content: output,
-        contentEncoding: "gzip")
-
-  return (
-    compressed: false,
-    content: fileContent,
-    contentEncoding: "")
-
-
-#[
   Handle dynamic route and middleware
 ]#
 proc handleDynamicRoute(
@@ -318,55 +259,18 @@ proc handleDynamicRoute(
     await route.thenDo(ctx)
 
   elif staticFound:
-    #var body = ""
-    #var contentEncoding = ""
-    #var contentType = ""
-
-    #[
-    var cache = self.getCache(staticFilePath)
-    if isNil(cache):
-      let (isCompressed, compressedCtn, compressedEncoding) =
-        self.tryCompress(
-          ctx,
-          staticFilePath,
-          staticContentType)
-
-      self.tryCache(
-        staticFilePath,
-        compressedCtn,
-        staticContentType,
-        compressedEncoding)
-
-      body = compressedCtn
-      contentEncoding = compressedEncoding
-      contentType = staticContentType
-
-    else:
-      body = cache.content
-      contentEncoding = cache.contentEncoding
-      contentType = cache.contentType
-    ]#
-
-    let (isCompressed, compressedCtn, compressedEncoding) =
-      self.tryCompress(
-        ctx,
-        staticFilePath,
-        staticContentType)
-
-    if isCompressed:
-      ctx.response.headers["Content-Encoding"] = compressedEncoding
-
-    #if contentEncoding != "":
-    #  ctx.response.headers["Content-Encoding"] = contentEncoding
-
     ctx.response.headers["Content-Type"] = staticContentType & "; charset=utf-8"
     if getHttpHeaderValues("Last-Modified", ctx.response.headers) == "":
       ctx.response.headers["Last-Modified"] =
         format(utc(getFileInfo(staticFilePath).lastAccessTime),
           "ddd, dd MMM yyyy HH:mm:ss") & " GMT"
 
-    if getHttpHeaderValues("Access-Control-Allow-Origin", ctx.response.headers) == "":
+    let accessControlAllowOrigin = getHttpHeaderValues("Access-Control-Allow-Origin", ctx.response.headers)
+    let origin = getHttpHeaderValues("Origin", ctx.request.headers)
+    if accessControlAllowOrigin == "":
       ctx.response.headers["Access-Control-Allow-Origin"] = "*"
+      if origin != "":
+        ctx.response.headers["Access-Control-Allow-Origin"] = origin
 
     if getHttpHeaderValues("Access-Control-Max-Age", ctx.response.headers) == "":
       ctx.response.headers["Access-Control-Max-Age"] = "3600"
@@ -377,12 +281,15 @@ proc handleDynamicRoute(
     if getHttpHeaderValues("Access-Control-Allow-Methods", ctx.response.headers) == "":
       ctx.response.headers["Access-Control-Allow-Methods"] = "GET"
 
+    if getHttpHeaderValues("Access-Control-Allow-Headers", ctx.response.headers) == "":
+      ctx.response.headers["Access-Control-Allow-Headers"] = "X-PINGOTHER, Content-Type"
+
     if getHttpHeaderValues("Vary", ctx.response.headers) == "":
       ctx.response.headers["Vary"] =
         "Origin, Access-Control-Request-Headers," &
         "Access-Control-Request-Method, Accept-Encoding"
 
-    ctx.resp(Http200, compressedCtn)
+    ctx.resp(Http200, open(staticFilePath).readAll())
 
   else:
     # default response if route does not match
