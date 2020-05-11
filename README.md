@@ -76,25 +76,24 @@ ctx.clearCookie -> clearCookie
 Configuration file create file settings.json in the same level with the source
 ```
 {
-    "AppRootDir": "",
-    "KeepAliveMax": 100,
-    "KeepAliveTimeout": 15,
-    "MaxBodyLength": 268435456,
-    "Debug": false,
-    "Http": {
-        "Port": 8080,
-        "Address": "0.0.0.0",
-        "ReuseAddress": true,
-        "ReusePort": false,
-        "Secure": {
-            "Cert": "ssl/certificate.pem",
-            "Key": "ssl/key.pem",
-            "Verify": true,
-            "Port": 8443
-        }
+  "appRootDir": "",
+  "keepAliveMax": 100,
+  "keepAliveTimeout": 15,
+  "maxBodyLength": 268435456,
+  "debug": false,
+  "http": {
+    "port": 8080,
+    "address": "0.0.0.0",
+    "reuseAddress": true,
+    "reusePort": false,
+    "secure": {
+      "cert": "ssl/certificate.pem",
+      "key": "ssl/key.pem",
+      "verify": true,
+      "port": 8443
     }
+  }
 }
-
 ```
 
 Example code
