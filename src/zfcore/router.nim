@@ -279,7 +279,7 @@ proc handleDynamicRoute(
       ctx.response.headers["Cache-Control"] = "public, max-age=31536000"
 
     if getHttpHeaderValues("Access-Control-Allow-Methods", ctx.response.headers) == "":
-      ctx.response.headers["Access-Control-Allow-Methods"] = "GET"
+      ctx.response.headers["Access-Control-Allow-Methods"] = "POST,GET,PUT,PATCH,TRACE,DELETE,OPTIONS,HEAD,CONNECT"
 
     if getHttpHeaderValues("Access-Control-Allow-Headers", ctx.response.headers) == "":
       ctx.response.headers["Access-Control-Allow-Headers"] = "X-PINGOTHER, Content-Type"
