@@ -154,7 +154,17 @@ proc sendToRouter(
   self: ZendFlow,
   ctx: HttpContext): Future[void] {.async.} =
 
-  await self.r.executeProc(ctx, self.settings)
+  try:
+    await self.r.executeProc(ctx, self.settings)
+  except Exception as ex:
+    if self.settings.debug:
+      asyncCheck dbg(proc () =
+        echo ""
+        echo "#== start"
+        echo "#== zfcore debuger"
+        echo ex.msg
+        echo "#== end"
+        echo "")
 
 #[
   clean Tmp folder may take resource

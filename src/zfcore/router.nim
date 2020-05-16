@@ -305,10 +305,20 @@ proc executeProc*(
   ctx: HttpContext,
   settings: Settings): Future[void] {.async.} =
 
-  var httpCtx = newHttpCtx(ctx)
-  httpCtx.settings = settings
+  try:
+    var httpCtx = newHttpCtx(ctx)
+    httpCtx.settings = settings
 
-  await self.handleDynamicRoute(httpCtx)
+    await self.handleDynamicRoute(httpCtx)
+  except Exception as ex:
+    if settings.debug:
+      asyncCheck dbg(proc () =
+        echo ""
+        echo "#== start"
+        echo "#== zfcore debuger"
+        echo ex.msg
+        echo "#== end"
+        echo "")
 
 proc static*(
   self: Router,
