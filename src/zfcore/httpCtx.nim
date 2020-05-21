@@ -123,6 +123,21 @@ proc resp*(
 
   asyncCheck self.send(self)
 
+proc respHtml*(
+  self: HttpCtx,
+  httpCode: HttpCode,
+  body: string,
+  headers: HttpHeaders = nil) =
+
+  self.response.httpCode = httpCode
+  self.response.headers["Content-Type"] = @["text/html", "charset=utf-8"]
+  self.response.body = $body
+  if not isNil(headers):
+    for k, v in headers.pairs:
+      self.response.headers[k] = v
+
+  asyncCheck self.send(self)
+
 proc respRedirect*(
   self: HttpCtx,
   redirectTo: string) =

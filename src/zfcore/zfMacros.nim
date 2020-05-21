@@ -169,6 +169,17 @@ macro resp*(httpCode: untyped, body: untyped, headers: untyped = nil) =
     headers
   )
 
+macro respHtml*(httpCode: untyped, body: untyped, headers: untyped = nil) =
+  nnkCall.newTree(
+    nnkDotExpr.newTree(
+      newIdentNode("ctx"),
+      newIdentNode("respHtml")
+    ),
+    httpCode,
+    body,
+    headers
+  )
+
 macro respRedirect*(redirectTo: untyped) =
   nnkCall.newTree(
     nnkDotExpr.newTree(
@@ -223,4 +234,3 @@ macro serve*() =
 
 export
   macros
-
