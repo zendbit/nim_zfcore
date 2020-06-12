@@ -263,30 +263,6 @@ proc handleDynamicRoute(
         format(utc(getFileInfo(staticFilePath).lastAccessTime),
           "ddd, dd MMM yyyy HH:mm:ss") & " GMT"
 
-    let accessControlAllowOrigin = getHttpHeaderValues("Access-Control-Allow-Origin", ctx.response.headers)
-    let origin = getHttpHeaderValues("Origin", ctx.request.headers)
-    if accessControlAllowOrigin == "":
-      ctx.response.headers["Access-Control-Allow-Origin"] = "*"
-      if origin != "":
-        ctx.response.headers["Access-Control-Allow-Origin"] = origin
-
-    if getHttpHeaderValues("Access-Control-Max-Age", ctx.response.headers) == "":
-      ctx.response.headers["Access-Control-Max-Age"] = "3600"
-
-    if getHttpHeaderValues("Cache-Control", ctx.response.headers) == "":
-      ctx.response.headers["Cache-Control"] = "public, max-age=31536000"
-
-    if getHttpHeaderValues("Access-Control-Allow-Methods", ctx.response.headers) == "":
-      ctx.response.headers["Access-Control-Allow-Methods"] = "POST,GET,PUT,PATCH,TRACE,DELETE,OPTIONS,HEAD,CONNECT"
-
-    if getHttpHeaderValues("Access-Control-Allow-Headers", ctx.response.headers) == "":
-      ctx.response.headers["Access-Control-Allow-Headers"] = "X-PINGOTHER, Content-Type"
-
-    if getHttpHeaderValues("Vary", ctx.response.headers) == "":
-      ctx.response.headers["Vary"] =
-        "Origin, Access-Control-Request-Headers," &
-        "Access-Control-Request-Method, Accept-Encoding"
-
     ctx.resp(Http200, open(staticFilePath).readAll())
 
   else:
