@@ -136,8 +136,7 @@ proc parseUriToTable(
   var uriToParse = uri
   if uri.find("?") == -1: uriToParse = &"?{uriToParse}"
   for q in parseUri3(uriToParse).getAllQueries():
-    if (q.len == 2):
-      query.add(q[0], decodeUri(q[1]))
+    query.add(q[0], decodeUri(q[1]))
 
   if query.len > 0:
     return query
@@ -244,8 +243,7 @@ proc handleDynamicRoute(
         ctx.params.add(k, v)
 
       for qStr in ctx.request.url.getAllQueries():
-        if qStr.len == 2:
-          ctx.params.add(qStr[0], decodeUri(qStr[1]))
+        ctx.params.add(qStr[0], decodeUri(qStr[1]))
 
       ctx.reParams = matchesUri.reParams
 
