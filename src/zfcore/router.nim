@@ -22,8 +22,7 @@ import
   settings,
   mime,
   httpcore,
-  zfblast,
-  osproc
+  zfblast
 
 #[
   Definition of the Router inherit from the Middleware

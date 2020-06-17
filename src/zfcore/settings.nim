@@ -42,8 +42,7 @@ type
     keepAliveMax*: int
     # Keep-Alive timeout
     keepAliveTimeout*: int
-    viewDir: string
-    staticDir: string
+    staticDir*: string
     tmpDir: string
 
 #[
@@ -53,7 +52,7 @@ type
     staticDir -> www
 ]#
 proc newSettings*(
-  appRootDir:string = "",
+  appRootDir:string = getAppDir(),
   port: int = 8080,
   address: string = "0.0.0.0",
   reuseAddress: bool = true,
@@ -75,7 +74,6 @@ proc newSettings*(
     debug: debug,
     keepAliveMax: keepAliveMax,
     keepAliveTimeout: keepAliveTimeout,
-    viewDir: joinPath(appRootDir, "views"),
     sslSettings: sslSettings)
 
   return instance
@@ -85,9 +83,6 @@ proc staticDir*(self: Settings): string =
 
 proc tmpDir*(self: Settings): string =
   return self.tmpDir
-
-proc viewDir*(self: Settings): string =
-  return self.viewDir
 
 export
   Settings,
