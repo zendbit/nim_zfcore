@@ -6,8 +6,8 @@
   Email: amru.rosyada@gmail.com
   Git: https://github.com/zendbit
 ]#
+import nre except toSeq
 import
-  re,
   httpCtx,
   strutils,
   strformat,
@@ -81,27 +81,41 @@ proc matchesUri(
   else:
     for i in 0..high(pathSeg):
       # check if matches with <tag-param>, ex: /home/<id>/index.html
-      var paramTag: array[1, string]
+      #var paramTag: array[1, string]
       let currentPathSeg = decodeUri(pathSeg[i], false)
       let currentUriSeg = decodeUri(uriSeg[i], false)
 
-      if match(currentPathSeg, re"<([\w\W]+)>$", paramTag):
+      #if match(currentPathSeg, re"<([\w\W]+)>$", paramTag):
+      let paramTag = currentPathSeg.match(re"<([\w\W]+)>$")
+      if paramTag.isSome:
         # parse uri eith regex without length value to get ex: /home/<ids:re[\\w]>
-        var reParamsTag: array[3, string]
+        #var reParamsTag: array[3, string]
         # parse uri eith regex with length value to get ex: /home/<ids:re[(\\w+)_([0-9]+)]:len[2]>
-        if match(
-          paramTag[0],
-          re"(\w+):re\[([\w\W]*)\]:len\[([0-9]+)\]$",
-          reParamsTag):
+        #if match(
+        #  paramTag[0],
+        #  re"(\w+):re\[([\w\W]*)\]:len\[([0-9]+)\]$",
+        #  reParamsTag):
+        let reParamsTag = paramTag.get.captures[0].match(re"(\w+):re\[([\w\W]*)\]$")
+        if reParamsTag.isSome:
+
           var reParamsSegmentTag: seq[string]
-          for i in 0..(parseInt(reParamsTag[2]) - 1):
-            reParamsSegmentTag.add("")
-          if match(currentUriSeg, re reParamsTag[1], reParamsSegmentTag):
-            reParams.add(reParamsTag[0], @ reParamsSegmentTag)
+          let reParamToCapture = re reParamsTag.get.captures[1]
+          let reParamCount = captureCount(reParamToCapture)
+          let reParamCaptured = currentUriSeg.match(reParamToCapture)
+          if reParamCount != 0:
+            for i in 0..(reParamCount - 1):
+              reParamsSegmentTag.add(reParamCaptured.get.captures[i])
+            reParams.add(reParamsTag.get.captures[0], @ reParamsSegmentTag)
           else:
             success = false
+          #for i in 0..(parseInt(reParamsTag[2]) - 1):
+          #  reParamsSegmentTag.add("")
+          #if match(currentUriSeg, re reParamsTag[1], reParamsSegmentTag):
+          #  reParams.add(reParamsTag[0], @ reParamsSegmentTag)
+          #else:
+          #  success = false
         else:
-          params.add(paramTag[0], currentUriSeg)
+          params.add(paramTag.get.captures[0], currentUriSeg)
       elif currentPathSeg != currentUriSeg:
         success = false
       # break and continue if current route not match
@@ -200,11 +214,13 @@ proc handleStaticRoute(
           # default is "application/octet-stream"
           var contentType = "application/octet-stream"
           # define extension of the requested file
-          var ext: array[1, string]
-          if match(staticPath, re"[\w\W]+\.([\w]+)$", ext):
+          #var ext: array[1, string]
+          #if match(staticPath, re"[\w\W]+\.([\w]+)$", ext):
+          let ext = staticPath.match(re"[\w\W]+\.([\w]+)$")
+          if ext.isSome:
             # if extension is defined then try to search the contentType
             let mimeType = newMimeType().getMimeType(
-              ("." & ext[0]).toLower())
+              ("." & ext.get.captures[0]).toLower())
             # override the contentType if we found it
             if mimeType != "":
               contentType = mimeType
