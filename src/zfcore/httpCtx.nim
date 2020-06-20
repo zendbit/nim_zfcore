@@ -8,14 +8,20 @@
 ]#
 import
   asyncnet,
-  uri3,
   tables,
   asyncdispatch,
   json,
-  settings,
-  cookies,
-  strutils,
   strtabs,
+  cookies,
+  strutils
+
+# nimble
+import
+  uri3
+
+# local
+import
+  settings,
   formData,
   zfblast
 

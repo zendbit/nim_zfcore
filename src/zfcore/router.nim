@@ -7,21 +7,28 @@
   Git: https://github.com/zendbit
 ]#
 import nre except toSeq
+
 import
-  httpCtx,
   strutils,
   strformat,
   asyncdispatch,
   tables,
-  uri3,
-  formData,
   json,
+  os,
+  httpcore
+
+# nimble
+import
+  uri3
+
+# local
+import
+  httpCtx,
+  formData,
   middleware,
   route,
-  os,
   settings,
   mime,
-  httpcore,
   zfblast
 
 #[
