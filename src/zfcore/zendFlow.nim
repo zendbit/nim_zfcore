@@ -25,12 +25,12 @@ import
 import
   router,
   route,
-  httpCtx,
-  formData,
+  httpctx,
+  formdata,
   settings,
-  fluentValidation,
+  fluentvalidation,
   zfblast,
-  zfMacros
+  zfmacros
 
 const ZF_SETTINGS_FILE* = "settings.json"
 

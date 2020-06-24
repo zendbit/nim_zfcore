@@ -12,7 +12,7 @@ from asynchttpserver import HttpMethod
 from asyncdispatch import Future
 
 # local
-from httpCtx import HttpCtx
+from httpctx import HttpCtx
 
 type
   Route* = ref object
