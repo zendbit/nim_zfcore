@@ -121,7 +121,7 @@ proc resp*(
   headers: HttpHeaders = nil) =
 
   self.response.httpCode = httpCode
-  self.response.headers["Content-Type"] = @["application/json", "charset=utf-8"]
+  self.response.headers["Content-Type"] = @["application/json"]
   self.response.body = $body
   if not isNil(headers):
     for k, v in headers.pairs:
