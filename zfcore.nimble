@@ -7,5 +7,5 @@ srcDir      = "src"
 
 # Deps
 requires "nim >= 1.0.0"
-requires "zfblast >= 0.1.7"
-requires "uri3"
+requires "zfblast >= 0.1.10"
+requires "uri3 >= 0.1.2"
