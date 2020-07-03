@@ -39,7 +39,7 @@ proc genMiddleware(id: string, stmtList: NimNode): NimNode =
   return nnkCall.newTree(
     nnkDotExpr.newTree(
       nnkDotExpr.newTree(
-        newIdentNode("zfInstance"),
+        newIdentNode("zfc"),
         newIdentNode("r")
       ),
       newIdentNode(id)
@@ -72,7 +72,7 @@ proc genRoutes(x: NimNode): NimNode =
         let routeDef = nnkCall.newTree(
             nnkDotExpr.newTree(
               nnkDotExpr.newTree(
-                newIdentNode("zfInstance"),
+                newIdentNode("zfc"),
                 newIdentNode("r")
               ),
               newIdentNode(action)
@@ -109,7 +109,7 @@ proc genRoutes(x: NimNode): NimNode =
             nnkCall.newTree(
               nnkDotExpr.newTree(
                 nnkDotExpr.newTree(
-                  newIdentNode("zfInstance"),
+                  newIdentNode("zfc"),
                   newIdentNode("r")
                 ),
                 newIdentNode("static")
@@ -131,10 +131,10 @@ macro zf*(x: untyped): untyped =
   let stmtList = nnkStmtList.newTree(
       nnkLetSection.newTree(
         nnkIdentDefs.newTree(
-          newIdentNode("zfInstance"),
+          newIdentNode("zfc"),
           newEmptyNode(),
           newCall(
-            newIdentNode("newZendFlow")
+            newIdentNode("newZFCore")
           )
         )
       )
@@ -155,6 +155,15 @@ macro zf*(x: untyped): untyped =
 
     else:
       stmtList.add(child)
+  
+  stmtList.add(nnkStmtList.newTree(
+      nnkCall.newTree(
+        nnkDotExpr.newTree(
+          newIdentNode("zfc"),
+          newIdentNode("serve")
+        )
+      )
+    ))
 
   return stmtList
 
@@ -222,15 +231,15 @@ macro clearCookie*(cookies: untyped) =
     cookies
   )
 
-macro serve*() =
-  nnkStmtList.newTree(
-    nnkCall.newTree(
-      nnkDotExpr.newTree(
-        newIdentNode("zfInstance"),
-        newIdentNode("serve")
-      )
-    )
-  )
+#macro serve*() =
+#  nnkStmtList.newTree(
+#    nnkCall.newTree(
+#      nnkDotExpr.newTree(
+#        newIdentNode("zfc"),
+#        newIdentNode("serve")
+#      )
+#    )
+#  )
 
 export
   macros
