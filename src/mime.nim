@@ -1,5 +1,5 @@
 #[
-  ZendFlow web framework for nim language
+  zfcore web framework for nim language
   This framework if free to use and to modify
   License: BSD
   Author: Amru Rosyada

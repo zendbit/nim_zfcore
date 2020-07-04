@@ -1,5 +1,5 @@
 #[
-  ZendFlow web framework for nim language
+  zfcore web framework for nim language
   This framework if free to use and to modify
   License: BSD
   Author: Amru Rosyada
@@ -42,20 +42,21 @@ type
 proc moveFileTo*(
   self: FileData,
   destFilePath: string): bool {.discardable.} =
+  #
+  # Move uploaded file to the destination
+  #
+  let destDir = destFilePath.rsplit(DirSep, 1)[0]
 
-  # get destination directory
-  let destDir = rsplit(destFilePath, DirSep, 1)[0]
-
-  if existsDir(destDir):
+  if destDir.existsDir:
     # delete target first
-    if existsFile(destFilePath):
-      removeFile(destFilePath)
+    if destFilePath.existsFile:
+      destFilePath.removeFile
 
     # move the file
-    moveFile(self.content, destFilePath)
+    self.content.moveFile(destFilePath)
 
     # check if file exist
-  result = existsFile(destFilePath)
+  result = destFilePath.existsFile
   if result:
     # if success change the file path of the file with new destination file path
     self.content = destFilePath
@@ -63,24 +64,21 @@ proc moveFileTo*(
 proc moveFileToDir*(
   self: FileData,
   destDirPath: string): bool {.discardable.} =
+  #
+  # move uploaded file into the directory
+  #
+  let destFilePath = destDirPath.joinPath(self.content.splitPath[1])
 
-  # get destination directory
-  let destFilePath = joinPath(
-    destDirPath,
-    splitPath(self.content)[1])
-
-  if existsDir(destDirPath):
+  if destDirPath.existsDir:
     # delete target first
-    if existsFile(destFilePath):
-      removeFile(destFilePath)
+    if destFilePath.existsFile:
+      destFilePath.removeFile
 
     # move the file
-    moveFile(
-      self.content,
-      destFilePath)
+    self.content.moveFile(destFilePath)
 
   # check if file exist
-  result = existsFile(destFilePath)
+  result = destFilePath.existsFile
   if result:
     # if success change the file path of the file with new destination file path
     self.content = destFilePath
@@ -94,7 +92,9 @@ type
   Create form data instance with default tmp to stored uploded files
 ]#
 proc newFormData*(): FormData =
-
+  #
+  # create new form data
+  #
   return FormData(fields: @[], files: @[])
 
 #[
@@ -103,10 +103,13 @@ proc newFormData*(): FormData =
 proc getField*(
   self: FormData,
   name: string): FieldData =
-
+  #
+  # get field data by name return FieldData
+  #
   for field in self.fields:
     if field.name == name:
-      return field
+      result = field
+      break
 
 #[
   Get uploaded file by the name and will return the FileData as result
@@ -115,10 +118,14 @@ proc getField*(
 proc getFileByName*(
   self: FormData,
   name: string): FileData =
-
+  #
+  # get uploaded file by name, return FileData
+  # saved file location in the FileData.content
+  #
   for file in self.files:
     if file.name == name:
-      return file
+      result = file
+      break
 
 #[
   Get uploaded file by the filename and will return the FileData as result
@@ -127,23 +134,31 @@ proc getFileByName*(
 proc getFileByFileName*(
   self: FormData,
   name: string): FileData =
-
+  #
+  # get uploaded file by filename, return FileData
+  # saved file location in the FileData.content
+  #
   for file in self.files:
     if file.filename == name:
-      return file
+      result = file
+      break
 
 #[
   Get all field of the form data parameter
 ]#
 proc getFields*(self: FormData): seq[FieldData] =
-
+  #
+  # get all fields data of the forms, return sequence of FieldData
+  #
   return self.fields
 
 #[
   Get all the uploaded files from the multipart forms
 ]#
 proc getFiles*(self: FormData): seq[FileData] =
-
+  #
+  # get all uploaded files, return sequence of FileData
+  #
   return self.files
 
 #[
@@ -156,7 +171,11 @@ proc parse*(
   settings: Settings,
   allowedMime: seq[string] = @[],
   allowedExt: seq[string] = @[]): FormData =
-
+  #
+  # parse multipart content data string
+  # allowedMime is list of allowed mime when uploading the file
+  # allowedExt is list of allowed ext when uploading the file
+  #
   if content != "":
     var buff = content.split("\n")
     var boundary = ""
@@ -183,7 +202,7 @@ proc parse*(
           parseStep = ParseStep.boundary
           case parseType
           of ParseType.file:
-            if not isNil(tmpFileData):
+            if not tmpFileData.isNil:
               tmpFileData.flush()
               tmpFileData.close()
               # save parse result to file
@@ -194,11 +213,9 @@ proc parse*(
 
           of ParseType.field:
             # save parse result to field
-            tmpField.content = join(
-              tmpFieldData,
-              "")
+            tmpField.content = tmpFieldData.join("")
 
-            self.fields.add(deepCopy(tmpField))
+            self.fields.add(tmpField.deepCopy)
             tmpFieldData = @[]
 
           else:
@@ -217,7 +234,7 @@ proc parse*(
       # read header of chunk
       # this will define which is file header or field header
       of ParseStep.headerStart:
-        let lineStrip = line.strip()
+        let lineStrip = line.strip
         if lineStrip != "":
           # split header with ; delimiter
           let hdata = line.split(';')
@@ -232,7 +249,7 @@ proc parse*(
 
           # parse each header data section after split with ; character
           for hinfo in hdata:
-              let hinfoStrip = hinfo.strip()
+              let hinfoStrip = hinfo.strip
               if hinfoStrip != "":
                 # parse to file if parseType is file from previous readline
                 var hinfoSplit: seq[string] = @[]
@@ -247,9 +264,8 @@ proc parse*(
                   hinfoSplit = hinfoStrip.split('=')
 
                 if hinfoSplit.len == 2:
-                  let hinfoKey = hinfoSplit[0].strip()
-                  let hinfoValue = hinfoSplit[1].strip().replace(
-                          "\"", "")
+                  let hinfoKey = hinfoSplit[0].strip
+                  let hinfoValue = hinfoSplit[1].strip().replace("\"", "")
                   # parse file
                   case parseType
                   of ParseType.file:
@@ -260,14 +276,11 @@ proc parse*(
                       tmpFile.name = hinfoValue
                     of "filename":
                       tmpFile.filename = hinfoValue
-                      tmpFile.content = joinPath(
-                        settings.tmpDir,
-                        $toUnix(getTime()) &
+                      tmpFile.content = settings.tmpDir.joinPath(
+                        $(getTime().toUnix) &
                         "_" & hinfoValue)
 
-                      tmpFileData = newFileStream(
-                        tmpFile.content,
-                        fmWrite)
+                      tmpFileData = tmpFile.content.newFileStream(fmWrite)
 
                     of "Content-Type":
                       tmpFile.contentType = hinfoValue
@@ -295,7 +308,7 @@ proc parse*(
       of ParseStep.content:
         case parseType
         of ParseType.file:
-          if not isNil(tmpFileData):
+          if not tmpFileData.isNil:
             tmpFileData.writeLine(line)
 
         of ParseType.field:

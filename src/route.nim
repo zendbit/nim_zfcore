@@ -1,5 +1,5 @@
 #[
-  ZendFlow web framework for nim language
+  zfcore web framework for nim language
   This framework if free to use and to modify
   License: BSD
   Author: Amru Rosyada
@@ -10,13 +10,17 @@
 # std
 from asynchttpserver import HttpMethod
 from asyncdispatch import Future
+import sugar
 
 # local
 from httpctx import HttpCtx
 
 type
   Route* = ref object
+    #
+    # Route object
+    #
     httpMethod*: HttpMethod
     path*: string
-    thenDo*: proc (ctx: HttpCtx): Future[void]
+    thenDo*: (ctx: HttpCtx) -> Future[void]
     segments*: seq[string]

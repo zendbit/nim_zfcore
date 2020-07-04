@@ -1,5 +1,5 @@
 #[
-  ZendFlow web framework for nim language
+  zfcore web framework for nim language
   This framework if free to use and to modify
   License: BSD
   Author: Amru Rosyada
@@ -23,7 +23,8 @@ import
   strutils,
   strformat,
   re,
-  tables
+  tables,
+  parseutils
 
 #[
   FieldData is object model of field to be validated
@@ -41,7 +42,7 @@ type
 proc newFieldData*(
   name: string,
   value: string): FieldData {.discardable.} =
-
+  # create new field data for validation
   return FieldData(
     name: name.strip(),
     value: value.strip())
@@ -50,10 +51,13 @@ proc must*(
   self: FieldData,
   errMsg: string = "",
   okMsg:string = ""): FieldData =
-
+  # set value as required
+  # if value empty string
+  # errMsg for error msg
+  # okMsg for success msg
   if self.msg == "":
+    self.isValid = false
     if self.value == "":
-      self.isValid = false
       if errMsg != "":
         self.msg = errMsg
       else:
@@ -69,15 +73,18 @@ proc num*(
   self: FieldData,
   errMsg: string = "",
   okMsg:string = ""): FieldData {.discardable.} =
-
+  # validate the value treat as number
+  # if value not number will not valid
+  # errMsg for error msg
+  # okMsg for success msg 
   if self.msg == "":
-    try:
-      discard parseFloat(self.value)
-      self.isValid = true
+    self.isValid = false
+    var res: float64
+    self.isValid = self.value.strip.parseBiggestFloat(res, 0) == self.value.strip.len
+    if self.isValid:
       self.msg = okMsg
 
-    except Exception:
-      self.isValid = false
+    else:
       if errMsg != "":
         self.msg = errMsg
       else:
@@ -91,13 +98,15 @@ proc rangeNum*(
   max: float64,
   errMsg: string = "",
   okMsg:string = ""): FieldData {.discardable.} =
-
+  # validate the value in the range of given min and max
+  # errMsg for error msg
+  # okMsg for success msg 
   if self.msg == "":
     var err = ""
-    try:
-      let num = parseFloat(self.value)
+    self.isValid = false
+    var num: float64
+    if self.value.strip.parseBiggestFloat(num, 0) == self.value.strip.len:
       if num < min or num > max:
-        self.isValid = false
         if errMsg != "":
             err = errMsg
         else:
@@ -107,8 +116,7 @@ proc rangeNum*(
         self.isValid = true
         self.msg = okMsg
 
-
-    except Exception:
+    else:
       err = &"Value is not in range. ({min}-{max})"
 
     if err != "":
@@ -121,13 +129,15 @@ proc maxNum*(
   max: float64,
   errMsg: string = "",
   okMsg:string = ""): FieldData {.discardable.} =
-
+  # validate value must not larger than given max value
+  # errMsg for error msg
+  # okMsg for success msg 
   if self.msg == "":
+    self.isValid = false
     var err = ""
-    try:
-      let num = parseFloat(self.value)
+    var num: float64
+    if self.value.strip.parseBiggestFloat(num, 0) == self.value.strip.len:
       if num > max:
-        self.isValid = false
         if errMsg != "":
           err = errMsg
         else:
@@ -137,7 +147,7 @@ proc maxNum*(
         self.isValid = true
         self.msg = okMsg
 
-    except Exception:
+    else:
       err = &"Larger value not allowed. (>{max})"
 
     if err != "":
@@ -150,13 +160,15 @@ proc minNum*(
   min: float64,
   errMsg: string = "",
   okMsg:string = ""): FieldData {.discardable.} =
-
+  # validate value must not less than given min value
+  # errMsg for error msg
+  # okMsg for success msg 
   if self.msg == "":
+    self.isValid = false
     var err = ""
-    try:
-      let num = parseFloat(self.value)
+    var num: float64
+    if self.value.strip.parseBiggestFloat(num, 0) == self.value.strip.len:
       if num < min:
-        self.isValid = false
         if errMsg != "":
           err = errMsg
         else:
@@ -166,7 +178,7 @@ proc minNum*(
         self.isValid = true
         self.msg = okMsg
 
-    except Exception:
+    else:
       err = &"Lower value not allowed. (<{min})"
 
     if err != "":
@@ -177,7 +189,8 @@ proc minNum*(
 proc customErr*(
   self: FieldData,
   errMsg: string = ""): FieldData =
-
+  # create custom error message
+  # errMsg for error msg
   self.msg =  errMsg
   self.isValid = false
 
@@ -186,7 +199,8 @@ proc customErr*(
 proc customOk*(
   self: FieldData,
   okMsg: string = ""): FieldData =
-
+  # create custom ok msg
+  # okMsg for success msg 
   self.msg =  okMsg
   self.isValid = true
 
@@ -197,10 +211,12 @@ proc minLen*(
   min: int,
   errMsg: string = "",
   okMsg: string = ""): FieldData {.discardable.} =
-
+  # validate the value length not less than the given min len
+  # errMsg for error msg
+  # okMsg for success msg 
   if self.msg == "":
+    self.isValid = false
     if self.value.len < min:
-      self.isValid = false
       if errMsg != "":
         self.msg = errMsg
       else:
@@ -217,10 +233,12 @@ proc maxLen*(
   max: int,
   errMsg: string = "",
   okMsg: string = ""): FieldData {.discardable.} =
-
+  # validate the value length not larger than given max len
+  # errMsg for error msg
+  # okMsg for success msg 
   if self.msg == "":
+    self.isValid = false
     if self.value.len > max:
-      self.isValid = false
       if errMsg != "":
         self.msg = errMsg
       else:
@@ -238,10 +256,12 @@ proc rangeLen*(
   max: int,
   errMsg: string = "",
   okMsg: string = ""): FieldData {.discardable.} =
-
+  # validate the value length is in given range
+  # errMsg for error msg
+  # okMsg for success msg 
   if self.msg == "":
+    self.isValid = false
     if (self.value.len > max or self.value.len < min):
-      self.isValid = false
       if errMsg != "":
         self.msg = errMsg
       else:
@@ -258,10 +278,12 @@ proc reMatch*(
   regex: string,
   errMsg: string = "",
   okMsg: string = ""): FieldData {.discardable.} =
-
+  # validate the value with given regex
+  # errMsg for error msg
+  # okMsg for success msg 
   if self.msg == "":
-    if not match(self.value, re regex):
-      self.isValid = false
+    self.isValid = false
+    if not self.value.match(re regex):
       if errMsg != "":
         self.msg = errMsg
       else:
@@ -277,7 +299,9 @@ proc email*(
   self: FieldData,
   errMsg: string = "",
   okMsg: string = ""): FieldData {.discardable.} =
-
+  # validate the value is email format
+  # errMsg for error msg
+  # okMsg for success msg 
   if self.msg == "":
     var localErrMsg = errMsg
     if localErrMsg != "":
@@ -303,7 +327,7 @@ type
     notValids*: Table[string, FieldData]
 
 proc newFluentValidation*(): FluentValidation =
-
+  # create new fluent validation
   var instance = FluentValidation()
   instance.valids = initTable[string, FieldData]()
   instance.notValids = initTable[string, FieldData]()
@@ -312,7 +336,7 @@ proc newFluentValidation*(): FluentValidation =
 proc add*(
   self: FluentValidation,
   fieldData: FieldData): FluentValidation {.discardable.} =
-
+  # add field data validation to the fluent validation
   if not fieldData.isValid:
     self.notValids.add(fieldData.name, fieldData)
   else:
@@ -320,10 +344,10 @@ proc add*(
   return self
 
 proc clear*(self: FluentValidation) =
-
+  # clear fluent validation
   clear(self.valids)
   clear(self.notValids)
 
 proc isValid*(self: FluentValidation): bool =
-
+  # check if validation success (valid all passes)
   return self.notValids.len == 0

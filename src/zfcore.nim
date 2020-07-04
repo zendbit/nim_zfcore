@@ -64,7 +64,7 @@ proc newZFCore*(settings: Settings): ZFCore =
       maxBodyLength = settings.maxBodyLength,
       keepAliveMax = settings.keepAliveMax,
       keepAliveTimeout = settings.keepAliveTimeout,
-      debug = settings.debug,
+      trace = settings.trace,
       sslSettings = settings.sslSettings),
     r: newRouter(),
     settings: settings)
@@ -92,7 +92,7 @@ proc newZFCore*(): ZFCore =
     settings.keepAliveMax = settingsJson{"keepAliveMax"}.getInt()
     settings.keepAliveTimeout = settingsJson{"keepAliveTimeout"}.getInt()
     settings.maxBodyLength = settingsJson{"maxBodyLength"}.getInt()
-    settings.debug = settingsJson{"debug"}.getBool()
+    settings.trace = settingsJson{"trace"}.getBool()
     let httpSettings = settingsJson{"http"}
     if not isNil(httpSettings):
       settings.port = httpSettings{"port"}.getInt()
@@ -116,7 +116,7 @@ proc newZFCore*(): ZFCore =
         maxBodyLength = settings.maxBodyLength,
         keepAliveMax = settings.keepAliveMax,
         keepAliveTimeout = settings.keepAliveTimeout,
-        debug = settings.debug,
+        trace = settings.trace,
         sslSettings = settings.sslSettings),
       r: newRouter(),
       settings: settings)
@@ -129,7 +129,7 @@ proc newZFCore*(): ZFCore =
       server: newZFBlast(
         address = "0.0.0.0",
         port = Port(8080),
-        debug = false,
+        trace = false,
         reuseAddress = true,
         reusePort = false,
         sslSettings = nil,
@@ -164,14 +164,14 @@ proc sendToRouter(
   try:
     await self.r.executeProc(ctx, self.settings)
   except Exception as ex:
-    if self.settings.debug:
-      asyncCheck dbg(proc () =
+    if self.settings.trace:
+      asyncCheck trace proc () =
         echo ""
         echo "#== start"
-        echo "#== zfcore debuger"
+        echo "#== zfcore trace"
         echo ex.msg
         echo "#== end"
-        echo "")
+        echo ""
 
 #[
   clean Tmp folder may take resource
@@ -181,12 +181,12 @@ proc cleanTmpDir(
   self: ZFCore,
   settings: Settings) =
 
-  for file in walkFiles(settings.tmpDir & "*"):
+  for file in (settings.tmpDir & "*").walkFiles:
     # get all files
-    let timestamp = splitPath(file)[1].split('_')[0]
-    let timeInterval = toUnix(getTime()) - parseBiggestInt(timestamp)
+    let timestamp = file.splitPath()[1].split('_')[0]
+    let timeInterval = getTime().toUnix - timestamp.parseBiggestInt
     if timeInterval div 3600 >= 1:
-      discard tryRemoveFile(file)
+      discard file.tryRemoveFile
 
 #[
   this proc is private for main dispatch of request
@@ -201,7 +201,7 @@ proc mainHandlerAsync(
       # set default headers content type
       ctx.response.headers["Content-Type"] = "text/plain; utf-8"
 
-      await sendToRouter(self, ctx)
+      await self.sendToRouter(ctx)
       # Chek cleanup tmp dir
       if not self.isCleanTmpDirExecuted:
         self.isCleanTmpDirExecuted = not self.isCleanTmpDirExecuted
@@ -212,15 +212,15 @@ proc mainHandlerAsync(
       await httpMethodNotFoundAsync(self, ctx)
 
   except Exception as ex:
-    if self.settings.debug:
-      asyncCheck dbg(proc () =
+    if self.settings.trace:
+      asyncCheck trace proc () =
         echo ""
         echo "#== start"
-        echo "#== zfcore debuger"
+        echo "#== zfcore trace"
         echo "Failed handle client request."
         echo ex.msg
         echo "#== end"
-        echo "")
+        echo ""
 
 #[
   this proc is for start the ZendFlow, this will serve forever :-)

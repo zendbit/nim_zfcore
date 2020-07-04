@@ -1,5 +1,5 @@
 #[
-  ZendFlow web framework for nim language
+  zfcore web framework for nim language
   This framework if free to use and to modify
   License: BSD
   Author: Amru Rosyada
@@ -7,43 +7,9 @@
   Git: https://github.com/zendbit
 ]#
 
-#[
-  This is middleware for filltering or for injecting action before route or after route
-  after route will excute before actual route.
-
-  this is usefull when we want to use for filtering or authentication before rouing happend,
-  for example we want to validate header authorization we can do in the before routing middleware
-
-  let zf = newZendFlow()
-
-  zf.r.beforeRoute(proc (ctx: CtxReq): Future[void] {.async.} =
-
-    #### your code here
-    #### you can directly by pass respon from here before routing happend
-
-    )
-  zf.r.afterRoute(proc (ctx: CtxReq, route: Route): Future[void] {.async.} =
-
-    #### your code here
-    #### you can directly by pass respon from here after routing match happend
-    #### and will call before the actual routing procedure called
-
-    )
-
-  zf.r.get("/home/<ids:re[([0-9]+)_([0-9]+)]:len[2]>/<body>", proc (
-    ctx: CtxReq): Future[void] {.async.} =
-    echo "Welcome home"
-    echo $ctx.reParams["ids"]
-    echo $ctx.params["body"]
-    await ctx.resp(Http200, "Hello World"))
-
-  zf.r.post("/home", proc (ctx: CtxReq): Future[void] {.async.} =
-    await ctx.resp(Http200, "Hello World"))
-
-  zf.serve()
-]#
 import
-  asyncdispatch
+  asyncdispatch,
+  sugar
 
 # local
 import
@@ -53,34 +19,52 @@ from httpctx import HttpCtx
 
 type
   Middleware* = ref object of RootObj
-    pre: proc (ctx: HttpCtx): Future[bool]
-    post: proc (ctx: HttpCtx, route: Route): Future[bool]
+    #
+    # Middleware
+    # pre is callback for prerouting
+    # post is callback for postrouting
+    #
+    pre: (ctx: HttpCtx) -> Future[bool]
+    post: (ctx: HttpCtx, route: Route) -> Future[bool]
 
 proc newMiddleware*(): Middleware =
+  #
+  # create new middleware
+  #
   return Middleware()
 
 proc beforeRoute*(
   self: Middleware,
-  pre: proc (ctx: HttpCtx): Future[bool]) =
-
+  pre: (ctx: HttpCtx) -> Future[bool]) =
+  #
+  # add before route in middleware
+  # this will always check on client request before routing process
+  #
   self.pre = pre
 
 proc afterRoute*(
   self: Middleware,
-  post: proc (ctx: HttpCtx, route: Route): Future[bool]) =
-
+  post: (ctx: HttpCtx, route: Route) -> Future[bool]) =
+  #
+  # add after route in middleware
+  # this will always check on client request after routing process
+  #
   self.post = post
 
 proc execBeforeRoute*(
   self: Middleware, ctx: HttpCtx): Future[bool] {.async.} =
-
-  if not isNil(self.pre):
+  #
+  # execute the before routing callback check
+  #
+  if not self.pre.isNil:
     return await self.pre(ctx)
 
 proc execAfterRoute*(
   self: Middleware,
   ctx: HttpCtx,
   route: Route): Future[bool] {.async.} =
-
-  if not isNil(self.post):
+  #
+  # execute the after routing callback check
+  #
+  if not self.post.isNil:
     return await self.post(ctx, route)
