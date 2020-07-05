@@ -270,6 +270,10 @@ proc executeProc*(
     await self.handleDynamicRoute(httpCtx)
   except Exception as ex:
     echo ex.msg
+    ctx.response.headers["Content-Type"] = "application/json"
+    ctx.response.body = (%*{"status": false, "error": ex.msg}).pretty(2)
+    ctx.response.httpCode = Http500
+    asyncCheck ctx.send(ctx)
 
 proc static*(
   self: Router,
