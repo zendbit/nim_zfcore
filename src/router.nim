@@ -24,13 +24,15 @@ import
 
 # local
 import
-  httpctx,
+  httpcontext,
   formdata,
   middleware,
   route,
   settings,
   mime,
-  zfblast
+  times
+  
+from zfblast import getHttpHeaderValues, trace
 
 type
   Router* = ref object of Middleware
@@ -128,7 +130,7 @@ proc parseUriToTable(
 
 proc mapContentype(
   self: Router,
-  ctx: HttpCtx) =
+  ctx: HttpContext) =
   # This proc is private for mapt the content type
   # HttpPost, HttpPut, HttpPatch will auto parse and extract the request, including the uploaded files
   # uploaded files will save to tmp folder
@@ -148,7 +150,7 @@ proc mapContentype(
 
 proc handleStaticRoute(
   self: Router,
-  ctx: HttpCtx):
+  ctx: HttpContext):
   Future[tuple[
     found: bool,
     filePath: string,
@@ -200,7 +202,7 @@ proc handleStaticRoute(
 
 proc handleDynamicRoute(
   self: Router,
-  ctx: HttpCtx): Future[void] {.async.} =
+  ctx: HttpContext): Future[void] {.async.} =
   # 
   # execute middleware before routing
   # handle dynamic route
@@ -215,7 +217,7 @@ proc handleDynamicRoute(
   # route to potensial uri
   # also extract the uri parameter
   let ctxSegments = self.parseSegmentsFromPath(ctx.request.url.getPath())
-  #var exec: proc (ctx: HttpCtx): Future[void] {.gcsafe.}
+  #var exec: proc (ctx: HttpContext): Future[void] {.gcsafe.}
   var route: Route
   for r in self.routes:
     let matchesUri = self.matchesUri(r.segments, ctxSegments)
@@ -233,7 +235,7 @@ proc handleDynamicRoute(
       break
 
   if route != nil:
-    # execute middleware after routing before respond
+    # execute middleware after routing before response
     if await self.execAfterRoute(ctx, route): return
 
     # execute route callback
@@ -254,21 +256,21 @@ proc handleDynamicRoute(
 
 proc executeProc*(
   self: Router,
-  ctx: HttpContext,
+  ctx: zfblast.HttpContext,
   settings: Settings): Future[void] {.async.} =
   #
   # This proc will execute the registered callback procedure in route list.
-  # asynchttpserver Request will convert to HttpCtx.
+  # asynchttpserver Request will convert to HttpContext.
   # beforeRoute and afterRoute middleware will evaluated here
   #
   try:
-    var httpCtx = ctx.newHttpCtx
+    var httpCtx = ctx.newHttpContext
     httpCtx.settings = settings
 
     await self.handleDynamicRoute(httpCtx)
   except Exception as ex:
     if settings.trace:
-      asyncCheck trace proc () =
+      asyncCheck trace do () -> void:
         echo ""
         echo "#== start"
         echo "#== zfcore trace"
@@ -289,17 +291,17 @@ proc static*(
 proc get*(
   self: Router,
   path: string,
-  thenDo: (ctx: HttpCtx) -> Future[void]) =
+  thenDo: (ctx: HttpContext) -> Future[void]) =
   #
   # let zf = newZfCore()
   #
-  # ### Register the post route to the framework
-  # ### example with regex to extract the segment
-  # ### this regex will match with /home/123_12345/test
-  # ### the regex will capture ids -> @["123", "12345"]
-  # ### the <body> parameter will capture body -> test
+  ### Register the post route to the framework
+  ### example with regex to extract the segment
+  ### this regex will match with /home/123_12345/test
+  ### the regex will capture ids -> @["123", "12345"]
+  ### the <body> parameter will capture body -> test
   # zf.r.get("/home/<ids:re[([0-9]+)_([0-9]+)]:len[2]>/<body>", proc (
-  #   ctx: HttpCtx): Future[void] {.async.} =
+  #   ctx: HttpContext): Future[void] {.async.} =
   #   echo "Welcome home"
   #   echo $ctx.reParams["ids"]
   #   echo $ctx.params["body"]
@@ -308,7 +310,7 @@ proc get*(
   # ### without regex
   # ### will accept from /home
   # zf.r.get("/home", proc (
-  #   ctx: HttpCtx): Future[void] {.async.} =
+  #   ctx: HttpContext): Future[void] {.async.} =
   #
   #   #### your code here
   #
@@ -327,26 +329,26 @@ proc get*(
 proc post*(
   self: Router,
   path: string,
-  thenDo: (ctx: HttpCtx) -> Future[void]) =
+  thenDo: (ctx: HttpContext) -> Future[void]) =
   #
   # let zf = newZfCore()
   #
-  # ### Register the post route to the framework
-  # ### example with regex to extract the segment
-  # ### this regex will match with /home/123_12345/test
-  # ### the regex will capture ids -> @["123", "12345"]
-  # ### the <body> parameter will capture body -> test
+  ### Register the post route to the framework
+  ### example with regex to extract the segment
+  ### this regex will match with /home/123_12345/test
+  ### the regex will capture ids -> @["123", "12345"]
+  ### the <body> parameter will capture body -> test
   # zf.r.post("/home/<ids:re[([0-9]+)_([0-9]+)]:len[2]>/<body>", proc (
-  #   ctx: HttpCtx): Future[void] {.async.} =
+  #   ctx: HttpContext): Future[void] {.async.} =
   #   echo "Welcome home"
   #   echo $ctx.reParams["ids"]
   #   echo $ctx.params["body"]
   #   await ctx.resp(Http200, "Hello World"))
   #
-  # ### without regex
-  # ### will accept from /home
+  ### without regex
+  ### will accept from /home
   # zf.r.post("/home", proc (
-  #   ctx: HttpCtx): Future[void] {.async.} =
+  #   ctx: HttpContext): Future[void] {.async.} =
   #
   #   #### your code here
   #
@@ -365,26 +367,26 @@ proc post*(
 proc put*(
   self: Router,
   path: string,
-  thenDo: (ctx: HttpCtx) -> Future[void]) =
+  thenDo: (ctx: HttpContext) -> Future[void]) =
   #
   # let zf = newZfCore()
   #
-  # ### Register the post route to the framework
-  # ### example with regex to extract the segment
-  # ### this regex will match with /home/123_12345/test
-  # ### the regex will capture ids -> @["123", "12345"]
-  # ### the <body> parameter will capture body -> test
+  ### Register the post route to the framework
+  ### example with regex to extract the segment
+  ### this regex will match with /home/123_12345/test
+  ### the regex will capture ids -> @["123", "12345"]
+  ### the <body> parameter will capture body -> test
   # zf.r.put("/home/<ids:re[([0-9]+)_([0-9]+)]:len[2]>/<body>", proc (
-  #   ctx: HttpCtx): Future[void] {.async.} =
+  #   ctx: HttpContext): Future[void] {.async.} =
   #   echo "Welcome home"
   #   echo $ctx.reParams["ids"]
   #   echo $ctx.params["body"]
   #   await ctx.resp(Http200, "Hello World"))
   #
-  # ### without regex
-  # ### will accept from /home
+  ### without regex
+  ### will accept from /home
   # zf.r.put("/home", proc (
-  #   ctx: HttpCtx): Future[void] {.async.} =
+  #   ctx: HttpContext): Future[void] {.async.} =
   #
   #   #### your code here
   #
@@ -403,32 +405,32 @@ proc put*(
 proc delete*(
   self: Router,
   path: string,
-  thenDo: (ctx: HttpCtx) -> Future[void]) =
+  thenDo: (ctx: HttpContext) -> Future[void]) =
   #
   # let zf = newZfCore()
   #
-  # ### Register the post route to the framework
-  # ### example with regex to extract the segment
-  # ### this regex will match with /home/123_12345/test
-  # ### the regex will capture ids -> @["123", "12345"]
-  # ### the <body> parameter will capture body -> test
+  ### Register the post route to the framework
+  ### example with regex to extract the segment
+  ### this regex will match with /home/123_12345/test
+  ### the regex will capture ids -> @["123", "12345"]
+  ### the <body> parameter will capture body -> test
   # zf.r.delete("/home/<ids:re[([0-9]+)_([0-9]+)]:len[2]>/<body>", proc (
-  #   ctx: HttpCtx): Future[void] {.async.} =
+  #   ctx: HttpContext): Future[void] {.async.} =
   #   echo "Welcome home"
   #   echo $ctx.reParams["ids"]
   #   echo $ctx.params["body"]
   #   await ctx.resp(Http200, "Hello World"))
   #
-  # ### without regex
-  # ### will accept from /home
+  ### without regex
+  ### will accept from /home
   # zf.r.delete("/home", proc (
-  #   ctx: HttpCtx): Future[void] {.async.} =
+  #   ctx: HttpContext): Future[void] {.async.} =
   #
   #   #### your code here
   #
   #   await ctx.resp(Http200, "Hello World"))
   #
-  # ### start the server
+  ### start the server
   #
   # zf.serve()
   #
@@ -441,32 +443,32 @@ proc delete*(
 proc patch*(
   self: Router,
   path: string,
-  thenDo: (ctx: HttpCtx) -> Future[void]) =
+  thenDo: (ctx: HttpContext) -> Future[void]) =
   #
   # let zf = newZfCore()
   #
-  # ### Register the post route to the framework
-  # ### example with regex to extract the segment
-  # ### this regex will match with /home/123_12345/test
-  # ### the regex will capture ids -> @["123", "12345"]
-  # ### the <body> parameter will capture body -> test
+  ### Register the post route to the framework
+  ### example with regex to extract the segment
+  ### this regex will match with /home/123_12345/test
+  ### the regex will capture ids -> @["123", "12345"]
+  ### the <body> parameter will capture body -> test
   # zf.r.patch("/home/<ids:re[([0-9]+)_([0-9]+)]:len[2]>/<body>", proc (
-  #   ctx: HttpCtx): Future[void] {.async.} =
+  #   ctx: HttpContext): Future[void] {.async.} =
   #   echo "Welcome home"
   #   echo $ctx.reParams["ids"]
   #   echo $ctx.params["body"]
   #   await ctx.resp(Http200, "Hello World"))
   #
-  # ### without regex
-  # ### will accept from /home
+  ### without regex
+  ### will accept from /home
   # zf.r.patch("/home", proc (
-  #   ctx: HttpCtx): Future[void] {.async.} =
+  #   ctx: HttpContext): Future[void] {.async.} =
   #
   #   #### your code here
   #
   #   await ctx.resp(Http200, "Hello World"))
   #
-  # ### start the server
+  ### start the server
   #
   # zf.serve()
   #
@@ -479,32 +481,32 @@ proc patch*(
 proc head*(
   self: Router,
   path: string,
-  thenDo: (ctx: HttpCtx) -> Future[void]) =
+  thenDo: (ctx: HttpContext) -> Future[void]) =
   #
   # let zf = newZfCore()
   #
-  # ### Register the post route to the framework
-  # ### example with regex to extract the segment
-  # ### this regex will match with /home/123_12345/test
-  # ### the regex will capture ids -> @["123", "12345"]
-  # ### the <body> parameter will capture body -> test
+  ### Register the post route to the framework
+  ### example with regex to extract the segment
+  ### this regex will match with /home/123_12345/test
+  ### the regex will capture ids -> @["123", "12345"]
+  ### the <body> parameter will capture body -> test
   # zf.r.get("/home/<ids:re[([0-9]+)_([0-9]+)]:len[2]>/<body>", proc (
-  #   ctx: HttpCtx): Future[void] {.async.} =
+  #   ctx: HttpContext): Future[void] {.async.} =
   #   echo "Welcome home"
   #   echo $ctx.reParams["ids"]
   #   echo $ctx.params["body"]
   #   await ctx.resp(Http200, "Hello World"))
   #
-  # ### without regex
-  # ### will accept from /home
+  ### without regex
+  ### will accept from /home
   # zf.r.get("/home", proc (
-  #   ctx: HttpCtx): Future[void] {.async.} =
+  #   ctx: HttpContext): Future[void] {.async.} =
   #
   #   #### your code here
   #
   #   await ctx.resp(Http200, "Hello World"))
   #
-  # ### start the server
+  ### start the server
   #
   # zf.serve()
   #
@@ -517,32 +519,32 @@ proc head*(
 proc options*(
   self: Router,
   path: string,
-  thenDo: (ctx: HttpCtx) -> Future[void]) =
+  thenDo: (ctx: HttpContext) -> Future[void]) =
   #
   # let zf = newZfCore()
   #
-  # ### Register the post route to the framework
-  # ### example with regex to extract the segment
-  # ### this regex will match with /home/123_12345/test
-  # ### the regex will capture ids -> @["123", "12345"]
-  # ### the <body> parameter will capture body -> test
+  ### Register the post route to the framework
+  ### example with regex to extract the segment
+  ### this regex will match with /home/123_12345/test
+  ### the regex will capture ids -> @["123", "12345"]
+  ### the <body> parameter will capture body -> test
   # zf.r.options("/home/<ids:re[([0-9]+)_([0-9]+)]:len[2]>/<body>", proc (
-  #   ctx: HttpCtx): Future[void] {.async.} =
+  #   ctx: HttpContext): Future[void] {.async.} =
   #   echo "Welcome home"
   #   echo $ctx.reParams["ids"]
   #   echo $ctx.params["body"]
   #   await ctx.resp(Http200, "Hello World"))
   #
-  # ### without regex
-  # ### will accept from /home
+  ### without regex
+  ### will accept from /home
   # zf.r.options("/home", proc (
-  #   ctx: HttpCtx): Future[void] {.async.} =
+  #   ctx: HttpContext): Future[void] {.async.} =
   #
   #   #### your code here
   #
   #   await ctx.resp(Http200, "Hello World"))
   #
-  # ### start the server
+  ### start the server
   #
   # zf.serve()
   #
@@ -555,32 +557,32 @@ proc options*(
 proc trace*(
   self: Router,
   path: string,
-  thenDo: (ctx: HttpCtx) -> Future[void]) =
+  thenDo: (ctx: HttpContext) -> Future[void]) =
   #
   # let zf = newZfCore()
   #
-  # ### Register the post route to the framework
-  # ### example with regex to extract the segment
-  # ### this regex will match with /home/123_12345/test
-  # ### the regex will capture ids -> @["123", "12345"]
-  # ### the <body> parameter will capture body -> test
+  ### Register the post route to the framework
+  ### example with regex to extract the segment
+  ### this regex will match with /home/123_12345/test
+  ### the regex will capture ids -> @["123", "12345"]
+  ### the <body> parameter will capture body -> test
   # zf.r.get("/home/<ids:re[([0-9]+)_([0-9]+)]:len[2]>/<body>", proc (
-  #   ctx: HttpCtx): Future[void] {.async.} =
+  #   ctx: HttpContext): Future[void] {.async.} =
   #   echo "Welcome home"
   #   echo $ctx.reParams["ids"]
   #   echo $ctx.params["body"]
   #   await ctx.resp(Http200, "Hello World"))
   #
-  # ### without regex
-  # ### will accept from /home
+  ### without regex
+  ### will accept from /home
   # zf.r.get("/home", proc (
-  #   ctx: HttpCtx): Future[void] {.async.} =
+  #   ctx: HttpContext): Future[void] {.async.} =
   #
   #   #### your code here
   #
   #   await ctx.resp(Http200, "Hello World"))
   #
-  # ### start the server
+  ### start the server
   #
   # zf.serve()
   #
@@ -593,32 +595,32 @@ proc trace*(
 proc connect*(
   self: Router,
   path: string,
-  thenDo: (ctx: HttpCtx) -> Future[void]) =
+  thenDo: (ctx: HttpContext) -> Future[void]) =
   #
   # let zf = newZfCore()
   #
-  # ### Register the post route to the framework
-  # ### example with regex to extract the segment
-  # ### this regex will match with /home/123_12345/test
-  # ### the regex will capture ids -> @["123", "12345"]
-  # ### the <body> parameter will capture body -> test
+  ### Register the post route to the framework
+  ### example with regex to extract the segment
+  ### this regex will match with /home/123_12345/test
+  ### the regex will capture ids -> @["123", "12345"]
+  ### the <body> parameter will capture body -> test
   # zf.r.get("/home/<ids:re[([0-9]+)_([0-9]+)]:len[2]>/<body>", proc (
-  #   ctx: HttpCtx): Future[void] {.async.} =
+  #   ctx: HttpContext): Future[void] {.async.} =
   #   echo "Welcome home"
   #   echo $ctx.reParams["ids"]
   #   echo $ctx.params["body"]
   #   await ctx.resp(Http200, "Hello World"))
   #
-  # ### without regex
-  # ### will accept from /home
+  ### without regex
+  ### will accept from /home
   # zf.r.get("/home", proc (
-  #   ctx: HttpCtx): Future[void] {.async.} =
+  #   ctx: HttpContext): Future[void] {.async.} =
   #
   #   #### your code here
   #
   #   await ctx.resp(Http200, "Hello World"))
   #
-  # ### start the server
+  ### start the server
   #
   # zf.serve()
   #

@@ -1,5 +1,5 @@
 #[
-  ZendFlow web framework for nim language
+  zfcore web framework for nim language
   This framework if free to use and to modify
   License: BSD
   Author: Amru Rosyada
@@ -12,70 +12,113 @@
 # resp, setCookie etc
 import
   macros,
-  strutils
+  strutils,
+  httpcore,
+  strtabs
 
-proc genMiddleware(id: string, stmtList: NimNode): NimNode =
-  let formalParams = nnkFormalParams.newTree(
-      nnkBracketExpr.newTree(
-        newIdentNode("Future"),
-        newIdentNode("bool")
-      ),
-      nnkIdentDefs.newTree(
-        newIdentNode("ctx"),
-        newIdentNode("HttpCtx"),
-        newEmptyNode()
-      )
-    )
+import
+  httpcontext
 
-  if id == "afterRoute":
-    formalParams.add(
-      nnkIdentDefs.newTree(
-        newIdentNode("route"),
-        newIdentNode("Route"),
-        newEmptyNode()
-      )
-    )
-
-  return nnkCall.newTree(
-    nnkDotExpr.newTree(
-      nnkDotExpr.newTree(
-        newIdentNode("zfc"),
-        newIdentNode("r")
-      ),
-      newIdentNode(id)
-    ),
-    nnkLambda.newTree(
-      newEmptyNode(),
-      newEmptyNode(),
-      newEmptyNode(),
-      formalParams,
-      nnkPragma.newTree(
-        newIdentNode("async")
-      ),
-      newEmptyNode(),
-      stmtList
-    )
-  )
-
-proc genRoutes(x: NimNode): NimNode =
+macro routes*(x: untyped): untyped =
   let stmtList = newStmtList()
   for child in x.children():
-    if child.kind == nnkCommand and len(child) >= 2:
-      let action = ($child[0]).strip()
-      let route = ($child[1]).strip()
-      case action
-      of "get", "post", "head",
-        "patch", "delete", "put",
-        "options", "connect", "trace":
-
-        let childStmtList = child[2]
-        let routeDef = nnkCall.newTree(
+    let childKind = ($child[0]).strip()
+    case child.kind
+    of nnkCall:
+      let childStmtList = child[1]
+      case childKind
+      of "after":
+        stmtList.add(
+          nnkCall.newTree(
             nnkDotExpr.newTree(
               nnkDotExpr.newTree(
                 newIdentNode("zfc"),
                 newIdentNode("r")
               ),
-              newIdentNode(action)
+              newIdentNode("afterRoute")
+            ),
+            nnkLambda.newTree(
+              newEmptyNode(),
+              newEmptyNode(),
+              newEmptyNode(),
+              nnkFormalParams.newTree(
+                nnkBracketExpr.newTree(
+                  newIdentNode("Future"),
+                  newIdentNode("bool")
+                ),
+                nnkIdentDefs.newTree(
+                  newIdentNode("ctx"),
+                  newIdentNode("HttpContext"),
+                  newEmptyNode()
+                ),
+                nnkIdentDefs.newTree(
+                  newIdentNode("route"),
+                  newIdentNode("Route"),
+                  newEmptyNode()
+                )
+              ),
+              nnkPragma.newTree(
+                newIdentNode("async")
+              ),
+              newEmptyNode(),
+              childStmtList
+            )
+          )
+        )
+
+      of "before":
+        stmtList.add(
+          nnkCall.newTree(
+            nnkDotExpr.newTree(
+              nnkDotExpr.newTree(
+                newIdentNode("zfc"),
+                newIdentNode("r")
+              ),
+              newIdentNode("beforeRoute")
+            ),
+            nnkLambda.newTree(
+              newEmptyNode(),
+              newEmptyNode(),
+              newEmptyNode(),
+              nnkFormalParams.newTree(
+                nnkBracketExpr.newTree(
+                  newIdentNode("Future"),
+                  newIdentNode("bool")
+                ),
+                nnkIdentDefs.newTree(
+                  newIdentNode("ctx"),
+                  newIdentNode("HttpContext"),
+                  newEmptyNode()
+                )
+              ),
+              nnkPragma.newTree(
+                newIdentNode("async")
+              ),
+              newEmptyNode(),
+              childStmtList
+            )
+          )
+        )
+
+      else:
+        stmtList.add(child)
+
+    of nnkCommand:
+      let route = ($child[1]).strip()
+      case childKind
+      of "get", "post", "head",
+        "patch", "delete", "put",
+        "options", "connect", "trace":
+
+        let childStmtList = child[2]
+        stmtList.add(
+          nnkCall.newTree(
+            nnkDotExpr.newTree(
+              nnkDotExpr.newTree(
+                newIdentNode("zfc"),
+                newIdentNode("r")
+              ),
+              newIdentNode(childKind)
             ),
             newLit(route),
             nnkLambda.newTree(
@@ -89,7 +132,7 @@ proc genRoutes(x: NimNode): NimNode =
                 ),
                 nnkIdentDefs.newTree(
                   newIdentNode("ctx"),
-                  newIdentNode("HttpCtx"),
+                  newIdentNode("HttpContext"),
                   newEmptyNode()
                 )
               ),
@@ -100,8 +143,7 @@ proc genRoutes(x: NimNode): NimNode =
               childStmtList
             )
           )
-
-        stmtList.add(routeDef)
+        )
 
       of "staticDir":
         stmtList.add(
@@ -125,49 +167,18 @@ proc genRoutes(x: NimNode): NimNode =
     else:
       stmtList.add(child)
 
-  return stmtList
-
-macro zf*(x: untyped): untyped =
-  let stmtList = nnkStmtList.newTree(
-      nnkLetSection.newTree(
-        nnkIdentDefs.newTree(
-          newIdentNode("zfc"),
-          newEmptyNode(),
-          newCall(
-            newIdentNode("newZFCore")
-          )
-        )
+  stmtList.add(
+    nnkCall.newTree(
+      nnkDotExpr.newTree(
+        newIdentNode("zfc"),
+        newIdentNode("serve")
       )
     )
-
-  for child in x.children():
-    if child.kind == nnkCall:
-      let action = $child[0]
-      case action
-      of "beforeRoute", "afterRoute":
-        stmtList.add(genMiddleware(action, child[1]))
-
-      of "routes":
-        stmtList.add(genRoutes(child[1]))
-
-      else:
-        stmtList.add(child)
-
-    else:
-      stmtList.add(child)
-  
-  stmtList.add(nnkStmtList.newTree(
-      nnkCall.newTree(
-        nnkDotExpr.newTree(
-          newIdentNode("zfc"),
-          newIdentNode("serve")
-        )
-      )
-    ))
+  )
 
   return stmtList
 
-macro resp*(httpCode: untyped, body: untyped, headers: untyped = nil) =
+macro resp*(httpCode: HttpCode, body: untyped, headers: HttpHeaders = nil) =
   nnkCall.newTree(
     nnkDotExpr.newTree(
       newIdentNode("ctx"),
@@ -178,7 +189,7 @@ macro resp*(httpCode: untyped, body: untyped, headers: untyped = nil) =
     headers
   )
 
-macro respHtml*(httpCode: untyped, body: untyped, headers: untyped = nil) =
+macro respHtml*(httpCode: HttpCode, body: string, headers: HttpHeaders = nil) =
   nnkCall.newTree(
     nnkDotExpr.newTree(
       newIdentNode("ctx"),
@@ -189,7 +200,7 @@ macro respHtml*(httpCode: untyped, body: untyped, headers: untyped = nil) =
     headers
   )
 
-macro respRedirect*(redirectTo: untyped) =
+macro respRedirect*(redirectTo: string) =
   nnkCall.newTree(
     nnkDotExpr.newTree(
       newIdentNode("ctx"),
@@ -199,7 +210,7 @@ macro respRedirect*(redirectTo: untyped) =
   )
 
 macro setCookie*(
-  cookies: untyped, domain: untyped = "",
+  cookies: StringTableRef, domain: untyped = "",
   path: untyped = "", expires: untyped = "",
   secure: untyped = false) =
   nnkCall.newTree(
@@ -231,15 +242,59 @@ macro clearCookie*(cookies: untyped) =
     cookies
   )
 
-#macro serve*() =
-#  nnkStmtList.newTree(
-#    nnkCall.newTree(
-#      nnkDotExpr.newTree(
-#        newIdentNode("zfc"),
-#        newIdentNode("serve")
-#      )
-#    )
-#  )
+macro req*: untyped =
+  return nnkDotExpr.newTree(
+    newIdentNode("ctx"),
+    newIdentNode("request")
+  )
+
+macro res*: untyped =
+  return nnkDotExpr.newTree(
+    newIdentNode("ctx"),
+    newIdentNode("response")
+  )
+
+macro config*: untyped =
+  return nnkDotExpr.newTree(
+    newIdentNode("ctx"),
+    newIdentNode("settings")
+  )
+
+macro client: untyped =
+  return nnkDotExpr.newTree(
+    newIdentNode("ctx"),
+    newIdentNode("client")
+  )
+
+macro ws*: untyped =
+  return nnkDotExpr.newTree(
+    newIdentNode("ctx"),
+    newIdentNode("webSocket")
+  )
+
+macro params*: untyped =
+  return nnkDotExpr.newTree(
+    newIdentNode("ctx"),
+    newIdentNode("params")
+  )
+
+macro reParams*: untyped =
+  return nnkDotExpr.newTree(
+    newIdentNode("ctx"),
+    newIdentNode("reParams")
+  )
+
+macro formData*: untyped =
+  return nnkDotExpr.newTree(
+    newIdentNode("ctx"),
+    newIdentNode("formData")
+  )
+
+macro json*: JsonNode =
+  return nnkDotExpr.newTree(
+    newIdentNode("ctx"),
+    newIdentNode("json")
+  )
 
 export
   macros

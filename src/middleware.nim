@@ -15,7 +15,7 @@ import
 import
   route
 
-from httpctx import HttpCtx
+from httpcontext import HttpContext
 
 type
   Middleware* = ref object of RootObj
@@ -24,8 +24,8 @@ type
     # pre is callback for prerouting
     # post is callback for postrouting
     #
-    pre: (ctx: HttpCtx) -> Future[bool]
-    post: (ctx: HttpCtx, route: Route) -> Future[bool]
+    pre: (ctx: HttpContext) -> Future[bool]
+    post: (ctx: HttpContext, route: Route) -> Future[bool]
 
 proc newMiddleware*(): Middleware =
   #
@@ -35,7 +35,7 @@ proc newMiddleware*(): Middleware =
 
 proc beforeRoute*(
   self: Middleware,
-  pre: (ctx: HttpCtx) -> Future[bool]) =
+  pre: (ctx: HttpContext) -> Future[bool]) =
   #
   # add before route in middleware
   # this will always check on client request before routing process
@@ -44,7 +44,7 @@ proc beforeRoute*(
 
 proc afterRoute*(
   self: Middleware,
-  post: (ctx: HttpCtx, route: Route) -> Future[bool]) =
+  post: (ctx: HttpContext, route: Route) -> Future[bool]) =
   #
   # add after route in middleware
   # this will always check on client request after routing process
@@ -52,7 +52,7 @@ proc afterRoute*(
   self.post = post
 
 proc execBeforeRoute*(
-  self: Middleware, ctx: HttpCtx): Future[bool] {.async.} =
+  self: Middleware, ctx: HttpContext): Future[bool] {.async.} =
   #
   # execute the before routing callback check
   #
@@ -61,7 +61,7 @@ proc execBeforeRoute*(
 
 proc execAfterRoute*(
   self: Middleware,
-  ctx: HttpCtx,
+  ctx: HttpContext,
   route: Route): Future[bool] {.async.} =
   #
   # execute the after routing callback check

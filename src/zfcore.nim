@@ -17,7 +17,8 @@ import
   times,
   asyncnet,
   net,
-  strutils
+  strutils,
+  httpcore
 
 import
   uri3
@@ -25,12 +26,21 @@ import
 import
   router,
   route,
-  httpctx,
+  httpcontext,
   formdata,
   settings,
   fluentvalidation,
-  zfblast,
   zfmacros
+  
+from
+  zfblast
+    import
+      HttpContext,
+      newZFBlast,
+      getHttpHeaderValues,
+      ZFBlast,
+      trace,
+      serve
 
 const ZF_SETTINGS_FILE* = "settings.json"
 
@@ -145,7 +155,7 @@ proc newZFCore*(): ZFCore =
 ]#
 proc httpMethodNotFoundAsync(
   self: ZFCore,
-  ctx: HttpContext): Future[void] {.async.} =
+  ctx: zfblast.HttpContext): Future[void] {.async.} =
 
   ctx.response.httpCode = Http500
   ctx.response.body =
@@ -159,7 +169,7 @@ proc httpMethodNotFoundAsync(
 ]#
 proc sendToRouter(
   self: ZFCore,
-  ctx: HttpContext): Future[void] {.async.} =
+  ctx: zfblast.HttpContext): Future[void] {.async.} =
 
   try:
     await self.r.executeProc(ctx, self.settings)
@@ -193,7 +203,7 @@ proc cleanTmpDir(
 ]#
 proc mainHandlerAsync(
   self: ZFCore,
-  ctx: HttpContext): Future[void] {.async.} =
+  ctx: zfblast.HttpContext): Future[void] {.async.} =
 
   try:
     if ctx.request.httpmethod in [HttpGet, HttpPost, HttpPut, HttpPatch,
@@ -229,8 +239,11 @@ proc serve*(self: ZFCore) =
 
   echo "Enjoy and take a cup of coffe :-)"
 
-  waitFor self.server.serve(proc (ctx: HttpContext): Future[void] {.async.} =
+  waitFor self.server.serve(proc (ctx: zfblast.HttpContext): Future[void] {.async.} =
     asyncCheck self.mainHandlerAsync(ctx))
+
+# zfcore instance
+let zfc* {.global.} = newZfCore()
 
 export
   asyncdispatch,
@@ -240,17 +253,18 @@ export
   strutils,
   times,
   os,
-  asyncnet
+  asyncnet,
+  httpcore
 
 export
-  uri3
+  uri3,
+  getHttpHeaderValues
 
 export
-  httpctx,
+  httpcontext,
   router,
   route,
   formdata,
   settings,
   fluentvalidation,
-  zfblast,
   zfmacros

@@ -23,19 +23,22 @@ import
 import
   settings,
   formdata,
-  zfblast
+  zfblast,
+  websocket
 
 
 type
-  HttpCtx* = ref object of HttpContext
+  HttpContext* = ref object of zfblast.HttpContext
     # 
     # The field is widely used the zfblast HttpContext object but we add some field to its:
-    #    url -> in zfcore we user uri3 from the nimble package
-    #    params -> is table of the captured query string and path segment
-    #    reParams -> is table of the captured regex match with the segment
-    #    formData -> is FormData object and will capture if we use the multipart form
-    #    json -> this will capture the application/json body from the post/put/patch method
-    #    settings -> this is the shared settings
+    # request -> Request object
+    # response -> Response object
+    # settings -> this is the shared settings
+    #
+    # params -> is table of the captured query string and path segment
+    # reParams -> is table of the captured regex match with the segment
+    # formData -> is FormData object and will capture if we use the multipart form
+    # json -> this will capture the application/json body from the post/put/patch method
     #
     params*: Table[string, string]
     reParams*: Table[string, seq[string]]
@@ -43,11 +46,11 @@ type
     json*: JsonNode
     settings*: Settings
 
-proc newHttpCtx*(ctx: HttpContext): HttpCtx =
+proc newHttpContext*(ctx: zfblast.HttpContext): HttpContext =
   #
-  # create new HttpCtx from the zfblast HttpContext
+  # create new HttpContext from the zfblast HttpContext
   #
-  return HttpCtx(
+  return HttpContext(
     client: ctx.client,
     request: ctx.request,
     response: ctx.response,
@@ -62,7 +65,7 @@ proc newHttpCtx*(ctx: HttpContext): HttpCtx =
     settings: newSettings())
 
 proc setCookie*(
-  self: HttpCtx,
+  self: HttpContext,
   cookies: StringTableRef,
   domain: string = "",
   path: string = "",
@@ -88,7 +91,7 @@ proc setCookie*(
 
   self.response.headers.add("Set-Cookie", join(cookieList, ";"))
 
-proc getCookie*(self: HttpCtx): StringTableRef =
+proc getCookie*(self: HttpContext): StringTableRef =
   #
   # get cookies, return StringTableRef
   # if ctx.getCookies().hasKey("username"):
@@ -101,7 +104,7 @@ proc getCookie*(self: HttpCtx): StringTableRef =
   return newStringTable()
 
 proc clearCookie*(
-  self: HttpCtx,
+  self: HttpContext,
   cookies: StringTableRef) =
   #
   # clear cookie
@@ -111,7 +114,7 @@ proc clearCookie*(
   self.setCookie(cookies, expires = "Thu, 01 Jan 1970 00:00:00 GMT")
 
 proc resp*(
-  self: HttpCtx,
+  self: HttpContext,
   httpCode: HttpCode,
   body: string,
   headers: HttpHeaders = nil) =
@@ -133,7 +136,7 @@ proc resp*(
   asyncCheck self.send(self)
 
 proc resp*(
-  self: HttpCtx,
+  self: HttpContext,
   httpCode: HttpCode,
   body: JsonNode,
   headers: HttpHeaders = nil) =
@@ -152,7 +155,7 @@ proc resp*(
   asyncCheck self.send(self)
 
 proc respHtml*(
-  self: HttpCtx,
+  self: HttpContext,
   httpCode: HttpCode,
   body: string,
   headers: HttpHeaders = nil) =
@@ -170,7 +173,7 @@ proc respHtml*(
   asyncCheck self.send(self)
 
 proc respRedirect*(
-  self: HttpCtx,
+  self: HttpContext,
   redirectTo: string) =
   #
   # response redirect to the client
@@ -179,3 +182,24 @@ proc respRedirect*(
   self.response.httpCode = Http303
   self.response.headers["Location"] = @[redirectTo]
   asyncCheck self.send(self)
+
+export
+  asyncnet,
+  tables,
+  asyncdispatch,
+  json,
+  strtabs,
+  cookies,
+  strutils
+
+# nimble
+export
+  uri3
+
+# local
+export
+  settings,
+  Request,
+  Response,
+  websocket,
+  formdata

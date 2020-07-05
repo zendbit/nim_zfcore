@@ -13,7 +13,7 @@ from asyncdispatch import Future
 import sugar
 
 # local
-from httpctx import HttpCtx
+from httpcontext import HttpContext
 
 type
   Route* = ref object
@@ -22,5 +22,5 @@ type
     #
     httpMethod*: HttpMethod
     path*: string
-    thenDo*: (ctx: HttpCtx) -> Future[void]
+    thenDo*: (ctx: HttpContext) -> Future[void]
     segments*: seq[string]
