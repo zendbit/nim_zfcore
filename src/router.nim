@@ -269,14 +269,7 @@ proc executeProc*(
 
     await self.handleDynamicRoute(httpCtx)
   except Exception as ex:
-    if settings.trace:
-      asyncCheck trace do () -> void:
-        echo ""
-        echo "#== start"
-        echo "#== zfcore trace"
-        echo ex.msg
-        echo "#== end"
-        echo ""
+    echo ex.msg
 
 proc static*(
   self: Router,
