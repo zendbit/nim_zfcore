@@ -267,7 +267,6 @@ proc executeProc*(
   try:
     var httpCtx = ctx.newHttpContext
     httpCtx.settings = settings
-
     await self.handleDynamicRoute(httpCtx)
   except Exception as ex:
     echo ex.msg
