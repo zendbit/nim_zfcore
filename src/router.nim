@@ -272,7 +272,7 @@ proc executeProc*(
   except Exception as ex:
     echo ex.msg
     let apiMsg = newApiMsg(success=false,
-      error=(%*{"status": false, "error": ex.msg}))
+      error=(%*{"status": false, "error": ex.msg.split("\n")}))
     ctx.response.headers["Content-Type"] = "application/json"
     ctx.response.body = (%apiMsg).pretty(2)
     ctx.response.httpCode = Http500
