@@ -100,6 +100,8 @@ proc newZFCore*(): ZFCore =
     var appRootDir = settingsJson{"appRootDir"}.getStr()
     if appRootDir != "":
       settings.appRootDir = appRootDir
+    else:
+      settings.appRootDir = getAppDir()
     settings.keepAliveMax = settingsJson{"keepAliveMax"}.getInt()
     settings.keepAliveTimeout = settingsJson{"keepAliveTimeout"}.getInt()
     settings.maxBodyLength = settingsJson{"maxBodyLength"}.getInt()
@@ -136,6 +138,8 @@ proc newZFCore*(): ZFCore =
     echo ""
     echo "Failed to load settings.json, using default settings."
     echo ""
+    let settings = newSettings()
+    settings.appRootDir = getAppDir()
     return ZFCore(
       server: newZFBlast(
         address = "0.0.0.0",
@@ -148,7 +152,7 @@ proc newZFCore*(): ZFCore =
         keepAliveMax = 20,
         keepAliveTimeout = 10),
       r: newRouter(),
-      settings: newSettings())
+      settings: settings)
 
 #[
   this proc is private and will to use if the route not found or not match with router definition

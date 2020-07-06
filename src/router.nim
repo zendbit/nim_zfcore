@@ -16,7 +16,9 @@ import
   json,
   os,
   httpcore,
-  sugar
+  sugar,
+  zip/gzipfiles,
+  base64
 
 # nimble
 import
@@ -201,6 +203,29 @@ proc handleStaticRoute(
             filePath: staticSearchDir,
             contentType: contentType)
 
+proc gzipCompress(source: string): string =
+    let tmpDir = getAppDir().joinPath(".tmp", "gzip")
+    let filename = tmpDir.joinPath(now().utc().format("yyyy-MM-dd HH:mm:ss:fffffffff").encode) & ".gz"
+    if not tmpDir.existsDir:
+      tmpDir.createDir()
+    let text = "Hello World"
+    let w = filename.newGzFileStream(fmWrite)
+    let chunk_size = 32
+    var num_bytes = text.len
+    var idx = 0
+    while true:
+      w.writeData(text[idx].unsafeAddr, min(num_bytes, chunk_size))
+      if num_bytes < chunk_size:
+        break
+      dec(num_bytes, chunk_size)
+      inc(idx, chunk_size)
+    w.close()
+    let r = filename.newFileStream()
+    let data = r.readAll()
+    r.close()
+    removeFile(filename)
+    return data
+
 proc handleDynamicRoute(
   self: Router,
   ctx: HttpContext): Future[void] {.async.} =
@@ -244,12 +269,21 @@ proc handleDynamicRoute(
 
   elif staticFound:
     ctx.response.headers["Content-Type"] = staticContentType & "; charset=utf-8"
-    if getHttpHeaderValues("Last-Modified", ctx.response.headers) == "":
+    if ctx.response.headers.getHttpHeaderValues("Last-Modified") == "":
       ctx.response.headers["Last-Modified"] =
         format(utc(getFileInfo(staticFilePath).lastAccessTime),
           "ddd, dd MMM yyyy HH:mm:ss") & " GMT"
 
-    ctx.resp(Http200, staticFilePath.open().readAll())
+    let accept =
+      ctx.request.headers.getHttpHeaderValues("accept-encoding").toLower
+    let typeToZip = staticContentType.toLower()
+    if accept.startsWith("gzip") or accept.contains("gzip") or
+      typeToZip.startsWith("text/") or typeToZip.startsWith("font/") or
+      typeToZip.startsWith("message/") or typeToZip.startsWith("application"):
+      ctx.response.headers["Content-Encoding"] = "gzip"
+      ctx.resp(Http200, staticFilePath.open().readAll().gzipCompress)
+    else:
+      ctx.resp(Http200, staticFilePath.open().readAll())
 
   else:
     # default response if route does not match
