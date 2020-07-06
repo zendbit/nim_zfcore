@@ -196,12 +196,15 @@ proc cleanTmpDir(
   self: ZFCore,
   settings: Settings) =
 
-  for file in (settings.tmpDir & "*").walkFiles:
-    # get all files
-    let timestamp = file.splitPath()[1].split('_')[0]
-    let timeInterval = getTime().toUnix - timestamp.parseBiggestInt
-    if timeInterval div 3600 >= 1:
-      discard file.tryRemoveFile
+  for dir in settings.tmpCleanupDir:
+    var toCleanup = settings.tmpDir.joinPath(dir.dirName, "*")
+    if dir.dirName == settings.tmpDir:
+      toCleanup = settings.tmpDir
+    for file in toCleanup.walkFiles:
+      # get all files
+      let timeInterval = getTime().toUnix - file.getLastAccessTime().toUnix
+      if timeInterval > 3600:
+        discard file.tryRemoveFile
 
 #[
   this proc is private for main dispatch of request
@@ -249,6 +252,9 @@ proc serve*(self: ZFCore) =
 
 # zfcore instance
 let zfc* {.global.} = newZfCore()
+
+if not zfc.settings.tmpDir.existsDir:
+  zfc.settings.tmpDir.createDir
 
 export
   asyncdispatch,

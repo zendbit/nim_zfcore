@@ -276,7 +276,7 @@ proc parse*(
                       tmpFile.name = hinfoValue
                     of "filename":
                       tmpFile.filename = hinfoValue
-                      tmpFile.content = settings.tmpDir.joinPath(
+                      tmpFile.content = settings.uploadDir.joinPath(
                         $(getTime().toUnix) &
                         "_" & hinfoValue)
 

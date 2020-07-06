@@ -8,7 +8,9 @@
 ]#
 
 import
-  os
+  os,
+  sugar,
+  sequtils
 
 from zfblast import SslSettings
 
@@ -42,7 +44,17 @@ type
     # Keep-Alive timeout
     keepAliveTimeout*: int
     staticDir*: string
-    tmpDir: string
+    tmpDir*: string
+    uploadDir*: string
+    gzipDir*: string
+    tmpCleanupDir*: seq[tuple[dirName: string, interval: uint]]
+
+proc addTmpCleanupDir*(self: Settings, dirName: string, interval: uint = 3600) =
+  if filter(self.tmpCleanupDir, (x: tuple[dirName: string, interval: uint]) => x.dirName == dirName).len == 0:
+    self.tmpCleanupDir.add((dirName, interval))
+    
+proc removeTmpCleanupDir*(self: Settings, dirname: string) =
+  self.tmpCleanupDir = filter(self.tmpCleanupDir, (x: tuple[dirName: string, interval: uint]) => x.dirName != dirname)
 
 proc newSettings*(
   appRootDir:string = getAppDir(),
@@ -54,7 +66,8 @@ proc newSettings*(
   trace: bool = false,
   keepAliveMax: int = 20,
   keepAliveTimeout: int = 10,
-  sslSettings: SslSettings = nil): Settings =
+  sslSettings: SslSettings = nil,
+  tmpCleanupDir: seq[tuple[dirName: string, interval: uint]] = @[]): Settings =
   #
   # this for instantiate new Settings with default parameter is:
   #   port -> 8080
@@ -64,8 +77,11 @@ proc newSettings*(
   var instance = Settings(
     port: port,
     address: address,
-    staticDir: joinPath(appRootDir ,"www"),
-    tmpDir: joinPath(appRootDir, "tmp"),
+    staticDir: appRootDir.joinPath("www"),
+    tmpDir: appRootDir.joinPath(".tmp"),
+    uploadDir: appRootDir.joinPath(".tmp", "upload"),
+    gzipDir: appRootDir.joinPath(".tmp", "gzip"),
+    tmpCleanupDir: tmpCleanupDir,
     reuseAddress: reuseAddress,
     reusePort: reusePort,
     maxBodyLength: maxBodyLength,
@@ -74,13 +90,17 @@ proc newSettings*(
     keepAliveTimeout: keepAliveTimeout,
     sslSettings: sslSettings)
 
+  if not instance.tmpDir.existsDir:
+    instance.tmpDir.createDir
+  if not instance.uploadDir.existsDir:
+    instance.uploadDir.createDir
+  if not instance.gzipDir.existsDir:
+    instance.gzipDir.createDir
+
+  instance.addTmpCleanupDir("upload")
+  instance.addTmpCleanupDir("gzip")
+
   return instance
-
-proc staticDir*(self: Settings): string =
-  return self.staticDir
-
-proc tmpDir*(self: Settings): string =
-  return self.tmpDir
 
 export
   SslSettings

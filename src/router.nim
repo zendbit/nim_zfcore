@@ -203,11 +203,8 @@ proc handleStaticRoute(
             filePath: staticSearchDir,
             contentType: contentType)
 
-proc gzipCompress(source: string): string =
-    let tmpDir = getAppDir().joinPath(".tmp", "gzip")
-    let filename = tmpDir.joinPath(now().utc().format("yyyy-MM-dd HH:mm:ss:fffffffff").encode) & ".gz"
-    if not tmpDir.existsDir:
-      tmpDir.createDir()
+proc gzipCompress(ctx: HttpContext, source: string): string =
+    let filename = ctx.settings.gzipDir.joinPath(now().utc().format("yyyy-MM-dd HH:mm:ss:fffffffff").encode) & ".gz"
     let text = "Hello World"
     let w = filename.newGzFileStream(fmWrite)
     let chunk_size = 32
@@ -281,7 +278,7 @@ proc handleDynamicRoute(
       typeToZip.startsWith("text/") or typeToZip.startsWith("font/") or
       typeToZip.startsWith("message/") or typeToZip.startsWith("application"):
       ctx.response.headers["Content-Encoding"] = "gzip"
-      ctx.resp(Http200, staticFilePath.open().readAll().gzipCompress)
+      ctx.resp(Http200, ctx.gzipCompress(staticFilePath.open().readAll()))
     else:
       ctx.resp(Http200, staticFilePath.open().readAll())
 
