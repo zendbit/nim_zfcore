@@ -30,7 +30,8 @@ import
   formdata,
   settings,
   fluentvalidation,
-  zfmacros
+  zfmacros,
+  apimsg
   
 from
   zfblast
@@ -267,4 +268,5 @@ export
   formdata,
   settings,
   fluentvalidation,
-  zfmacros
+  zfmacros,
+  apimsg
