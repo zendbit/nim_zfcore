@@ -30,7 +30,8 @@ import
   route,
   settings,
   mime,
-  times
+  times,
+  apimsg
   
 from zfblast import getHttpHeaderValues, trace
 
@@ -270,8 +271,10 @@ proc executeProc*(
     await self.handleDynamicRoute(httpCtx)
   except Exception as ex:
     echo ex.msg
+    let apiMsg = newApiMsg(success=false,
+      error=(%*{"status": false, "error": ex.msg}))
     ctx.response.headers["Content-Type"] = "application/json"
-    ctx.response.body = (%*{"status": false, "error": ex.msg}).pretty(2)
+    ctx.response.body = (%apiMsg).pretty(2)
     ctx.response.httpCode = Http500
     asyncCheck ctx.send(ctx)
 
