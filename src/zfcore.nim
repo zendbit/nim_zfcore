@@ -255,7 +255,8 @@ export
   times,
   os,
   asyncnet,
-  httpcore
+  httpcore,
+  strformat
 
 export
   uri3,
