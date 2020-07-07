@@ -149,6 +149,12 @@ proc clearCookie*(
 proc getContentRange*(
   self: HttpContext,
   filePath: string = ""): tuple[content: string, headers: HttpHeaders, errMsg: ApiMsg] =
+  #
+  # get content range of file
+  # will check request header from client if request contain Range: bytes=<start>-<stop>
+  # then return requested data with length of the requested file
+  # this method will defend then web server from overload of large request process
+  #
   if filePath != "":
     self.staticFile(filePath)
 
