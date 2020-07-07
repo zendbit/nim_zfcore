@@ -155,6 +155,7 @@ proc newMimeType*(): Mime =
       "|.gif|=image/gif",
       "|.ief|=image/ief",
       "|.jpe|.jpeg|.jpg|=image/jpeg",
+      "|.png|=image/png",
       "|.jfif|=image/pipeg",
       "|.svg|=image/svg+xml",
       "|.tif|.tiff|=image/tiff",

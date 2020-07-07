@@ -33,6 +33,7 @@ type
     reuseAddress*: bool
     reusePort*: bool
     maxBodyLength*: int
+    maxResponseBodyLength*: int64
     trace*: bool
     appRootDir*: string
     sslSettings*: SslSettings
@@ -66,6 +67,7 @@ proc newSettings*(
   reusePort: bool = false,
   maxBodyLength: int = 268435456,
   readBodyBuffer: int = 1024,
+  maxResponseBodyLength: int64 = 52428800,
   trace: bool = false,
   keepAliveMax: int = 20,
   keepAliveTimeout: int = 10,
@@ -90,6 +92,7 @@ proc newSettings*(
     reusePort: reusePort,
     maxBodyLength: maxBodyLength,
     readBodyBuffer: readBodyBuffer,
+    maxResponseBodyLength: maxResponseBodyLength,
     trace: trace,
     keepAliveMax: keepAliveMax,
     keepAliveTimeout: keepAliveTimeout,

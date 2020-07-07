@@ -16,7 +16,8 @@ import
   json,
   os,
   httpcore,
-  sugar
+  sugar,
+  times
 
 # nimble
 import
@@ -29,9 +30,7 @@ import
   middleware,
   route,
   settings,
-  mime,
-  times,
-  apimsg
+  mime
   
 from zfblast import getHttpHeaderValues, trace
 
@@ -206,17 +205,34 @@ proc handleDynamicRoute(
     await route.thenDo(ctx)
 
   elif staticFound:
-    ctx.response.headers["Content-Type"] = staticContentType & "; charset=utf-8"
+    ctx.response.headers["Content-Type"] = staticContentType
     if ctx.response.headers.getHttpHeaderValues("Last-Modified") == "":
       ctx.response.headers["Last-Modified"] =
         format(utc(getFileInfo(staticFilePath).lastAccessTime),
           "ddd, dd MMM yyyy HH:mm:ss") & " GMT"
+    
+    # set static file path
+    ctx.staticFile(staticFilePath)
 
-
-    # open the file
-    let staticFile = staticFilePath.open
-    ctx.resp(Http200, staticFile.readAll)
-    staticFile.close
+    # check if header contains Range
+    let headRange = ctx.request.headers.getHttpHeaderValues("Range")
+    if ctx.isSupportGz(staticContentType) or headRange == "":
+      let staticFile = staticFilePath.open
+      if ctx.settings.maxResponseBodyLength >= staticFile.getFileSize:
+        ctx.resp(Http200, staticFile.readAll)
+      else:
+        ctx.resp(Http406, %newApiMsg(
+          success = false,
+          error = %*{
+            "msg": &"use Range header (partial request) for response larger than {ctx.settings.maxResponseBodyLength div (1024*1024)} MB.",
+            "hint": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Range_requests"}))
+      staticFile.close
+    else:
+      let contentRange = ctx.getContentRange
+      if contentRange.content != "":
+        ctx.resp(Http206, contentRange.content, contentRange.headers)
+      else:
+        ctx.resp(Http406, %contentRange.errMsg)
 
   else:
     # default response if route does not match

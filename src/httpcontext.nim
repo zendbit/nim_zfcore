@@ -33,7 +33,8 @@ export
 # nimble
 import
   uri3,
-  zip/gzipfiles
+  zip/gzipfiles,
+  stdext/strutils_ext
 
 export
   uri3
@@ -42,11 +43,13 @@ export
 import
   settings,
   formdata,
-  websocket
+  websocket,
+  apimsg
 
 export
   formdata,
-  websocket
+  websocket,
+  apimsg
 
 from zfblast import send, getHttpHeaderValues
 
@@ -68,6 +71,13 @@ type
     formData*: FormData
     json*: JsonNode
     settings*: Settings
+    staticFilePath: string
+
+proc staticFile*(self: HttpContext, path: string = ""): string {.discardable.} =
+  if path != "":
+    self.staticFilePath = path
+
+  return self.staticFilePath
 
 proc newHttpContext*(self: zfblast.HttpContext): HttpContext =
   #
@@ -136,15 +146,56 @@ proc clearCookie*(
   #
   self.setCookie(cookies, expires = "Thu, 01 Jan 1970 00:00:00 GMT")
 
+proc getContentRange*(
+  self: HttpContext,
+  filePath: string = ""): tuple[content: string, headers: HttpHeaders, errMsg: ApiMsg] =
+  if filePath != "":
+    self.staticFile(filePath)
+
+  # handle range request
+  let apiMsg = newApiMsg(success = false)
+  result = ("", newHttpHeaders(), apiMsg)
+  if self.staticFile().existsFile:
+    let staticFile = self.staticFile.open
+    let rangeHead = self.request.headers.getHttpHeaderValues("Range")
+    var httpHeaders = newHttpHeaders()
+    let rangeParams = rangeHead.split("=")
+    if rangeParams.len == 2 and rangeParams[0].toLower().strip == "bytes":
+      let rangeToRetrieves = rangeParams[1].split(",")
+      # single request
+      if rangeToRetrieves.len == 1:
+        let rangePos = rangeToRetrieves[0].split("-")
+        if rangePos.len == 2:
+          let rangeStart = rangePos[0].strip().tryParseBiggestInt
+          let rangeEnd = rangePos[1].strip().tryParseBiggestInt
+          if rangeEnd.ok and rangeStart.ok and rangeEnd.val > rangeStart.val:
+            staticFile.setFilePos(rangeStart.val)
+            var charBuffer = (rangeEnd.val - rangeStart.val).newString
+            discard staticFile.readChars(charBuffer, 0, charBuffer.len - 1)
+            httpHeaders["Content-Range"] = &"bytes {rangeStart}-{rangeEnd}/{staticFile.getFileSize}"
+            apiMsg.success = true
+            result = (charBuffer, httpHeaders, apiMsg)
+          else:
+            apiMsg.error["msg"] = %"invalid range value."
+        else:
+          apiMsg.error["msg"] = %"range definition invalid."
+      else:
+        apiMsg.error["msg"] = %"multipart range is not supported."
+    else:
+      apiMsg.error["msg"] = %"range header value invalid, only accept bytes."
+    # close flie
+    staticFile.close
+  else:
+    apiMsg.error["msg"] = % &"failed retrieve file."
+
 proc gzCompress*(self: HttpContext, source: string): tuple[content: string, size: int] =
   let filename = self.settings.tmpGzipDir.joinPath(now().utc().format("yyyy-MM-dd HH:mm:ss:fffffffff").encode) & ".gz"
-  let text = "Hello World"
   let w = filename.newGzFileStream(fmWrite)
   let chunk_size = 32
-  var num_bytes = text.len
+  var num_bytes = source.len
   var idx = 0
   while true:
-    w.writeData(text[idx].unsafeAddr, min(num_bytes, chunk_size))
+    w.writeData(source[idx].unsafeAddr, min(num_bytes, chunk_size))
     if num_bytes < chunk_size:
       break
     dec(num_bytes, chunk_size)
@@ -178,7 +229,7 @@ proc mapContentype*(self: HttpContext) =
     self.request.body = gzContent.content
     self.request.headers["Content-Length"] = $gzContent.size
   
-  let contentType = self.request.headers.getOrDefault("Content-Type")
+  let contentType = self.request.headers.getHttpHeaderValues("Content-Type").toLower
   if self.request.httpMethod in [HttpPost, HttpPut, HttpPatch]:
     if contentType.find("multipart/form-data") != -1:
       self.formData = newFormData().parse(
@@ -205,27 +256,31 @@ proc isSupportGz*(self: HttpContext, contentType: string): bool =
   let accept =
     self.request.headers.getHttpHeaderValues("accept-encoding").toLower
   let typeToZip = contentType.toLower
-  return accept.startsWith("gzip") or accept.contains("gzip") or
-    typeToZip.startsWith("text/") or typeToZip.startsWith("font/") or
-    typeToZip.startsWith("message/") or typeToZip.startsWith("application/")
+  return (accept.startsWith("gzip") or accept.contains("gzip")) and
+    (typeToZip.startsWith("text/") or typeToZip.startsWith("message/") or
+    typeToZip in ["application/json", "application/xml", "application/javascript",
+      "application/x-javascript", "application/xhtml", "application/xhtml+xml",
+      "application/ld+json"])
 
 proc toGzResp(self: HttpContext): Future[void] {.async.} =
   let contentType = self.response.headers.getHttpHeaderValues("Content-Type")
   if contentType == "":
     self.response.headers["Content-Type"] = "application/octet-stream"
 
-  if self.request.headers.getHttpHeaderValues("Accept-Ranges") == "":
-    self.response.headers["Accept-Ranges"] = "bytes"
-  if self.request.headers.getHttpHeaderValues("Accept-Encoding") == "":
-    self.response.headers["Accept-Encoding"] = "gzip"
-  
+  if self.request.httpMethod == HttpHead:
+    if self.request.headers.getHttpHeaderValues("Accept-Ranges") == "":
+      self.response.headers["Accept-Ranges"] = "bytes"
+    if self.request.headers.getHttpHeaderValues("Accept-Encoding") == "":
+      self.response.headers["Accept-Encoding"] = "gzip"
+
   if self.isSupportGz(contentType):
     let gzContent = self.gzCompress(self.response.body)
     if self.request.httpMethod != HttpHead:
       self.response.headers["Content-Encoding"] = "gzip"
       self.response.body = gzContent.content
     else:
-      self.response.headers["Accept-Encoding"] = "gzip"
+      # gzip content should not allow ranges
+      self.response.headers.del("Accept-Ranges")
       if self.response.body != "":
         self.response.headers["Content-Length"] = $gzContent.size
       # remove the body
@@ -239,7 +294,6 @@ proc toGzResp(self: HttpContext): Future[void] {.async.} =
     self.response.body = ""
 
   await self.send(self)
-
 
 proc resp*(
   self: HttpContext,

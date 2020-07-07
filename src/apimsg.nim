@@ -12,15 +12,15 @@ import
 
 type
   ApiMsg* = ref object
-    success: bool
-    error: JsonNode
-    data: JsonNode
+    success*: bool
+    error*: JsonNode
+    data*: JsonNode
 
-proc `%`*(apiMsg: ApiMsg): JsonNode =
+proc `%`*(self: ApiMsg): JsonNode =
   result = %*{}
-  result["success"] = %apiMsg.success
-  result["error"] = apiMsg.error
-  result["data"] = apiMsg.data
+  result["success"] = %self.success
+  result["error"] = self.error
+  result["data"] = self.data
 
 proc newApiMsg*(success: bool = false, error: JsonNode = %*{}, data: JsonNode = %*{}): ApiMsg =
   result = ApiMsg(success: success, error: error, data: data)

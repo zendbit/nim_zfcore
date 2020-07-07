@@ -106,6 +106,7 @@ proc newZFCore*(): ZFCore =
     settings.keepAliveTimeout = settingsJson{"keepAliveTimeout"}.getInt
     settings.maxBodyLength = settingsJson{"maxBodyLength"}.getInt
     settings.readBodyBuffer = settingsJson{"readBodyBuffer"}.getInt
+    settings.maxResponseBodyLength = settingsJson{"maxResponseBodyLength"}.getBiggestInt
     settings.trace = settingsJson{"trace"}.getBool
     let httpSettings = settingsJson{"http"}
     if not isNil(httpSettings):
@@ -151,7 +152,7 @@ proc newZFCore*(): ZFCore =
         reusePort = false,
         sslSettings = nil,
         maxBodyLength = 268435456,
-        readBodyBuffer = 2048,
+        readBodyBuffer = 1024,
         keepAliveMax = 20,
         keepAliveTimeout = 10),
       r: newRouter(),
