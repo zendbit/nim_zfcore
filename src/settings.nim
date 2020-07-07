@@ -45,16 +45,18 @@ type
     keepAliveTimeout*: int
     staticDir*: string
     tmpDir*: string
-    uploadDir*: string
-    gzipDir*: string
-    tmpCleanupDir*: seq[tuple[dirName: string, interval: uint]]
+    tmpUploadDir*: string
+    tmpGzipDir*: string
+    tmpBodyDir*: string
+    readBodyBuffer*: int
+    tmpCleanupDir*: seq[tuple[dirName: string, interval: int64]]
 
-proc addTmpCleanupDir*(self: Settings, dirName: string, interval: uint = 3600) =
-  if filter(self.tmpCleanupDir, (x: tuple[dirName: string, interval: uint]) => x.dirName == dirName).len == 0:
+proc addTmpCleanupDir*(self: Settings, dirName: string, interval: int64 = 3600) =
+  if filter(self.tmpCleanupDir, (x: tuple[dirName: string, interval: int64]) => x.dirName == dirName).len == 0:
     self.tmpCleanupDir.add((dirName, interval))
     
 proc removeTmpCleanupDir*(self: Settings, dirname: string) =
-  self.tmpCleanupDir = filter(self.tmpCleanupDir, (x: tuple[dirName: string, interval: uint]) => x.dirName != dirname)
+  self.tmpCleanupDir = filter(self.tmpCleanupDir, (x: tuple[dirName: string, interval: int64]) => x.dirName != dirname)
 
 proc newSettings*(
   appRootDir:string = getAppDir(),
@@ -63,11 +65,12 @@ proc newSettings*(
   reuseAddress: bool = true,
   reusePort: bool = false,
   maxBodyLength: int = 268435456,
+  readBodyBuffer: int = 1024,
   trace: bool = false,
   keepAliveMax: int = 20,
   keepAliveTimeout: int = 10,
   sslSettings: SslSettings = nil,
-  tmpCleanupDir: seq[tuple[dirName: string, interval: uint]] = @[]): Settings =
+  tmpCleanupDir: seq[tuple[dirName: string, interval: int64]] = @[]): Settings =
   #
   # this for instantiate new Settings with default parameter is:
   #   port -> 8080
@@ -79,12 +82,14 @@ proc newSettings*(
     address: address,
     staticDir: appRootDir.joinPath("www"),
     tmpDir: appRootDir.joinPath(".tmp"),
-    uploadDir: appRootDir.joinPath(".tmp", "upload"),
-    gzipDir: appRootDir.joinPath(".tmp", "gzip"),
+    tmpUploadDir: appRootDir.joinPath(".tmp", "upload"),
+    tmpGzipDir: appRootDir.joinPath(".tmp", "gzip"),
+    tmpBodyDir: appRootDir.joinPath(".tmp", "body"),
     tmpCleanupDir: tmpCleanupDir,
     reuseAddress: reuseAddress,
     reusePort: reusePort,
     maxBodyLength: maxBodyLength,
+    readBodyBuffer: readBodyBuffer,
     trace: trace,
     keepAliveMax: keepAliveMax,
     keepAliveTimeout: keepAliveTimeout,
@@ -92,10 +97,12 @@ proc newSettings*(
 
   if not instance.tmpDir.existsDir:
     instance.tmpDir.createDir
-  if not instance.uploadDir.existsDir:
-    instance.uploadDir.createDir
-  if not instance.gzipDir.existsDir:
-    instance.gzipDir.createDir
+  if not instance.tmpUploadDir.existsDir:
+    instance.tmpUploadDir.createDir
+  if not instance.tmpGzipDir.existsDir:
+    instance.tmpGzipDir.createDir
+  if not instance.tmpBodyDir.existsDir:
+    instance.tmpBodyDir.createDir
 
   instance.addTmpCleanupDir("upload")
   instance.addTmpCleanupDir("gzip")

@@ -16,9 +16,7 @@ import
   json,
   os,
   httpcore,
-  sugar,
-  zip/gzipfiles,
-  base64
+  sugar
 
 # nimble
 import
@@ -51,7 +49,6 @@ proc newRouter*(): Router {.gcsafe.} =
   return Router(routes: @[])
 
 proc matchesUri(
-  self: Router,
   pathSeg: seq[string],
   uriSeg: seq[string]):
   tuple[
@@ -107,49 +104,11 @@ proc getRoutes*(self: Router): seq[Route] =
   #
   return self.routes
 
-proc parseSegmentsFromPath(
-  self: Router,
-  path: string): seq[string] =
+proc parseSegmentsFromPath(path: string): seq[string] =
   #
   # get path segment from the given path
   #
   return parseUri3(path).getPathSegments()
-
-proc parseUriToTable(
-  self: Router,
-  uri: string): Table[string, string] =
-  #
-  # This proc is private and will parse the uri to table form
-  # ex: ?ok=true&hello=world will convert to {ok:true, hello:world}
-  #
-  var query = initTable[string, string]()
-  var uriToParse = uri
-  if uri.find("?") == -1: uriToParse = &"?{uriToParse}"
-  for q in uriToParse.parseUri3().getAllQueries():
-    query.add(q[0], q[1].decodeUri())
-
-  if query.len > 0:
-    return query
-
-proc mapContentype(
-  self: Router,
-  ctx: HttpContext) =
-  # This proc is private for mapt the content type
-  # HttpPost, HttpPut, HttpPatch will auto parse and extract the request, including the uploaded files
-  # uploaded files will save to tmp folder
-
-  let contentType = ctx.request.headers.getOrDefault("Content-Type")
-  if ctx.request.httpMethod in [HttpPost, HttpPut, HttpPatch]:
-    if contentType.find("multipart/form-data") != -1:
-      ctx.formData = newFormData().parse(
-        ctx.request.body,
-        ctx.settings)
-
-    if contentType.find("application/x-www-form-urlencoded") != -1:
-      ctx.params = self.parseUriToTable(ctx.request.body)
-
-    if contentType.find("application/json") != -1:
-      ctx.json = parseJson(ctx.request.body)
 
 proc handleStaticRoute(
   self: Router,
@@ -176,7 +135,7 @@ proc handleStaticRoute(
     var routePath = self.staticRoute.path.decodeUri()
     # get static path from the request url
     var staticPath = ctx.request.url.getPath().decodeUri()
-    if ctx.request.httpMethod == HttpGet:
+    if ctx.request.httpMethod in [HttpGet, HttpHead]:
       # only if static path from the request url start with the route path
       if staticPath.startsWith(routePath) and
         routePath != staticPath:
@@ -203,26 +162,6 @@ proc handleStaticRoute(
             filePath: staticSearchDir,
             contentType: contentType)
 
-proc gzipCompress(ctx: HttpContext, source: string): string =
-    let filename = ctx.settings.gzipDir.joinPath(now().utc().format("yyyy-MM-dd HH:mm:ss:fffffffff").encode) & ".gz"
-    let text = "Hello World"
-    let w = filename.newGzFileStream(fmWrite)
-    let chunk_size = 32
-    var num_bytes = text.len
-    var idx = 0
-    while true:
-      w.writeData(text[idx].unsafeAddr, min(num_bytes, chunk_size))
-      if num_bytes < chunk_size:
-        break
-      dec(num_bytes, chunk_size)
-      inc(idx, chunk_size)
-    w.close()
-    let r = filename.newFileStream()
-    let data = r.readAll()
-    r.close()
-    removeFile(filename)
-    return data
-
 proc handleDynamicRoute(
   self: Router,
   ctx: HttpContext): Future[void] {.async.} =
@@ -234,16 +173,18 @@ proc handleDynamicRoute(
   # call static route before the dynamic route
   let (staticFound, staticFilePath, staticContentType) =
     await self.handleStaticRoute(ctx)
+  
   # map content type
-  self.mapContentype(ctx)
+  # extract and map based on content type
+  ctx.mapContentype
 
   # route to potensial uri
   # also extract the uri parameter
-  let ctxSegments = self.parseSegmentsFromPath(ctx.request.url.getPath())
+  let ctxSegments = ctx.request.url.getPath().parseSegmentsFromPath
   #var exec: proc (ctx: HttpContext): Future[void] {.gcsafe.}
   var route: Route
   for r in self.routes:
-    let matchesUri = self.matchesUri(r.segments, ctxSegments)
+    let matchesUri = r.segments.matchesUri(ctxSegments)
     if r.httpMethod == ctx.request.httpMethod and
       matchesUri.success:
       route = r
@@ -271,16 +212,11 @@ proc handleDynamicRoute(
         format(utc(getFileInfo(staticFilePath).lastAccessTime),
           "ddd, dd MMM yyyy HH:mm:ss") & " GMT"
 
-    let accept =
-      ctx.request.headers.getHttpHeaderValues("accept-encoding").toLower
-    let typeToZip = staticContentType.toLower()
-    if accept.startsWith("gzip") or accept.contains("gzip") or
-      typeToZip.startsWith("text/") or typeToZip.startsWith("font/") or
-      typeToZip.startsWith("message/") or typeToZip.startsWith("application"):
-      ctx.response.headers["Content-Encoding"] = "gzip"
-      ctx.resp(Http200, ctx.gzipCompress(staticFilePath.open().readAll()))
-    else:
-      ctx.resp(Http200, staticFilePath.open().readAll())
+
+    # open the file
+    let staticFile = staticFilePath.open
+    ctx.resp(Http200, staticFile.readAll)
+    staticFile.close
 
   else:
     # default response if route does not match
@@ -316,7 +252,7 @@ proc static*(
     path: path,
     httpMethod: HttpGet,
     thenDo: nil,
-    segments: self.parseSegmentsFromPath(path))
+    segments: path.parseSegmentsFromPath)
 
 proc get*(
   self: Router,
@@ -354,7 +290,7 @@ proc get*(
   self.routes.add(Route(path: path,
     httpMethod: HttpGet,
     thenDo: thenDo,
-    segments: self.parseSegmentsFromPath(path)))
+    segments: path.parseSegmentsFromPath))
 
 proc post*(
   self: Router,
@@ -392,7 +328,7 @@ proc post*(
   self.routes.add(Route(path: path,
     httpMethod: HttpPost,
     thenDo: thenDo,
-    segments: self.parseSegmentsFromPath(path)))
+    segments: path.parseSegmentsFromPath))
 
 proc put*(
   self: Router,
@@ -430,7 +366,7 @@ proc put*(
   self.routes.add(Route(path: path,
     httpMethod: HttpPut,
     thenDo: thenDo,
-    segments: self.parseSegmentsFromPath(path)))
+    segments: path.parseSegmentsFromPath))
 
 proc delete*(
   self: Router,
@@ -468,7 +404,7 @@ proc delete*(
   self.routes.add(Route(path: path,
     httpMethod: HttpDelete,
     thenDo: thenDo,
-    segments: self.parseSegmentsFromPath(path)))
+    segments: path.parseSegmentsFromPath))
 
 proc patch*(
   self: Router,
@@ -506,7 +442,7 @@ proc patch*(
   self.routes.add(Route(path: path,
     httpMethod: HttpPatch,
     thenDo: thenDo,
-    segments: self.parseSegmentsFromPath(path)))
+    segments: path.parseSegmentsFromPath))
 
 proc head*(
   self: Router,
@@ -544,7 +480,7 @@ proc head*(
   self.routes.add(Route(path: path,
     httpMethod: HttpHead,
     thenDo: thenDo,
-    segments: self.parseSegmentsFromPath(path)))
+    segments: path.parseSegmentsFromPath))
 
 proc options*(
   self: Router,
@@ -582,7 +518,7 @@ proc options*(
   self.routes.add(Route(path: path,
     httpMethod: HttpOptions,
     thenDo: thenDo,
-    segments: self.parseSegmentsFromPath(path)))
+    segments: path.parseSegmentsFromPath))
 
 proc trace*(
   self: Router,
@@ -620,7 +556,7 @@ proc trace*(
   self.routes.add(Route(path: path,
     httpMethod: HttpTrace,
     thenDo: thenDo,
-    segments: self.parseSegmentsFromPath(path)))
+    segments: path.parseSegmentsFromPath))
 
 proc connect*(
   self: Router,
@@ -658,7 +594,7 @@ proc connect*(
   self.routes.add(Route(path: path,
     httpMethod: HttpConnect,
     thenDo: thenDo,
-    segments: self.parseSegmentsFromPath(path)))
+    segments: path.parseSegmentsFromPath))
 
 export
   middleware

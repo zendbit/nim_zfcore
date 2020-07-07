@@ -177,7 +177,7 @@ proc parse*(
   # allowedExt is list of allowed ext when uploading the file
   #
   if content != "":
-    var buff = content.split("\n")
+    #var buff = content.split("\n")
     var boundary = ""
     var parseStep = ParseStep.boundary
     var parseType = ParseType.none
@@ -185,15 +185,22 @@ proc parse*(
     var tmpField = FieldData()
     var tmpFileData: FileStream
     var tmpFieldData: seq[string] = @[]
+    let stream = content.newFileStream
+    var line = ""
+    var processLine = false
 
-    for line in buff:
+    while true:
+      line &= stream.readChar
+      if not line.endsWith("\c\L"):
+        continue
+    
       if line.strip() != boundary:
         if parseStep == ParseStep.headerEnd and
           line.strip() != "":
           parseStep = ParseStep.content
 
       # if boundary found
-      if line.strip() == boundary and
+      if line.strip().startsWith(boundary) and
         boundary != "":
         # if parse content end which is line same with the boundary content
         # reset parseStep to boundary and release all stream
@@ -241,83 +248,94 @@ proc parse*(
           # should define when read first line of header contein filename or not
           # if contein fileneme set parstType to file
           if parseType == ParseType.none:
-              if lineStrip.find("filename=") != -1:
-                  parseType = ParseType.file
+            if lineStrip.find("filename=") != -1:
+              parseType = ParseType.file
 
-              else:
-                  parseType = ParseType.field
+            else:
+              parseType = ParseType.field
 
           # parse each header data section after split with ; character
           for hinfo in hdata:
-              let hinfoStrip = hinfo.strip
-              if hinfoStrip != "":
-                # parse to file if parseType is file from previous readline
-                var hinfoSplit: seq[string] = @[]
-                # parse content information header
-                if hinfoStrip.find("Content-Disposition:") != -1 or
-                  hinfoStrip.find("Content-Type:") != -1:
-                  hinfoSplit = hinfoStrip.split(':')
+            let hinfoStrip = hinfo.strip
+            if hinfoStrip != "":
+              # parse to file if parseType is file from previous readline
+              var hinfoSplit: seq[string] = @[]
+              # parse content information header
+              if hinfoStrip.find("Content-Disposition:") != -1 or
+                hinfoStrip.find("Content-Type:") != -1:
+                hinfoSplit = hinfoStrip.split(':')
 
-                # parse content name and value
-                elif hinfoStrip.find("name=") != -1 or
-                  hinfoStrip.find("filename=") != -1:
-                  hinfoSplit = hinfoStrip.split('=')
+              # parse content name and value
+              elif hinfoStrip.find("name=") != -1 or
+                hinfoStrip.find("filename=") != -1:
+                hinfoSplit = hinfoStrip.split('=')
 
-                if hinfoSplit.len == 2:
-                  let hinfoKey = hinfoSplit[0].strip
-                  let hinfoValue = hinfoSplit[1].strip().replace("\"", "")
-                  # parse file
-                  case parseType
-                  of ParseType.file:
-                    case hinfoKey
-                    of "Content-Disposition":
-                      tmpFile.contentDisposition = hinfoValue
-                    of "name":
-                      tmpFile.name = hinfoValue
-                    of "filename":
-                      tmpFile.filename = hinfoValue
-                      tmpFile.content = settings.uploadDir.joinPath(
-                        $(getTime().toUnix) &
-                        "_" & hinfoValue)
+              if hinfoSplit.len == 2:
+                let hinfoKey = hinfoSplit[0].strip
+                let hinfoValue = hinfoSplit[1].strip().replace("\"", "")
+                # parse file
+                case parseType
+                of ParseType.file:
+                  case hinfoKey
+                  of "Content-Disposition":
+                    tmpFile.contentDisposition = hinfoValue
+                  of "name":
+                    tmpFile.name = hinfoValue
+                  of "filename":
+                    tmpFile.filename = hinfoValue
+                    tmpFile.content = settings.tmpUploadDir.joinPath(
+                      $(getTime().toUnix) &
+                      "_" & hinfoValue)
 
-                      tmpFileData = tmpFile.content.newFileStream(fmWrite)
+                    tmpFileData = tmpFile.content.newFileStream(fmWrite)
 
-                    of "Content-Type":
-                      tmpFile.contentType = hinfoValue
-
-                    else:
-                      discard
-
-                  # parse field
-                  of ParseType.field:
-                    case hinfoKey
-                    of "Content-Disposition":
-                      tmpField.contentDisposition = hinfoValue
-
-                    of "name":
-                      tmpField.name = hinfoValue
-
-                    else:
-                      discard
+                  of "Content-Type":
+                    tmpFile.contentType = hinfoValue
 
                   else:
                     discard
+
+                # parse field
+                of ParseType.field:
+                  case hinfoKey
+                  of "Content-Disposition":
+                    tmpField.contentDisposition = hinfoValue
+
+                  of "name":
+                    tmpField.name = hinfoValue
+
+                  else:
+                    discard
+
+                else:
+                  discard
         else:
           parseStep = ParseStep.headerEnd
 
       of ParseStep.content:
-        case parseType
-        of ParseType.file:
-          if not tmpFileData.isNil:
-            tmpFileData.writeLine(line)
+        if not line.strip().startsWith(boundary):
+          case parseType
+          of ParseType.file:
+            if not tmpFileData.isNil:
+              tmpFileData.writeLine(line)
 
-        of ParseType.field:
-          tmpFieldData.add(line)
+          of ParseType.field:
+            tmpFieldData.add(line)
 
-        else:
-          discard
+          else:
+            discard
 
       else:
-          discard
+        discard
+      
+      # clear the line buffer after process
+      line = ""
+
+      if stream.atEnd:
+        stream.close
+        break
+
+    # remove the content buffer from the temp
+    content.removeFile
 
   return self

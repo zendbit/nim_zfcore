@@ -97,27 +97,28 @@ proc newZFCore*(): ZFCore =
   if settingsJson.len() != 0:
     let settings = newSettings()
     settings.sslSettings = SslSettings()
-    var appRootDir = settingsJson{"appRootDir"}.getStr()
+    var appRootDir = settingsJson{"appRootDir"}.getStr
     if appRootDir != "":
       settings.appRootDir = appRootDir
     else:
       settings.appRootDir = getAppDir()
-    settings.keepAliveMax = settingsJson{"keepAliveMax"}.getInt()
-    settings.keepAliveTimeout = settingsJson{"keepAliveTimeout"}.getInt()
-    settings.maxBodyLength = settingsJson{"maxBodyLength"}.getInt()
-    settings.trace = settingsJson{"trace"}.getBool()
+    settings.keepAliveMax = settingsJson{"keepAliveMax"}.getInt
+    settings.keepAliveTimeout = settingsJson{"keepAliveTimeout"}.getInt
+    settings.maxBodyLength = settingsJson{"maxBodyLength"}.getInt
+    settings.readBodyBuffer = settingsJson{"readBodyBuffer"}.getInt
+    settings.trace = settingsJson{"trace"}.getBool
     let httpSettings = settingsJson{"http"}
     if not isNil(httpSettings):
-      settings.port = httpSettings{"port"}.getInt()
-      settings.address = httpSettings{"address"}.getStr()
-      settings.reuseAddress = httpSettings{"reuseAddress"}.getBool()
-      settings.reusePort = httpSettings{"reusePort"}.getBool()
+      settings.port = httpSettings{"port"}.getInt
+      settings.address = httpSettings{"address"}.getStr
+      settings.reuseAddress = httpSettings{"reuseAddress"}.getBool
+      settings.reusePort = httpSettings{"reusePort"}.getBool
       let httpsSettings = httpSettings{"secure"}
       if not isNil(httpsSettings):
-        settings.sslSettings.port = Port(httpsSettings{"port"}.getInt())
-        settings.sslSettings.certFile = httpsSettings{"cert"}.getStr()
-        settings.sslSettings.keyFile = httpsSettings{"key"}.getStr()
-        settings.sslSettings.verify = httpSettings{"verify"}.getBool()
+        settings.sslSettings.port = httpsSettings{"port"}.getInt.Port
+        settings.sslSettings.certFile = httpsSettings{"cert"}.getStr
+        settings.sslSettings.keyFile = httpsSettings{"key"}.getStr
+        settings.sslSettings.verify = httpSettings{"verify"}.getBool
 
 
     return ZFCore(
@@ -130,7 +131,8 @@ proc newZFCore*(): ZFCore =
         keepAliveMax = settings.keepAliveMax,
         keepAliveTimeout = settings.keepAliveTimeout,
         trace = settings.trace,
-        sslSettings = settings.sslSettings),
+        sslSettings = settings.sslSettings,
+        readBodyBuffer = settings.readBodyBuffer),
       r: newRouter(),
       settings: settings)
 
@@ -149,6 +151,7 @@ proc newZFCore*(): ZFCore =
         reusePort = false,
         sslSettings = nil,
         maxBodyLength = 268435456,
+        readBodyBuffer = 2048,
         keepAliveMax = 20,
         keepAliveTimeout = 10),
       r: newRouter(),
@@ -203,7 +206,8 @@ proc cleanTmpDir(
     for file in toCleanup.walkFiles:
       # get all files
       let timeInterval = getTime().toUnix - file.getLastAccessTime().toUnix
-      if timeInterval > 3600:
+      # if interval set to 0, don't cleanup the file
+      if timeInterval > dir.interval and dir.interval > 0:
         discard file.tryRemoveFile
 
 #[

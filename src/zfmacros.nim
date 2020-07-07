@@ -14,7 +14,8 @@ import
   macros,
   strutils,
   httpcore,
-  strtabs
+  strtabs,
+  json
 
 import
   httpcontext
