@@ -50,12 +50,13 @@ type
     tmpGzipDir*: string
     tmpBodyDir*: string
     readBodyBuffer*: int
+    responseRangeBuffer*: int
     tmpCleanupDir*: seq[tuple[dirName: string, interval: int64]]
 
 proc addTmpCleanupDir*(self: Settings, dirName: string, interval: int64 = 3600) =
   if filter(self.tmpCleanupDir, (x: tuple[dirName: string, interval: int64]) => x.dirName == dirName).len == 0:
     self.tmpCleanupDir.add((dirName, interval))
-    
+
 proc removeTmpCleanupDir*(self: Settings, dirname: string) =
   self.tmpCleanupDir = filter(self.tmpCleanupDir, (x: tuple[dirName: string, interval: int64]) => x.dirName != dirname)
 
@@ -66,7 +67,8 @@ proc newSettings*(
   reuseAddress: bool = true,
   reusePort: bool = false,
   maxBodyLength: int = 268435456,
-  readBodyBuffer: int = 1024,
+  readBodyBuffer: int = 51200,
+  responseRangeBuffer: int = 51200,
   maxResponseBodyLength: int64 = 52428800,
   trace: bool = false,
   keepAliveMax: int = 20,
@@ -92,6 +94,7 @@ proc newSettings*(
     reusePort: reusePort,
     maxBodyLength: maxBodyLength,
     readBodyBuffer: readBodyBuffer,
+    responseRangeBuffer: responseRangeBuffer,
     maxResponseBodyLength: maxResponseBodyLength,
     trace: trace,
     keepAliveMax: keepAliveMax,

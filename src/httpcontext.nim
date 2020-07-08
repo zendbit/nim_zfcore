@@ -175,12 +175,17 @@ proc getContentRange*(
           let rangeStart = rangePos[0].strip().tryParseBiggestInt
           let rangeEnd = rangePos[1].strip().tryParseBiggestInt
           if rangeEnd.ok and rangeStart.ok and rangeEnd.val > rangeStart.val:
-            staticFile.setFilePos(rangeStart.val)
-            var charBuffer = (rangeEnd.val - rangeStart.val).newString
-            discard staticFile.readChars(charBuffer, 0, charBuffer.len - 1)
-            httpHeaders["Content-Range"] = &"bytes {rangeStart}-{rangeEnd}/{staticFile.getFileSize}"
-            apiMsg.success = true
-            result = (charBuffer, httpHeaders, apiMsg)
+            let rangeLen = rangeEnd.val - rangeStart.val
+            if rangeLen <= self.settings.responseRangeBuffer:
+              staticFile.setFilePos(rangeStart.val)
+              var charBuffer = rangeLen.newString
+              discard staticFile.readChars(charBuffer, 0, charBuffer.len - 1)
+              httpHeaders["Content-Range"] = &"bytes {rangeStart}-{rangeEnd}/{staticFile.getFileSize}"
+              httpheaders["Max-Range"] = $self.settings.responseRangebuffer
+              apiMsg.success = true
+              result = (charBuffer, httpHeaders, apiMsg)
+            else:
+              apiMsg.error["msg"] = %"range not valid, max range {rangeLen} bytes."
           else:
             apiMsg.error["msg"] = %"invalid range value."
         else:

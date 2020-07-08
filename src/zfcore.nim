@@ -106,6 +106,7 @@ proc newZFCore*(): ZFCore =
     settings.keepAliveTimeout = settingsJson{"keepAliveTimeout"}.getInt
     settings.maxBodyLength = settingsJson{"maxBodyLength"}.getInt
     settings.readBodyBuffer = settingsJson{"readBodyBuffer"}.getInt
+    settings.responseRangeBuffer = settingsJson{"responseRangeBuffer"}.getInt
     settings.maxResponseBodyLength = settingsJson{"maxResponseBodyLength"}.getBiggestInt
     settings.trace = settingsJson{"trace"}.getBool
     let httpSettings = settingsJson{"http"}
