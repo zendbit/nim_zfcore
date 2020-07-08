@@ -94,7 +94,7 @@ proc zfJsonSettings*() : JsonNode =
 # read setting from file
 proc newZFCore*(): ZFCore =
   let settingsJson = zfJsonSettings()
-  if settingsJson.len() != 0:
+  if settingsJson.len != 0:
     let settings = newSettings()
     settings.sslSettings = SslSettings()
     var appRootDir = settingsJson{"appRootDir"}.getStr
@@ -102,25 +102,40 @@ proc newZFCore*(): ZFCore =
       settings.appRootDir = appRootDir
     else:
       settings.appRootDir = getAppDir()
-    settings.keepAliveMax = settingsJson{"keepAliveMax"}.getInt
-    settings.keepAliveTimeout = settingsJson{"keepAliveTimeout"}.getInt
-    settings.maxBodyLength = settingsJson{"maxBodyLength"}.getInt
-    settings.readBodyBuffer = settingsJson{"readBodyBuffer"}.getInt
-    settings.responseRangeBuffer = settingsJson{"responseRangeBuffer"}.getInt
-    settings.maxResponseBodyLength = settingsJson{"maxResponseBodyLength"}.getBiggestInt
-    settings.trace = settingsJson{"trace"}.getBool
+    if not settingsJson{"keepAliveMax"}.isNil:
+      settings.keepAliveMax = settingsJson{"keepAliveMax"}.getInt
+    if not settingsJson{"keepAliveTimeout"}.isNil:
+      settings.keepAliveTimeout = settingsJson{"keepAliveTimeout"}.getInt
+    if not settingsJson{"maxBodyLength"}.isNil:
+      settings.maxBodyLength = settingsJson{"maxBodyLength"}.getInt
+    if not settingsJson{"readBodyBuffer"}.isNil:
+      settings.readBodyBuffer = settingsJson{"readBodyBuffer"}.getInt
+    if not settingsJson{"responseRangeBuffer"}.isNil:
+      settings.responseRangeBuffer = settingsJson{"responseRangeBuffer"}.getInt
+    if not settingsJson{"maxResponseBodyLength"}.isNil:
+      settings.maxResponseBodyLength = settingsJson{"maxResponseBodyLength"}.getBiggestInt
+    if not settingsjson{"trace"}.isNil:
+      settings.trace = settingsjson{"trace"}.getBool
     let httpSettings = settingsJson{"http"}
-    if not isNil(httpSettings):
-      settings.port = httpSettings{"port"}.getInt
-      settings.address = httpSettings{"address"}.getStr
-      settings.reuseAddress = httpSettings{"reuseAddress"}.getBool
-      settings.reusePort = httpSettings{"reusePort"}.getBool
+    if not httpSettings.isNil:
+      if not httpSettings{"port"}.isNil:
+        settings.port = httpSettings{"port"}.getInt
+      if not httpSettings{"address"}.isNil:
+        settings.address = httpSettings{"address"}.getStr
+      if not httpSettings{"reuseAddress"}.isNil:
+        settings.reuseAddress = httpSettings{"reuseAddress"}.getBool
+      if not httpSettings{"reusePort"}.isNil:
+        settings.reusePort = httpSettings{"reusePort"}.getBool
       let httpsSettings = httpSettings{"secure"}
-      if not isNil(httpsSettings):
-        settings.sslSettings.port = httpsSettings{"port"}.getInt.Port
-        settings.sslSettings.certFile = httpsSettings{"cert"}.getStr
-        settings.sslSettings.keyFile = httpsSettings{"key"}.getStr
-        settings.sslSettings.verify = httpSettings{"verify"}.getBool
+      if not httpsSettings.isNil:
+        if not httpsSettings{"port"}.isNil:
+          settings.sslSettings.port = httpsSettings{"port"}.getInt.Port
+        if not httpsSettings{"cert"}.isNil:
+          settings.sslSettings.certFile = httpsSettings{"cert"}.getStr
+        if not httpsSettings{"key"}.isNil:
+          settings.sslSettings.keyFile = httpsSettings{"key"}.getStr
+        if not httpSettings{"verify"}.isNil:
+          settings.sslSettings.verify = httpSettings{"verify"}.getBool
 
 
     return ZFCore(
@@ -185,7 +200,7 @@ proc sendToRouter(
     await self.r.executeProc(ctx, self.settings)
   except Exception as ex:
     if self.settings.trace:
-      asyncCheck trace proc () =
+      asyncCheck trace do () -> void:
         echo ""
         echo "#== start"
         echo "#== zfcore trace"
@@ -237,7 +252,7 @@ proc mainHandlerAsync(
 
   except Exception as ex:
     if self.settings.trace:
-      asyncCheck trace proc () =
+      asyncCheck trace do () -> void:
         echo ""
         echo "#== start"
         echo "#== zfcore trace"
@@ -253,8 +268,8 @@ proc serve*(self: ZFCore) =
 
   echo "Enjoy and take a cup of coffe :-)"
 
-  waitFor self.server.serve(proc (ctx: zfblast.HttpContext): Future[void] {.async.} =
-    asyncCheck self.mainHandlerAsync(ctx))
+  waitFor self.server.serve do (ctx: zfblast.HttpContext) -> Future[void] {.async.}:
+    asyncCheck self.mainHandlerAsync(ctx)
 
 # zfcore instance
 let zfc* {.global.} = newZfCore()
