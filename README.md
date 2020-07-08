@@ -411,33 +411,15 @@ this will handle request context also contains the response context
         response -> response context
 ]#
 
-CtxReq will not used again and replaced with HttpCtx type
 type
-    CtxReq* = ref object
-        client*: AsyncSocket
-        reqMethod*: HttpMethod
-        headers*: HttpHeaders
-        protocol*: tuple[orig: string, major, minor: int]
-        url*: Uri3
-        hostname*: string
-        body*: string
-        params*: Table[string, string]
-        reParams*: Table[string, seq[string]]
-        formData*: FormData
-        json*: JsonNode
-        settings*: Settings
-        responseHeaders*: HttpHeaders
-        
-Replaced with HttpCtx type
-type
-    HttpCtx* = ref object of HttpContext
+    HttpContext* = ref object of zfblast.HttpContext
         params*: Table[string, string]
         reParams*: Table[string, seq[string]]
         formData*: FormData
         json*: JsonNode
         settings*: Settings
         
-Where HttpContext is zfblast context
+Where zfblast.HttpContext is zfblast context
 type
     HttpContext* = ref object of RootObj
         # Request type instance
