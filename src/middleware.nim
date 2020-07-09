@@ -7,15 +7,9 @@
   Git: https://github.com/zendbit
 ]#
 
-import
-  asyncdispatch,
-  sugar
-
 # local
-import
-  route
-
-from httpcontext import HttpContext
+import route, httpcontext, sugar
+export route, httpcontext, sugar
 
 type
   Middleware* = ref object of RootObj

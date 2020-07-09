@@ -10,15 +10,10 @@
 # this is the macro to make the coding more easy using zfcore
 # simpiify the construction of routing definition
 # resp, setCookie etc
-import
-  macros,
-  strutils,
-  httpcore,
-  strtabs,
-  json
+import macros, strutils, httpcore, strtabs
+export macros
 
-import
-  httpcontext
+import httpcontext
 
 macro routes*(x: untyped): untyped =
   let stmtList = newStmtList()
@@ -33,7 +28,7 @@ macro routes*(x: untyped): untyped =
           nnkCall.newTree(
             nnkDotExpr.newTree(
               nnkDotExpr.newTree(
-                newIdentNode("zfc"),
+                newIdentNode("zfcoreInstance"),
                 newIdentNode("r")
               ),
               newIdentNode("afterRoute")
@@ -72,7 +67,7 @@ macro routes*(x: untyped): untyped =
           nnkCall.newTree(
             nnkDotExpr.newTree(
               nnkDotExpr.newTree(
-                newIdentNode("zfc"),
+                newIdentNode("zfcoreInstance"),
                 newIdentNode("r")
               ),
               newIdentNode("beforeRoute")
@@ -116,7 +111,7 @@ macro routes*(x: untyped): untyped =
           nnkCall.newTree(
             nnkDotExpr.newTree(
               nnkDotExpr.newTree(
-                newIdentNode("zfc"),
+                newIdentNode("zfcoreInstance"),
                 newIdentNode("r")
               ),
               newIdentNode(childKind)
@@ -152,7 +147,7 @@ macro routes*(x: untyped): untyped =
             nnkCall.newTree(
               nnkDotExpr.newTree(
                 nnkDotExpr.newTree(
-                  newIdentNode("zfc"),
+                  newIdentNode("zfcoreInstance"),
                   newIdentNode("r")
                 ),
                 newIdentNode("static")
@@ -171,7 +166,7 @@ macro routes*(x: untyped): untyped =
   stmtList.add(
     nnkCall.newTree(
       nnkDotExpr.newTree(
-        newIdentNode("zfc"),
+        newIdentNode("zfcoreInstance"),
         newIdentNode("serve")
       )
     )
@@ -261,7 +256,7 @@ macro config*: untyped =
     newIdentNode("settings")
   )
 
-macro client: untyped =
+macro client*: untyped =
   return nnkDotExpr.newTree(
     newIdentNode("ctx"),
     newIdentNode("client")
@@ -297,5 +292,3 @@ macro json*: JsonNode =
     newIdentNode("json")
   )
 
-export
-  macros

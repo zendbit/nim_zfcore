@@ -6,15 +6,12 @@
   Email: amru.rosyada@gmail.com
   Git: https://github.com/zendbit
 ]#
-import
-  streams,
-  strutils,
-  os,
-  times
+import streams, strutils, os, times
+export streams, strutils, os, times
 
 # local
-import
-  settings
+import settings
+export settings
 
 type
   ParseType = enum

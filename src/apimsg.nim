@@ -7,8 +7,8 @@
   Git: https://github.com/zendbit
 ]#
 
-import
-  json
+import json
+export json
 
 type
   ApiMsg* = ref object

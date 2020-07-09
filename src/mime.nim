@@ -7,9 +7,7 @@
   Git: https://github.com/zendbit
 ]#
 
-import
-  strutils,
-  strformat
+import strutils, strformat
 
 type
   Mime = ref object

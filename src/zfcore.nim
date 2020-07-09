@@ -7,41 +7,12 @@
   Git: https://github.com/zendbit
 ]#
 
-import
-  asyncdispatch,
-  strformat,
-  tables,
-  json,
-  strtabs,
-  os,
-  times,
-  asyncnet,
-  net,
-  strutils,
-  httpcore
+from zfblast import HttpContext, newZFBlast, ZFBlast, serve
 
-import
-  uri3
-
-import
-  router,
-  route,
-  httpcontext,
-  formdata,
-  settings,
-  fluentvalidation,
-  zfmacros,
-  apimsg
-  
-from
-  zfblast
-    import
-      HttpContext,
-      newZFBlast,
-      getHttpHeaderValues,
-      ZFBlast,
-      trace,
-      serve
+import router, route, httpcontext, formdata, settings,
+  fluentvalidation, apimsg
+export httpcontext, router, route, formdata, settings,
+  fluentvalidation, apimsg
 
 const ZF_SETTINGS_FILE* = "settings.json"
 
@@ -85,10 +56,10 @@ proc zfJsonSettings*() : JsonNode =
     let sOp = open(ZF_SETTINGS_FILE)
     let settingsJson = sOp.readAll()
     sOp.close()
-    return parseJson(settingsJson)
+    result = parseJson(settingsJson)
 
   except:
-    return JsonNode()
+    result = %*{}
 
 
 # read setting from file
@@ -102,39 +73,40 @@ proc newZFCore*(): ZFCore =
       settings.appRootDir = appRootDir
     else:
       settings.appRootDir = getAppDir()
-    if not settingsJson{"keepAliveMax"}.isNil:
+    #if not settingsJson{"keepAliveMax"}.isNil:
+    if settingsJson.hasKey("keepAliveMax"):
       settings.keepAliveMax = settingsJson{"keepAliveMax"}.getInt
-    if not settingsJson{"keepAliveTimeout"}.isNil:
+    if settingsJson.hasKey("keepAliveTimeout"):
       settings.keepAliveTimeout = settingsJson{"keepAliveTimeout"}.getInt
-    if not settingsJson{"maxBodyLength"}.isNil:
+    if settingsJson.hasKey("maxBodyLength"):
       settings.maxBodyLength = settingsJson{"maxBodyLength"}.getInt
-    if not settingsJson{"readBodyBuffer"}.isNil:
+    if settingsJson.hasKey("readBodyBuffer"):
       settings.readBodyBuffer = settingsJson{"readBodyBuffer"}.getInt
-    if not settingsJson{"responseRangeBuffer"}.isNil:
+    if settingsJson.hasKey("responseRangeBuffer"):
       settings.responseRangeBuffer = settingsJson{"responseRangeBuffer"}.getInt
-    if not settingsJson{"maxResponseBodyLength"}.isNil:
+    if settingsJson.hasKey("maxResponseBodyLength"):
       settings.maxResponseBodyLength = settingsJson{"maxResponseBodyLength"}.getBiggestInt
-    if not settingsjson{"trace"}.isNil:
+    if settingsjson.hasKey("trace"):
       settings.trace = settingsjson{"trace"}.getBool
-    let httpSettings = settingsJson{"http"}
-    if not httpSettings.isNil:
-      if not httpSettings{"port"}.isNil:
+    if settingsJson.hasKey("http"):
+      let httpSettings = settingsJson{"http"}
+      if httpSettings.hasKey("port"):
         settings.port = httpSettings{"port"}.getInt
-      if not httpSettings{"address"}.isNil:
+      if httpSettings.hasKey("address"):
         settings.address = httpSettings{"address"}.getStr
-      if not httpSettings{"reuseAddress"}.isNil:
+      if httpSettings.hasKey("reuseAddress"):
         settings.reuseAddress = httpSettings{"reuseAddress"}.getBool
-      if not httpSettings{"reusePort"}.isNil:
+      if httpSettings.hasKey("reusePort"):
         settings.reusePort = httpSettings{"reusePort"}.getBool
-      let httpsSettings = httpSettings{"secure"}
-      if not httpsSettings.isNil:
-        if not httpsSettings{"port"}.isNil:
+      if httpSettings.hasKey("secure"):
+        let httpsSettings = httpSettings{"secure"}
+        if httpsSettings.hasKey("port"):
           settings.sslSettings.port = httpsSettings{"port"}.getInt.Port
-        if not httpsSettings{"cert"}.isNil:
+        if httpsSettings.hasKey("cert"):
           settings.sslSettings.certFile = httpsSettings{"cert"}.getStr
-        if not httpsSettings{"key"}.isNil:
+        if httpsSettings.hasKey("key"):
           settings.sslSettings.keyFile = httpsSettings{"key"}.getStr
-        if not httpSettings{"verify"}.isNil:
+        if httpSettings.hasKey("verify"):
           settings.sslSettings.verify = httpSettings{"verify"}.getBool
 
 
@@ -272,33 +244,9 @@ proc serve*(self: ZFCore) =
     asyncCheck self.mainHandlerAsync(ctx)
 
 # zfcore instance
-let zfc* {.global.} = newZfCore()
+let zfcoreInstance* {.global.} = newZfCore()
 
-if not zfc.settings.tmpDir.existsDir:
-  zfc.settings.tmpDir.createDir
+if not zfcoreInstance.settings.tmpDir.existsDir:
+  zfcoreInstance.settings.tmpDir.createDir
 
-export
-  asyncdispatch,
-  tables,
-  json,
-  strtabs,
-  strutils,
-  times,
-  os,
-  asyncnet,
-  httpcore,
-  strformat
-
-export
-  uri3,
-  getHttpHeaderValues
-
-export
-  httpcontext,
-  router,
-  route,
-  formdata,
-  settings,
-  fluentvalidation,
-  zfmacros,
-  apimsg
+include zfmacros

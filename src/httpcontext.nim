@@ -6,52 +6,21 @@
   Email: amru.rosyada@gmail.com
   Git: https://github.com/zendbit
 ]#
-import
-  asyncnet,
-  tables,
-  asyncdispatch,
-  json,
-  strtabs,
-  cookies,
-  strutils,
-  httpcore,
-  os,
-  times,
-  base64,
-  strformat
-
-export
-  json,
-  asyncnet,
-  tables,
-  asyncdispatch,
-  strtabs,
-  cookies,
-  strutils,
-  httpcore
+import asyncnet, tables, asyncdispatch, strtabs, cookies,
+  strutils, httpcore, os, times, base64, strformat, json
+export asyncnet, tables, asyncdispatch, strtabs, cookies,
+  strutils, httpcore, os, times, base64, strformat, json
 
 # nimble
-import
-  uri3,
-  zip/gzipfiles,
-  stdext/strutils_ext
-
-export
-  uri3
+import uri3, zip/gzipfiles, stdext/strutils_ext
+export uri3, gzipfiles, strutils_ext
 
 # local
-import
-  settings,
-  formdata,
-  websocket,
-  apimsg
+import settings, formdata, websocket, apimsg
+export settings, formdata, websocket, apimsg
 
-export
-  formdata,
-  websocket,
-  apimsg
-
-from zfblast import send, getHttpHeaderValues
+import zfblast
+export send, getHttpHeaderValues, trace
 
 type
   HttpContext* = ref object of zfblast.HttpContext
@@ -94,7 +63,7 @@ proc newHttpContext*(self: zfblast.HttpContext): HttpContext =
     params: initTable[string, string](),
     reParams: initTable[string, seq[string]](),
     formData: newFormData(),
-    json: JsonNode(),
+    json: newJObject(),
     settings: newSettings())
 
 proc setCookie*(

@@ -8,31 +8,14 @@
 ]#
 import nre except toSeq
 
-import
-  strutils,
-  strformat,
-  asyncdispatch,
-  tables,
-  json,
-  os,
-  httpcore,
-  sugar,
-  times
-
 # nimble
-import
-  uri3
+import uri3
+from zfblast import getHttpHeaderValues, trace
+export trace, getHttpHeaderValues
 
 # local
-import
-  httpcontext,
-  formdata,
-  middleware,
-  route,
-  settings,
-  mime
-  
-from zfblast import getHttpHeaderValues, trace
+import httpcontext, formdata, middleware, route, settings, mime
+export httpcontext, formdata, middleware, route, settings, mime
 
 type
   Router* = ref object of Middleware

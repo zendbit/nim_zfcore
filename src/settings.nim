@@ -7,12 +7,10 @@
   Git: https://github.com/zendbit
 ]#
 
-import
-  os,
-  sugar,
-  sequtils
+import os, sugar, sequtils
 
 from zfblast import SslSettings
+export SslSettings
 
 type
   Settings* = ref object
@@ -115,5 +113,3 @@ proc newSettings*(
 
   return instance
 
-export
-  SslSettings
