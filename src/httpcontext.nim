@@ -179,7 +179,7 @@ proc gzCompress*(self: HttpContext, source: string): tuple[content: string, size
     if num_bytes < chunk_size:
       break
     dec(num_bytes, chunk_size)
-    inc(idx, chunk_size)
+    inc(idx, min(num_bytes, chunk_size))
   w.close()
   let r = filename.newFileStream
   let data = r.readAll
