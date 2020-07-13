@@ -278,6 +278,20 @@ proc toGzResp(self: HttpContext): Future[void] {.async.} =
   await self.send(self)
 ]#
 
+proc doResp(self: HttpContext): Future[void] {.async.} =
+  let contentType = self.response.headers.getHttpHeaderValues("Content-Type")
+  if contentType == "":
+    self.response.headers["Content-Type"] = "application/octet-stream"
+
+  if self.request.httpMethod == HttpHead:
+    if self.request.headers.getHttpHeaderValues("Accept-Ranges") == "":
+      self.response.headers["Accept-Ranges"] = "bytes"
+
+    self.response.headers["Content-Length"] = $self.response.body.len
+    self.response.body = ""
+
+  await self.send(self)
+
 proc resp*(
   self: HttpContext,
   httpCode: HttpCode,
@@ -298,7 +312,7 @@ proc resp*(
       else:
         self.response.headers[k] = v
 
-  asyncCheck self.send(self)
+  asyncCheck self.doResp
 
 proc resp*(
   self: HttpContext,
@@ -317,7 +331,7 @@ proc resp*(
     for k, v in headers.pairs:
       self.response.headers[k] = v
 
-  asyncCheck self.send(self)
+  asyncCheck self.doResp
 
 proc respHtml*(
   self: HttpContext,
@@ -335,7 +349,7 @@ proc respHtml*(
     for k, v in headers.pairs:
       self.response.headers[k] = v
 
-  asyncCheck self.send(self)
+  asyncCheck self.doResp
 
 proc respRedirect*(
   self: HttpContext,
@@ -346,5 +360,5 @@ proc respRedirect*(
   #
   self.response.httpCode = Http303
   self.response.headers["Location"] = @[redirectTo]
-  asyncCheck self.send(self)
+  asyncCheck self.doResp
 

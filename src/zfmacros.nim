@@ -166,14 +166,14 @@ macro routes*(x: untyped): untyped =
     else:
       stmtList.add(child)
 
-    stmtList.add(
-      nnkCall.newTree(
-        nnkDotExpr.newTree(
-          newIdentNode("zfcoreInstance"),
-          newIdentNode("serve")
-        )
+  stmtList.add(
+    nnkCall.newTree(
+      nnkDotExpr.newTree(
+        newIdentNode("zfcoreInstance"),
+        newIdentNode("serve")
       )
     )
+  )
 
   return stmtList
 

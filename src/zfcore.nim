@@ -253,6 +253,7 @@ var zfcoreInstanceVar* {.threadvar global.}: ZFCore
 
 template zfcoreInstance*: ZFCore =
   if zfcoreInstanceVar.isNil:
+    echo "Init zfcore..."
     zfcoreInstanceVar = newZFCore()
   zfcoreInstanceVar
 

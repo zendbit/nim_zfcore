@@ -154,7 +154,6 @@ proc handleDynamicRoute(
   # call static route before the dynamic route
   let (staticFound, staticFilePath, staticContentType) =
     await self.handleStaticRoute(ctx)
-  
   # map content type
   # extract and map based on content type
   ctx.mapContentype
@@ -245,6 +244,7 @@ proc executeProc*(
 proc static*(
   self: Router,
   path: string) {.gcsafe.} =
+  echo "set static dir"
   self.staticRoute = Route(
     path: path,
     httpMethod: HttpGet,
