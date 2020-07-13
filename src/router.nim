@@ -244,7 +244,6 @@ proc executeProc*(
 proc static*(
   self: Router,
   path: string) {.gcsafe.} =
-  echo "set static dir"
   self.staticRoute = Route(
     path: path,
     httpMethod: HttpGet,
