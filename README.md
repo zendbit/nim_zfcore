@@ -18,7 +18,7 @@ nimble install zfcore
 Example code, this is example code from web template of zendflow, for zendflow usage follow this link https://github.com/zendbit/zendflow
 ```
 #[
-  ZendFlow web framework for nim language
+  zfcore web framework for nim language
   This framework if free to use and to modify
   License: BSD
   Author: Amru Rosyada
@@ -52,9 +52,7 @@ Example code, this is example code from web template of zendflow, for zendflow u
     zfmacros -> zfcore macros helper
 ]#
 
-import
-  zfcore,
-  example
+import zfcore, example
 
 #
 # configuration:
@@ -207,7 +205,7 @@ routes:
 
   # using regex for matching the request
   # the regex is regex match like in pcre standard like regex on python, perl etc
-  # <ids:re[([0-9]+)_([0-9]+)]:len[2]>
+  # <ids:re[([0-9]+)_([0-9]+)]>
   # - the ids wil capture as parameter name
   # - the len[2] is for len for capturing in this case in the () bracket,
   #   will capture ([0-9]+) twice
@@ -218,7 +216,7 @@ routes:
   #   in this case we use <name>
   # - <name> will capture segment value in there as name,
   #   we can access param value and query string in HttpCtx.params["name"] or other param name
-  get "/home/<ids:re[([0-9]+)_([0-9]+)]:len[2]>/<name>":
+  get "/home/<ids:re[([0-9]+)_([0-9]+)]>/<name>":
     echo "Welcome home"
     # capture regex result from the url
     echo reParams["ids"]
@@ -330,11 +328,13 @@ ctx.clearCookie -> clearCookie
 Configuration file create file settings.json in the same level with the source
 ```
 {
-  "appRootDir": "",
   "keepAliveMax": 100,
   "keepAliveTimeout": 15,
   "maxBodyLength": 268435456,
-  "debug": false,
+  "readBodyBuffer": 51200,
+  "responseRangeBuffer": 51200,
+  "maxResponseBodyLength": 52428800,
+  "trace": false,
   "http": {
     "port": 8080,
     "address": "0.0.0.0",
@@ -346,6 +346,21 @@ Configuration file create file settings.json in the same level with the source
       "verify": true,
       "port": 8443
     }
+  },
+  "database": {
+    "pgsql": {
+      "host": "127.0.0.1",
+      "port": 5432,
+      "username": "admin",
+      "password": "secret",
+      "database": "mydb"
+    }
+  },
+  "auth": {
+    "basicAuth": {
+      "username": "foo",
+      "password": "bar"
+    }
   }
 }
 ```
@@ -356,17 +371,17 @@ Starting from version 1.0.1 we added fluent validation
 
 ```
 let validation = newFluentValidation()
-    validation
-        .add(newFieldData("username", ctx.params["username"])
-            .must("Username is required.")
-            .reMatch("([\w\W]+@[\w\W]+\.[\w])$", "Email format is not valid."))
-        .add(newFieldData("password", ctx.params["password"])
-            .must("Password is required.")
-            .rangeLen(10, 255, "Min password length is 10, max is 255."))
+  validation
+    .add(newFieldData("username", ctx.params["username"])
+      .must("Username is required.")
+      .reMatch("([\w\W]+@[\w\W]+\.[\w])$", "Email format is not valid."))
+    .add(newFieldData("password", ctx.params["password"])
+      .must("Password is required.")
+      .rangeLen(10, 255, "Min password length is 10, max is 255."))
             
 access the validation result:
-    validation.valids -> contain valids field on validation (Table[string, FieldData])
-    validation.notValids -> contain notValids field on validation (Table[string, FieldDat])
+  validation.valids -> contain valids field on validation (Table[string, FieldData])
+  validation.notValids -> contain notValids field on validation (Table[string, FieldDat])
 ```
 
 Fluent Validation containts this procedures for validation each FieldData:
@@ -419,7 +434,7 @@ type
         json*: JsonNode
         settings*: Settings
         
-Where zfblast.HttpContext is zfblast context
+# Where zfblast.HttpContext is zfblast context
 type
     HttpContext* = ref object of RootObj
         # Request type instance
