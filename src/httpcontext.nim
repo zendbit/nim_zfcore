@@ -168,6 +168,7 @@ proc getContentRange*(
   else:
     apiMsg.error["msg"] = % &"failed retrieve file."
 
+#[
 proc gzCompress*(self: HttpContext, source: string): tuple[content: string, size: int] =
   let filename = self.settings.tmpGzipDir.joinPath(now().utc().format("yyyy-MM-dd HH:mm:ss:fffffffff").encode) & ".gz"
   let w = filename.newGzFileStream(fmWrite)
@@ -197,6 +198,7 @@ proc gzDeCompress*(self: HttpContext, source: string): tuple[content: string, si
   r.close
   result = (data, data.len)
   removeFile(filename)
+]#
 
 proc mapContentype*(self: HttpContext) =
   # HttpPost, HttpPut, HttpPatch will auto parse and extract the request, including the uploaded files
@@ -204,10 +206,10 @@ proc mapContentype*(self: HttpContext) =
 
   # if content encoding is gzip format
   # decompress it first
-  if self.request.headers.getHttpHeaderValues("Content-Encoding") == "gzip":
-    let gzContent = self.gzDecompress(self.request.body)
-    self.request.body = gzContent.content
-    self.request.headers["Content-Length"] = $gzContent.size
+  #if self.request.headers.getHttpHeaderValues("Content-Encoding") == "gzip":
+  #  let gzContent = self.gzDecompress(self.request.body)
+  #  self.request.body = gzContent.content
+  #  self.request.headers["Content-Length"] = $gzContent.size
   
   let contentType = self.request.headers.getHttpHeaderValues("Content-Type").toLower
   if self.request.httpMethod in [HttpPost, HttpPut, HttpPatch]:
@@ -241,6 +243,7 @@ proc isSupportGz*(self: HttpContext, contentType: string): bool =
     typeToZip in ["application/json", "application/xml", "application/xhtml",
     "application/xhtml+xml", "application/ld+json"])
 
+#[
 proc toGzResp(self: HttpContext): Future[void] {.async.} =
   let contentType = self.response.headers.getHttpHeaderValues("Content-Type")
   if contentType == "":
@@ -273,6 +276,7 @@ proc toGzResp(self: HttpContext): Future[void] {.async.} =
     self.response.body = ""
 
   await self.send(self)
+]#
 
 proc resp*(
   self: HttpContext,
@@ -294,7 +298,7 @@ proc resp*(
       else:
         self.response.headers[k] = v
 
-  asyncCheck self.toGzResp
+  asyncCheck self.send(self)
 
 proc resp*(
   self: HttpContext,
@@ -313,7 +317,7 @@ proc resp*(
     for k, v in headers.pairs:
       self.response.headers[k] = v
 
-  asyncCheck self.toGzResp
+  asyncCheck self.send(self)
 
 proc respHtml*(
   self: HttpContext,
@@ -331,7 +335,7 @@ proc respHtml*(
     for k, v in headers.pairs:
       self.response.headers[k] = v
 
-  asyncCheck self.toGzResp
+  asyncCheck self.send(self)
 
 proc respRedirect*(
   self: HttpContext,
@@ -342,5 +346,5 @@ proc respRedirect*(
   #
   self.response.httpCode = Http303
   self.response.headers["Location"] = @[redirectTo]
-  asyncCheck self.toGzResp
+  asyncCheck self.send(self)
 
