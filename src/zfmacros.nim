@@ -12,7 +12,7 @@
 # resp, setCookie etc
 import macros, strutils, httpcore, strtabs
 export macros
-
+import zfcore
 import httpcontext
 
 macro routes*(x: untyped): untyped =
@@ -54,6 +54,7 @@ macro routes*(x: untyped): untyped =
                 )
               ),
               nnkPragma.newTree(
+                newIdentNode("gcsafe"),
                 newIdentNode("async")
               ),
               newEmptyNode(),
@@ -88,6 +89,7 @@ macro routes*(x: untyped): untyped =
                 )
               ),
               nnkPragma.newTree(
+                newIdentNode("gcsafe"),
                 newIdentNode("async")
               ),
               newEmptyNode(),
@@ -133,6 +135,7 @@ macro routes*(x: untyped): untyped =
                 )
               ),
               nnkPragma.newTree(
+                newIdentNode("gcsafe"),
                 newIdentNode("async")
               ),
               newEmptyNode(),
@@ -163,14 +166,14 @@ macro routes*(x: untyped): untyped =
     else:
       stmtList.add(child)
 
-  stmtList.add(
-    nnkCall.newTree(
-      nnkDotExpr.newTree(
-        newIdentNode("zfcoreInstance"),
-        newIdentNode("serve")
+    stmtList.add(
+      nnkCall.newTree(
+        nnkDotExpr.newTree(
+          newIdentNode("zfcoreInstance"),
+          newIdentNode("serve")
+        )
       )
     )
-  )
 
   return stmtList
 

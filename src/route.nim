@@ -9,8 +9,7 @@
 
 # std
 from asynchttpserver import HttpMethod
-from asyncdispatch import Future
-import sugar
+import asyncdispatch
 
 # local
 from httpcontext import HttpContext
@@ -22,5 +21,5 @@ type
     #
     httpMethod*: HttpMethod
     path*: string
-    thenDo*: (ctx: HttpContext) -> Future[void]
+    thenDo*: proc (ctx: HttpContext): Future[void] {.gcsafe async.}
     segments*: seq[string]

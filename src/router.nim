@@ -24,8 +24,8 @@ type
     # this is the hearts of zfcore
     # statisRoute is for file serving
     #
-    routes: seq[Route]
-    staticRoute: Route
+    routes*: seq[Route]
+    staticRoute*: Route
 
 proc newRouter*(): Router {.gcsafe.} =
   return Router(routes: @[])
@@ -98,7 +98,7 @@ proc handleStaticRoute(
   Future[tuple[
     found: bool,
     filePath: string,
-    contentType: string]] {.async.} =
+    contentType: string]] {.gcsafe async.} =
   # Handle static resource, this should be only allow get method
   # all static resource should be access using prefix /s/
   # example static di is in this form:
@@ -111,7 +111,6 @@ proc handleStaticRoute(
   #   /s/js/*.js
   #   /s/img/*.jpg
   #   etc
-
   if not self.staticRoute.isNil:
     # get route from the path
     var routePath = self.staticRoute.path.decodeUri()
@@ -146,7 +145,7 @@ proc handleStaticRoute(
 
 proc handleDynamicRoute(
   self: Router,
-  ctx: HttpContext): Future[void] {.async.} =
+  ctx: HttpContext): Future[void] {.gcsafe async.} =
   # 
   # execute middleware before routing
   # handle dynamic route
@@ -224,7 +223,7 @@ proc handleDynamicRoute(
 proc executeProc*(
   self: Router,
   ctx: zfblast.HttpContext,
-  settings: Settings): Future[void] {.async.} =
+  settings: Settings): Future[void] {.gcsafe async.} =
   #
   # This proc will execute the registered callback procedure in route list.
   # asynchttpserver Request will convert to HttpContext.
@@ -245,8 +244,7 @@ proc executeProc*(
 
 proc static*(
   self: Router,
-  path: string) =
-
+  path: string) {.gcsafe.} =
   self.staticRoute = Route(
     path: path,
     httpMethod: HttpGet,
@@ -256,7 +254,7 @@ proc static*(
 proc get*(
   self: Router,
   path: string,
-  thenDo: (ctx: HttpContext) -> Future[void]) =
+  thenDo: proc (ctx: HttpContext): Future[void] {.gcsafe async.}) {.gcsafe.} =
   #
   # let zf = newZfCore()
   #
@@ -294,7 +292,7 @@ proc get*(
 proc post*(
   self: Router,
   path: string,
-  thenDo: (ctx: HttpContext) -> Future[void]) =
+  thenDo: proc (ctx: HttpContext): Future[void] {.gcsafe async.}) {.gcsafe.} =
   #
   # let zf = newZfCore()
   #
@@ -332,7 +330,7 @@ proc post*(
 proc put*(
   self: Router,
   path: string,
-  thenDo: (ctx: HttpContext) -> Future[void]) =
+  thenDo: proc (ctx: HttpContext): Future[void] {.gcsafe async.}) {.gcsafe.} =
   #
   # let zf = newZfCore()
   #
@@ -370,7 +368,7 @@ proc put*(
 proc delete*(
   self: Router,
   path: string,
-  thenDo: (ctx: HttpContext) -> Future[void]) =
+  thenDo: proc (ctx: HttpContext): Future[void] {.gcsafe async.}) {.gcsafe.} =
   #
   # let zf = newZfCore()
   #
@@ -408,7 +406,7 @@ proc delete*(
 proc patch*(
   self: Router,
   path: string,
-  thenDo: (ctx: HttpContext) -> Future[void]) =
+  thenDo: proc (ctx: HttpContext): Future[void] {.gcsafe async.}) {.gcsafe.} =
   #
   # let zf = newZfCore()
   #
@@ -446,7 +444,7 @@ proc patch*(
 proc head*(
   self: Router,
   path: string,
-  thenDo: (ctx: HttpContext) -> Future[void]) =
+  thenDo: proc (ctx: HttpContext): Future[void] {.gcsafe async.}) {.gcsafe.} =
   #
   # let zf = newZfCore()
   #
@@ -484,7 +482,7 @@ proc head*(
 proc options*(
   self: Router,
   path: string,
-  thenDo: (ctx: HttpContext) -> Future[void]) =
+  thenDo: proc (ctx: HttpContext): Future[void] {.gcsafe async.}) {.gcsafe.}=
   #
   # let zf = newZfCore()
   #
@@ -522,7 +520,7 @@ proc options*(
 proc trace*(
   self: Router,
   path: string,
-  thenDo: (ctx: HttpContext) -> Future[void]) =
+  thenDo: proc (ctx: HttpContext): Future[void] {.gcsafe async.}) {.gcsafe.} =
   #
   # let zf = newZfCore()
   #
@@ -560,7 +558,7 @@ proc trace*(
 proc connect*(
   self: Router,
   path: string,
-  thenDo: (ctx: HttpContext) -> Future[void]) =
+  thenDo: proc (ctx: HttpContext): Future[void] {.gcsafe async.}) {.gcsafe.} =
   #
   # let zf = newZfCore()
   #

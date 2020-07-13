@@ -7,7 +7,8 @@
   Git: https://github.com/zendbit
 ]#
 
-import os, sugar, sequtils
+import os, sugar, sequtils, net, json
+export os, sugar, sequtils, net, json
 
 from zfblast import SslSettings
 export SslSettings
@@ -50,6 +51,35 @@ type
     readBodyBuffer*: int
     responseRangeBuffer*: int
     tmpCleanupDir*: seq[tuple[dirName: string, interval: int64]]
+
+proc `%`*(seqTuple: seq[tuple[dirName: string, interval: int64]]): JsonNode =
+  result = newJArray()
+  for tpl in seqTuple:
+    result.add(%*{tpl.dirName: tpl.interval})
+
+proc `%`*(port: Port): JsonNode =
+  result = % port.int
+
+proc `%`*(settings: Settings): JsonNode =
+  result = %*{
+    "port": settings.port,
+    "address": settings.address,
+    "reuseAddress": settings.reuseAddress,
+    "reusePort": settings.reusePort,
+    "maxBodyLength": settings.maxBodyLength,
+    "maxResponseBodyLength": settings.maxResponseBodyLength,
+    "trace": settings.trace,
+    "appRootDir": settings.appRootDir,
+    "sslSettings": settings.sslSettings,
+    "keepAliveMax": settings.keepAliveMax,
+    "keepAliveTimeout": settings.keepAliveTimeout,
+    "staticDir": settings.staticDir,
+    "tmpDir": settings.tmpDir,
+    "tmpUploadDir": settings.tmpUploadDir,
+    "tmpGzipDir": settings.tmpGzipDir,
+    "tmpBodyDir": settings.tmpBodyDir,
+    "readBodyBuffer": settings.readBodyBuffer,
+    "tmpCleanupDir": settings.tmpCleanupDir}
 
 proc addTmpCleanupDir*(self: Settings, dirName: string, interval: int64 = 3600) =
   if filter(self.tmpCleanupDir, (x: tuple[dirName: string, interval: int64]) => x.dirName == dirName).len == 0:

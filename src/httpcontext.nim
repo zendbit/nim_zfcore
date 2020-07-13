@@ -20,7 +20,7 @@ import settings, formdata, websocket, apimsg
 export settings, formdata, websocket, apimsg
 
 import zfblast
-export send, getHttpHeaderValues, trace
+export send, getHttpHeaderValues, trace, Response, Request
 
 type
   HttpContext* = ref object of zfblast.HttpContext
@@ -48,7 +48,7 @@ proc staticFile*(self: HttpContext, path: string = ""): string {.discardable.} =
 
   return self.staticFilePath
 
-proc newHttpContext*(self: zfblast.HttpContext): HttpContext =
+proc newHttpContext*(self: zfblast.HttpContext): HttpContext {.gcsafe.} =
   #
   # create new HttpContext from the zfblast HttpContext
   #
@@ -238,9 +238,8 @@ proc isSupportGz*(self: HttpContext, contentType: string): bool =
   let typeToZip = contentType.toLower
   return (accept.startsWith("gzip") or accept.contains("gzip")) and
     (typeToZip.startsWith("text/") or typeToZip.startsWith("message/") or
-    typeToZip in ["application/json", "application/xml", "application/javascript",
-      "application/x-javascript", "application/xhtml", "application/xhtml+xml",
-      "application/ld+json"])
+    typeToZip in ["application/json", "application/xml", "application/xhtml",
+    "application/xhtml+xml", "application/ld+json"])
 
 proc toGzResp(self: HttpContext): Future[void] {.async.} =
   let contentType = self.response.headers.getHttpHeaderValues("Content-Type")

@@ -16,6 +16,9 @@ export httpcontext, router, route, formdata, settings,
 
 const ZF_SETTINGS_FILE* = "settings.json"
 
+# checkThread for check the cleanup thread
+var cleanUpThread {.threadvar.}: Thread[Settings]
+
 #[
   ZFCore object definition
   this contain:
@@ -36,7 +39,7 @@ type
   newZFCore is for instantiate the zendflow framework contain parameter settings.
   default value will run on port 8080, bind address 0.0.0.0 and staticDir point to www folder
 ]#
-proc newZFCore*(settings: Settings): ZFCore =
+proc newZFCore*(settings: Settings): ZFCore {.gcsafe.} =
   return ZFCore(
     server: newZFBlast(
       address = settings.address,
@@ -63,7 +66,7 @@ proc zfJsonSettings*() : JsonNode =
 
 
 # read setting from file
-proc newZFCore*(): ZFCore =
+proc newZFCore*(): ZFCore {.gcsafe.} =
   let settingsJson = zfJsonSettings()
   if settingsJson.len != 0:
     let settings = newSettings()
@@ -152,7 +155,7 @@ proc newZFCore*(): ZFCore =
 ]#
 proc httpMethodNotFoundAsync(
   self: ZFCore,
-  ctx: zfblast.HttpContext): Future[void] {.async.} =
+  ctx: zfblast.HttpContext): Future[void] {.gcsafe async.} =
 
   ctx.response.httpCode = Http500
   ctx.response.body =
@@ -166,13 +169,13 @@ proc httpMethodNotFoundAsync(
 ]#
 proc sendToRouter(
   self: ZFCore,
-  ctx: zfblast.HttpContext): Future[void] {.async.} =
+  ctx: zfblast.HttpContext): Future[void] {.gcsafe async.} =
 
   try:
     await self.r.executeProc(ctx, self.settings)
   except Exception as ex:
     if self.settings.trace:
-      asyncCheck trace do () -> void:
+      asyncCheck trace proc (): void =
         echo ""
         echo "#== start"
         echo "#== zfcore trace"
@@ -184,10 +187,11 @@ proc sendToRouter(
   clean Tmp folder may take resource
   todo: should be have better approach for this method
 ]#
-proc cleanTmpDir(
-  self: ZFCore,
-  settings: Settings) =
-
+proc cleanTmpDir(settings: Settings) {.thread.} =
+  #
+  # cleanup process will spawn new thread if not exist
+  # to check folder to cleanup
+  #
   for dir in settings.tmpCleanupDir:
     var toCleanup = settings.tmpDir.joinPath(dir.dirName, "*")
     if dir.dirName == settings.tmpDir:
@@ -204,7 +208,7 @@ proc cleanTmpDir(
 ]#
 proc mainHandlerAsync(
   self: ZFCore,
-  ctx: zfblast.HttpContext): Future[void] {.async.} =
+  ctx: zfblast.HttpContext): Future[void] {.gcsafe async.} =
 
   try:
     if ctx.request.httpmethod in [HttpGet, HttpPost, HttpPut, HttpPatch,
@@ -216,7 +220,8 @@ proc mainHandlerAsync(
       # Chek cleanup tmp dir
       if not self.isCleanTmpDirExecuted:
         self.isCleanTmpDirExecuted = not self.isCleanTmpDirExecuted
-        self.cleanTmpDir(self.settings)
+        #self.cleanTmpDir(self.settings)
+        createThread(cleanupThread, cleanTmpDir, self.settings)
         self.isCleanTmpDirExecuted = not self.isCleanTmpDirExecuted
 
     else:
@@ -224,7 +229,7 @@ proc mainHandlerAsync(
 
   except Exception as ex:
     if self.settings.trace:
-      asyncCheck trace do () -> void:
+      asyncCheck trace proc (): void =
         echo ""
         echo "#== start"
         echo "#== zfcore trace"
@@ -236,15 +241,20 @@ proc mainHandlerAsync(
 #[
   this proc is for start the ZendFlow, this will serve forever :-)
 ]#
-proc serve*(self: ZFCore) =
-
+proc serve*(self: ZFCore) {.gcsafe.} =
   echo "Enjoy and take a cup of coffe :-)"
 
-  waitFor self.server.serve do (ctx: zfblast.HttpContext) -> Future[void] {.async.}:
+  waitFor self.server.serve proc (ctx: zfblast.HttpContext): Future[void] {.gcsafe async.} =
     asyncCheck self.mainHandlerAsync(ctx)
 
 # zfcore instance
-let zfcoreInstance* {.global.} = newZfCore()
+# thread safe variable
+var zfcoreInstanceVar* {.threadvar global.}: ZFCore
+
+template zfcoreInstance*: ZFCore =
+  if zfcoreInstanceVar.isNil:
+    zfcoreInstanceVar = newZFCore()
+  zfcoreInstanceVar
 
 if not zfcoreInstance.settings.tmpDir.existsDir:
   zfcoreInstance.settings.tmpDir.createDir

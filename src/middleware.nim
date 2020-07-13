@@ -8,8 +8,8 @@
 ]#
 
 # local
-import route, httpcontext, sugar
-export route, httpcontext, sugar
+import route, httpcontext
+export route, httpcontext
 
 type
   Middleware* = ref object of RootObj
@@ -18,10 +18,10 @@ type
     # pre is callback for prerouting
     # post is callback for postrouting
     #
-    pre: (ctx: HttpContext) -> Future[bool]
-    post: (ctx: HttpContext, route: Route) -> Future[bool]
+    pre: proc (ctx: HttpContext): Future[bool] {.gcsafe async.}
+    post: proc (ctx: HttpContext, route: Route): Future[bool] {.gcsafe async.}
 
-proc newMiddleware*(): Middleware =
+proc newMiddleware*(): Middleware {.gcsafe.} =
   #
   # create new middleware
   #
@@ -29,7 +29,7 @@ proc newMiddleware*(): Middleware =
 
 proc beforeRoute*(
   self: Middleware,
-  pre: (ctx: HttpContext) -> Future[bool]) =
+  pre: proc (ctx: HttpContext): Future[bool] {.gcsafe async.}) {.gcsafe.} =
   #
   # add before route in middleware
   # this will always check on client request before routing process
@@ -38,7 +38,7 @@ proc beforeRoute*(
 
 proc afterRoute*(
   self: Middleware,
-  post: (ctx: HttpContext, route: Route) -> Future[bool]) =
+  post: proc (ctx: HttpContext, route: Route): Future[bool] {.gcsafe async.}) {.gcsafe.} =
   #
   # add after route in middleware
   # this will always check on client request after routing process
@@ -46,7 +46,7 @@ proc afterRoute*(
   self.post = post
 
 proc execBeforeRoute*(
-  self: Middleware, ctx: HttpContext): Future[bool] {.async.} =
+  self: Middleware, ctx: HttpContext): Future[bool] {.gcsafe async.} =
   #
   # execute the before routing callback check
   #
@@ -56,7 +56,7 @@ proc execBeforeRoute*(
 proc execAfterRoute*(
   self: Middleware,
   ctx: HttpContext,
-  route: Route): Future[bool] {.async.} =
+  route: Route): Future[bool] {.gcsafe async.} =
   #
   # execute the after routing callback check
   #
