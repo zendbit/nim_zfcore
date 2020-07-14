@@ -16,9 +16,6 @@ export httpcontext, router, route, formdata, settings,
 
 const ZF_SETTINGS_FILE* = "settings.json"
 
-# checkThread for check the cleanup thread
-var cleanUpThread {.threadvar.}: Thread[Settings]
-
 #[
   ZFCore object definition
   this contain:
@@ -33,7 +30,10 @@ type
     server: ZFBlast
     r*: Router
     settings*: Settings
-    isCleanTmpDirExecuted: bool
+    isCleanupTmpDirExecuted: bool
+
+# checkThread for check the cleanup thread
+var cleanUpThread {.threadvar.}: Thread[ZFCore]
 
 #[
   newZFCore is for instantiate the zendflow framework contain parameter settings.
@@ -183,25 +183,33 @@ proc sendToRouter(
         echo "#== end"
         echo ""
 
+proc `isCleanupTmpDir=`*(self: ZFCore, val: bool) =
+  self.isCleanupTmpDirExecuted = val
+
+proc `isCleanupTmpDir`*(self: ZFCore): bool =
+  return self.isCleanupTmpDirExecuted
+
 #[
   clean Tmp folder may take resource
   todo: should be have better approach for this method
 ]#
-proc cleanTmpDir(settings: Settings) {.thread.} =
+proc cleanTmpDir(zf: ZFCore) {.thread.} =
   #
   # cleanup process will spawn new thread if not exist
   # to check folder to cleanup
   #
-  for dir in settings.tmpCleanupDir:
-    var toCleanup = settings.tmpDir.joinPath(dir.dirName, "*")
-    if dir.dirName == settings.tmpDir:
-      toCleanup = settings.tmpDir
+  for dir in zf.settings.tmpCleanupDir:
+    var toCleanup = zf.settings.tmpDir.joinPath(dir.dirName, "*")
+    if dir.dirName == zf.settings.tmpDir:
+      toCleanup = zf.settings.tmpDir
     for file in toCleanup.walkFiles:
       # get all files
       let timeInterval = getTime().toUnix - file.getLastAccessTime().toUnix
       # if interval set to 0, don't cleanup the file
       if timeInterval > dir.interval and dir.interval > 0:
         discard file.tryRemoveFile
+        
+  zf.isCleanupTmpDir = false
 
 #[
   this proc is private for main dispatch of request
@@ -217,12 +225,11 @@ proc mainHandlerAsync(
       ctx.response.headers["Content-Type"] = "text/plain; utf-8"
 
       await self.sendToRouter(ctx)
+
       # Chek cleanup tmp dir
-      if not self.isCleanTmpDirExecuted:
-        self.isCleanTmpDirExecuted = not self.isCleanTmpDirExecuted
-        #self.cleanTmpDir(self.settings)
-        createThread(cleanupThread, cleanTmpDir, self.settings)
-        self.isCleanTmpDirExecuted = not self.isCleanTmpDirExecuted
+      if not self.isCleanupTmpDir:
+        self.isCleanupTmpDir = true
+        createThread(cleanupThread, cleanTmpDir, self)
 
     else:
       await httpMethodNotFoundAsync(self, ctx)
