@@ -9,7 +9,6 @@
 
 # std
 from asynchttpserver import HttpMethod
-import asyncdispatch
 
 # local
 from httpcontext import HttpContext
@@ -21,5 +20,5 @@ type
     #
     httpMethod*: HttpMethod
     path*: string
-    thenDo*: proc (ctx: HttpContext): Future[void] {.gcsafe async.}
+    thenDo*: proc (ctx: HttpContext) {.gcsafe.}
     segments*: seq[string]

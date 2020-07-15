@@ -38,10 +38,7 @@ macro routes*(x: untyped): untyped =
               newEmptyNode(),
               newEmptyNode(),
               nnkFormalParams.newTree(
-                nnkBracketExpr.newTree(
-                  newIdentNode("Future"),
-                  newIdentNode("bool")
-                ),
+                newIdentNode("bool"),
                 nnkIdentDefs.newTree(
                   newIdentNode("ctx"),
                   newIdentNode("HttpContext"),
@@ -55,7 +52,6 @@ macro routes*(x: untyped): untyped =
               ),
               nnkPragma.newTree(
                 newIdentNode("gcsafe"),
-                newIdentNode("async")
               ),
               newEmptyNode(),
               childStmtList
@@ -78,10 +74,7 @@ macro routes*(x: untyped): untyped =
               newEmptyNode(),
               newEmptyNode(),
               nnkFormalParams.newTree(
-                nnkBracketExpr.newTree(
-                  newIdentNode("Future"),
-                  newIdentNode("bool")
-                ),
+                newIdentNode("bool"),
                 nnkIdentDefs.newTree(
                   newIdentNode("ctx"),
                   newIdentNode("HttpContext"),
@@ -90,7 +83,6 @@ macro routes*(x: untyped): untyped =
               ),
               nnkPragma.newTree(
                 newIdentNode("gcsafe"),
-                newIdentNode("async")
               ),
               newEmptyNode(),
               childStmtList
@@ -124,10 +116,7 @@ macro routes*(x: untyped): untyped =
               newEmptyNode(),
               newEmptyNode(),
               nnkFormalParams.newTree(
-                nnkBracketExpr.newTree(
-                  newIdentNode("Future"),
-                  newIdentNode("void")
-                ),
+                newEmptyNode(),
                 nnkIdentDefs.newTree(
                   newIdentNode("ctx"),
                   newIdentNode("HttpContext"),
@@ -136,7 +125,6 @@ macro routes*(x: untyped): untyped =
               ),
               nnkPragma.newTree(
                 newIdentNode("gcsafe"),
-                newIdentNode("async")
               ),
               newEmptyNode(),
               childStmtList

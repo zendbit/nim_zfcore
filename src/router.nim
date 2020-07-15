@@ -95,10 +95,10 @@ proc parseSegmentsFromPath(path: string): seq[string] =
 proc handleStaticRoute(
   self: Router,
   ctx: HttpContext):
-  Future[tuple[
+  tuple[
     found: bool,
     filePath: string,
-    contentType: string]] {.gcsafe async.} =
+    contentType: string] {.gcsafe.} =
   # Handle static resource, this should be only allow get method
   # all static resource should be access using prefix /s/
   # example static di is in this form:
@@ -145,15 +145,15 @@ proc handleStaticRoute(
 
 proc handleDynamicRoute(
   self: Router,
-  ctx: HttpContext): Future[void] {.gcsafe async.} =
+  ctx: HttpContext) {.gcsafe.} =
   # 
   # execute middleware before routing
   # handle dynamic route
   #
-  if await self.execBeforeRoute(ctx): return
+  if self.execBeforeRoute(ctx): return
   # call static route before the dynamic route
   let (staticFound, staticFilePath, staticContentType) =
-    await self.handleStaticRoute(ctx)
+    self.handleStaticRoute(ctx)
   # map content type
   # extract and map based on content type
   ctx.mapContentype
@@ -180,10 +180,10 @@ proc handleDynamicRoute(
 
   if route != nil:
     # execute middleware after routing before response
-    if await self.execAfterRoute(ctx, route): return
+    if self.execAfterRoute(ctx, route): return
 
     # execute route callback
-    await route.thenDo(ctx)
+    route.thenDo(ctx)
 
   elif staticFound:
     ctx.response.headers["Content-Type"] = staticContentType
@@ -222,7 +222,7 @@ proc handleDynamicRoute(
 proc executeProc*(
   self: Router,
   ctx: zfblast.HttpContext,
-  settings: Settings): Future[void] {.gcsafe async.} =
+  settings: Settings) {.gcsafe.} =
   #
   # This proc will execute the registered callback procedure in route list.
   # asynchttpserver Request will convert to HttpContext.
@@ -231,7 +231,7 @@ proc executeProc*(
   try:
     var httpCtx = ctx.newHttpContext
     httpCtx.settings = settings
-    await self.handleDynamicRoute(httpCtx)
+    self.handleDynamicRoute(httpCtx)
   except Exception as ex:
     echo ex.msg
     let apiMsg = newApiMsg(success=false,
@@ -239,7 +239,7 @@ proc executeProc*(
     ctx.response.headers["Content-Type"] = "application/json"
     ctx.response.body = (%apiMsg).pretty(2)
     ctx.response.httpCode = Http500
-    asyncCheck ctx.send(ctx)
+    ctx.send(ctx)
 
 proc static*(
   self: Router,
@@ -253,7 +253,7 @@ proc static*(
 proc get*(
   self: Router,
   path: string,
-  thenDo: proc (ctx: HttpContext): Future[void] {.gcsafe async.}) {.gcsafe.} =
+  thenDo: proc (ctx: HttpContext) {.gcsafe.}) {.gcsafe.} =
   #
   # let zf = newZfCore()
   #
@@ -267,7 +267,7 @@ proc get*(
   #   echo "Welcome home"
   #   echo $ctx.reParams["ids"]
   #   echo $ctx.params["body"]
-  #   await ctx.resp(Http200, "Hello World"))
+  #   ctx.resp(Http200, "Hello World"))
   #
   # ### without regex
   # ### will accept from /home
@@ -276,7 +276,7 @@ proc get*(
   #
   #   #### your code here
   #
-  #   await ctx.resp(Http200, "Hello World"))
+  #   ctx.resp(Http200, "Hello World"))
   #
   # ### start the server
   #
@@ -291,7 +291,7 @@ proc get*(
 proc post*(
   self: Router,
   path: string,
-  thenDo: proc (ctx: HttpContext): Future[void] {.gcsafe async.}) {.gcsafe.} =
+  thenDo: proc (ctx: HttpContext) {.gcsafe.}) {.gcsafe.} =
   #
   # let zf = newZfCore()
   #
@@ -305,7 +305,7 @@ proc post*(
   #   echo "Welcome home"
   #   echo $ctx.reParams["ids"]
   #   echo $ctx.params["body"]
-  #   await ctx.resp(Http200, "Hello World"))
+  #   ctx.resp(Http200, "Hello World"))
   #
   ### without regex
   ### will accept from /home
@@ -314,7 +314,7 @@ proc post*(
   #
   #   #### your code here
   #
-  #   await ctx.resp(Http200, "Hello World"))
+  #   ctx.resp(Http200, "Hello World"))
   #
   # ### start the server
   #
@@ -329,7 +329,7 @@ proc post*(
 proc put*(
   self: Router,
   path: string,
-  thenDo: proc (ctx: HttpContext): Future[void] {.gcsafe async.}) {.gcsafe.} =
+  thenDo: proc (ctx: HttpContext) {.gcsafe.}) {.gcsafe.} =
   #
   # let zf = newZfCore()
   #
@@ -343,7 +343,7 @@ proc put*(
   #   echo "Welcome home"
   #   echo $ctx.reParams["ids"]
   #   echo $ctx.params["body"]
-  #   await ctx.resp(Http200, "Hello World"))
+  #   ctx.resp(Http200, "Hello World"))
   #
   ### without regex
   ### will accept from /home
@@ -352,7 +352,7 @@ proc put*(
   #
   #   #### your code here
   #
-  #   await ctx.resp(Http200, "Hello World"))
+  #   ctx.resp(Http200, "Hello World"))
   #
   # ### start the server
   #
@@ -367,7 +367,7 @@ proc put*(
 proc delete*(
   self: Router,
   path: string,
-  thenDo: proc (ctx: HttpContext): Future[void] {.gcsafe async.}) {.gcsafe.} =
+  thenDo: proc (ctx: HttpContext) {.gcsafe.}) {.gcsafe.} =
   #
   # let zf = newZfCore()
   #
@@ -381,7 +381,7 @@ proc delete*(
   #   echo "Welcome home"
   #   echo $ctx.reParams["ids"]
   #   echo $ctx.params["body"]
-  #   await ctx.resp(Http200, "Hello World"))
+  #   ctx.resp(Http200, "Hello World"))
   #
   ### without regex
   ### will accept from /home
@@ -390,7 +390,7 @@ proc delete*(
   #
   #   #### your code here
   #
-  #   await ctx.resp(Http200, "Hello World"))
+  #   ctx.resp(Http200, "Hello World"))
   #
   ### start the server
   #
@@ -405,7 +405,7 @@ proc delete*(
 proc patch*(
   self: Router,
   path: string,
-  thenDo: proc (ctx: HttpContext): Future[void] {.gcsafe async.}) {.gcsafe.} =
+  thenDo: proc (ctx: HttpContext) {.gcsafe.}) {.gcsafe.} =
   #
   # let zf = newZfCore()
   #
@@ -419,7 +419,7 @@ proc patch*(
   #   echo "Welcome home"
   #   echo $ctx.reParams["ids"]
   #   echo $ctx.params["body"]
-  #   await ctx.resp(Http200, "Hello World"))
+  #   ctx.resp(Http200, "Hello World"))
   #
   ### without regex
   ### will accept from /home
@@ -428,7 +428,7 @@ proc patch*(
   #
   #   #### your code here
   #
-  #   await ctx.resp(Http200, "Hello World"))
+  #   ctx.resp(Http200, "Hello World"))
   #
   ### start the server
   #
@@ -443,7 +443,7 @@ proc patch*(
 proc head*(
   self: Router,
   path: string,
-  thenDo: proc (ctx: HttpContext): Future[void] {.gcsafe async.}) {.gcsafe.} =
+  thenDo: proc (ctx: HttpContext) {.gcsafe.}) {.gcsafe.} =
   #
   # let zf = newZfCore()
   #
@@ -457,7 +457,7 @@ proc head*(
   #   echo "Welcome home"
   #   echo $ctx.reParams["ids"]
   #   echo $ctx.params["body"]
-  #   await ctx.resp(Http200, "Hello World"))
+  #   ctx.resp(Http200, "Hello World"))
   #
   ### without regex
   ### will accept from /home
@@ -466,7 +466,7 @@ proc head*(
   #
   #   #### your code here
   #
-  #   await ctx.resp(Http200, "Hello World"))
+  #   ctx.resp(Http200, "Hello World"))
   #
   ### start the server
   #
@@ -481,7 +481,7 @@ proc head*(
 proc options*(
   self: Router,
   path: string,
-  thenDo: proc (ctx: HttpContext): Future[void] {.gcsafe async.}) {.gcsafe.}=
+  thenDo: proc (ctx: HttpContext) {.gcsafe.}) {.gcsafe.}=
   #
   # let zf = newZfCore()
   #
@@ -495,7 +495,7 @@ proc options*(
   #   echo "Welcome home"
   #   echo $ctx.reParams["ids"]
   #   echo $ctx.params["body"]
-  #   await ctx.resp(Http200, "Hello World"))
+  #   ctx.resp(Http200, "Hello World"))
   #
   ### without regex
   ### will accept from /home
@@ -504,7 +504,7 @@ proc options*(
   #
   #   #### your code here
   #
-  #   await ctx.resp(Http200, "Hello World"))
+  #   ctx.resp(Http200, "Hello World"))
   #
   ### start the server
   #
@@ -519,7 +519,7 @@ proc options*(
 proc trace*(
   self: Router,
   path: string,
-  thenDo: proc (ctx: HttpContext): Future[void] {.gcsafe async.}) {.gcsafe.} =
+  thenDo: proc (ctx: HttpContext) {.gcsafe.}) {.gcsafe.} =
   #
   # let zf = newZfCore()
   #
@@ -533,7 +533,7 @@ proc trace*(
   #   echo "Welcome home"
   #   echo $ctx.reParams["ids"]
   #   echo $ctx.params["body"]
-  #   await ctx.resp(Http200, "Hello World"))
+  #   ctx.resp(Http200, "Hello World"))
   #
   ### without regex
   ### will accept from /home
@@ -542,7 +542,7 @@ proc trace*(
   #
   #   #### your code here
   #
-  #   await ctx.resp(Http200, "Hello World"))
+  #   ctx.resp(Http200, "Hello World"))
   #
   ### start the server
   #
@@ -557,7 +557,7 @@ proc trace*(
 proc connect*(
   self: Router,
   path: string,
-  thenDo: proc (ctx: HttpContext): Future[void] {.gcsafe async.}) {.gcsafe.} =
+  thenDo: proc (ctx: HttpContext) {.gcsafe.}) {.gcsafe.} =
   #
   # let zf = newZfCore()
   #
@@ -571,7 +571,7 @@ proc connect*(
   #   echo "Welcome home"
   #   echo $ctx.reParams["ids"]
   #   echo $ctx.params["body"]
-  #   await ctx.resp(Http200, "Hello World"))
+  #   ctx.resp(Http200, "Hello World"))
   #
   ### without regex
   ### will accept from /home
@@ -580,7 +580,7 @@ proc connect*(
   #
   #   #### your code here
   #
-  #   await ctx.resp(Http200, "Hello World"))
+  #   ctx.resp(Http200, "Hello World"))
   #
   ### start the server
   #

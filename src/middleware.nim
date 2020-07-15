@@ -18,8 +18,8 @@ type
     # pre is callback for prerouting
     # post is callback for postrouting
     #
-    pre: proc (ctx: HttpContext): Future[bool] {.gcsafe async.}
-    post: proc (ctx: HttpContext, route: Route): Future[bool] {.gcsafe async.}
+    pre: proc (ctx: HttpContext): bool {.gcsafe.}
+    post: proc (ctx: HttpContext, route: Route): bool {.gcsafe.}
 
 proc newMiddleware*(): Middleware {.gcsafe.} =
   #
@@ -29,7 +29,7 @@ proc newMiddleware*(): Middleware {.gcsafe.} =
 
 proc beforeRoute*(
   self: Middleware,
-  pre: proc (ctx: HttpContext): Future[bool] {.gcsafe async.}) {.gcsafe.} =
+  pre: proc (ctx: HttpContext): bool {.gcsafe.}) {.gcsafe.} =
   #
   # add before route in middleware
   # this will always check on client request before routing process
@@ -38,7 +38,7 @@ proc beforeRoute*(
 
 proc afterRoute*(
   self: Middleware,
-  post: proc (ctx: HttpContext, route: Route): Future[bool] {.gcsafe async.}) {.gcsafe.} =
+  post: proc (ctx: HttpContext, route: Route): bool {.gcsafe.}) {.gcsafe.} =
   #
   # add after route in middleware
   # this will always check on client request after routing process
@@ -46,19 +46,19 @@ proc afterRoute*(
   self.post = post
 
 proc execBeforeRoute*(
-  self: Middleware, ctx: HttpContext): Future[bool] {.gcsafe async.} =
+  self: Middleware, ctx: HttpContext): bool {.gcsafe.} =
   #
   # execute the before routing callback check
   #
   if not self.pre.isNil:
-    return await self.pre(ctx)
+    return self.pre(ctx)
 
 proc execAfterRoute*(
   self: Middleware,
   ctx: HttpContext,
-  route: Route): Future[bool] {.gcsafe async.} =
+  route: Route): bool {.gcsafe.} =
   #
   # execute the after routing callback check
   #
   if not self.post.isNil:
-    return await self.post(ctx, route)
+    return self.post(ctx, route)

@@ -6,9 +6,9 @@
   Email: amru.rosyada@gmail.com
   Git: https://github.com/zendbit
 ]#
-import asyncnet, tables, asyncdispatch, strtabs, cookies,
+import net, tables, strtabs, cookies,
   strutils, httpcore, os, times, base64, strformat, json
-export asyncnet, tables, asyncdispatch, strtabs, cookies,
+export net, tables, strtabs, cookies,
   strutils, httpcore, os, times, base64, strformat, json
 
 # nimble
@@ -168,49 +168,10 @@ proc getContentRange*(
   else:
     apiMsg.error["msg"] = % &"failed retrieve file."
 
-#[
-proc gzCompress*(self: HttpContext, source: string): tuple[content: string, size: int] =
-  let filename = self.settings.tmpGzipDir.joinPath(now().utc().format("yyyy-MM-dd HH:mm:ss:fffffffff").encode) & ".gz"
-  let w = filename.newGzFileStream(fmWrite)
-  let chunk_size = 32
-  var num_bytes = source.len
-  var idx = 0
-  while true:
-    w.writeData(source[idx].unsafeAddr, min(num_bytes, chunk_size))
-    if num_bytes < chunk_size:
-      break
-    dec(num_bytes, chunk_size)
-    inc(idx, min(num_bytes, chunk_size))
-  w.close()
-  let r = filename.newFileStream
-  let data = r.readAll
-  r.close
-  result = (data, data.len)
-  removeFile(filename)
-
-proc gzDeCompress*(self: HttpContext, source: string): tuple[content: string, size: int] =
-  let filename = self.settings.tmpGzipDir.joinPath(now().utc().format("yyyy-MM-dd HH:mm:ss:fffffffff").encode) & ".gz"
-  let w = filename.newFileStream(fmWrite)
-  w.write(source)
-  w.close
-  let r = filename.newGzFileStream
-  let data = r.readAll
-  r.close
-  result = (data, data.len)
-  removeFile(filename)
-]#
-
 proc mapContentype*(self: HttpContext) =
   # HttpPost, HttpPut, HttpPatch will auto parse and extract the request, including the uploaded files
   # uploaded files will save to tmp folder
-
-  # if content encoding is gzip format
-  # decompress it first
-  #if self.request.headers.getHttpHeaderValues("Content-Encoding") == "gzip":
-  #  let gzContent = self.gzDecompress(self.request.body)
-  #  self.request.body = gzContent.content
-  #  self.request.headers["Content-Length"] = $gzContent.size
-  
+  #
   let contentType = self.request.headers.getHttpHeaderValues("Content-Type").toLower
   if self.request.httpMethod in [HttpPost, HttpPut, HttpPatch]:
     if contentType.find("multipart/form-data") != -1:
@@ -243,42 +204,7 @@ proc isSupportGz*(self: HttpContext, contentType: string): bool =
     typeToZip in ["application/json", "application/xml", "application/xhtml",
     "application/xhtml+xml", "application/ld+json"])
 
-#[
-proc toGzResp(self: HttpContext): Future[void] {.async.} =
-  let contentType = self.response.headers.getHttpHeaderValues("Content-Type")
-  if contentType == "":
-    self.response.headers["Content-Type"] = "application/octet-stream"
-
-  if self.request.httpMethod == HttpHead:
-    if self.request.headers.getHttpHeaderValues("Accept-Ranges") == "":
-      self.response.headers["Accept-Ranges"] = "bytes"
-    if self.request.headers.getHttpHeaderValues("Accept-Encoding") == "":
-      self.response.headers["Accept-Encoding"] = "gzip"
-
-  if self.isSupportGz(contentType):
-    let gzContent = self.gzCompress(self.response.body)
-    if self.request.httpMethod != HttpHead:
-      self.response.headers["Content-Encoding"] = "gzip"
-      self.response.body = gzContent.content
-    else:
-      # gzip content should not allow ranges
-      self.response.headers.del("Accept-Ranges")
-      if self.response.body != "":
-        self.response.headers["Content-Length"] = $gzContent.size
-      # remove the body
-      # head request doesn,t need the body
-      self.response.body = ""
-
-  elif self.request.httpMethod == HttpHead:
-    # if not gzip support
-    # and the request is HttpHead
-    self.response.headers["Content-Length"] = $self.response.body.len
-    self.response.body = ""
-
-  await self.send(self)
-]#
-
-proc doResp(self: HttpContext): Future[void] {.async.} =
+proc doResp(self: HttpContext) {.gcsafe.} =
   let contentType = self.response.headers.getHttpHeaderValues("Content-Type")
   if contentType == "":
     self.response.headers["Content-Type"] = "application/octet-stream"
@@ -290,13 +216,13 @@ proc doResp(self: HttpContext): Future[void] {.async.} =
     self.response.headers["Content-Length"] = $self.response.body.len
     self.response.body = ""
 
-  await self.send(self)
+  self.send(self)
 
 proc resp*(
   self: HttpContext,
   httpCode: HttpCode,
   body: string,
-  headers: HttpHeaders = nil) =
+  headers: HttpHeaders = nil) {.gcsafe.} =
   #
   # response to the client
   # self.resp(Http200, "ok")
@@ -312,13 +238,13 @@ proc resp*(
       else:
         self.response.headers[k] = v
 
-  asyncCheck self.doResp
+  self.doResp
 
 proc resp*(
   self: HttpContext,
   httpCode: HttpCode,
   body: JsonNode,
-  headers: HttpHeaders = nil) =
+  headers: HttpHeaders = nil) {.gcsafe.} =
   #
   # response as application/json to the client
   # let msg = %*{"status": true}
@@ -331,13 +257,13 @@ proc resp*(
     for k, v in headers.pairs:
       self.response.headers[k] = v
 
-  asyncCheck self.doResp
+  self.doResp
 
 proc respHtml*(
   self: HttpContext,
   httpCode: HttpCode,
   body: string,
-  headers: HttpHeaders = nil) =
+  headers: HttpHeaders = nil) {.gcsafe.} =
   #
   # response as html to the client
   # self.respHtml(Http200, """<html><body>Nice...</body></html>""")
@@ -349,16 +275,16 @@ proc respHtml*(
     for k, v in headers.pairs:
       self.response.headers[k] = v
 
-  asyncCheck self.doResp
+  self.doResp
 
 proc respRedirect*(
   self: HttpContext,
-  redirectTo: string) =
+  redirectTo: string) {.gcsafe.} =
   #
   # response redirect to the client
   # self.respRedirect("https://google.com")
   #
   self.response.httpCode = Http303
   self.response.headers["Location"] = @[redirectTo]
-  asyncCheck self.doResp
+  self.doResp
 
