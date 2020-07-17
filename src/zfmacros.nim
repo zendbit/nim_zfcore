@@ -214,11 +214,11 @@ macro setCookie*(
 
 macro getCookie*(): untyped =
   return nnkCall.newTree(
-      nnkDotExpr.newTree(
-        newIdentNode("ctx"),
-        newIdentNode("getCookie")
-      )
+    nnkDotExpr.newTree(
+      newIdentNode("ctx"),
+      newIdentNode("getCookie")
     )
+  )
 
 macro clearCookie*(cookies: untyped) =
   nnkCall.newTree(
