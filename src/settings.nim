@@ -27,7 +27,7 @@ type
     #    certFile*: string
     #    keyFile*: string
     #
-    port*: int
+    port*: Port
     address*: string
     reuseAddress*: bool
     reusePort*: bool
@@ -88,7 +88,7 @@ proc removeTmpCleanupDir*(self: Settings, dirname: string) =
 
 proc newSettings*(
   appRootDir:string = getAppDir(),
-  port: int = 8080,
+  port: Port = 8080.Port,
   address: string = "0.0.0.0",
   reuseAddress: bool = true,
   reusePort: bool = false,

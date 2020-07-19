@@ -204,7 +204,7 @@ proc customOk*(
 
 proc minLen*(
   self: FieldData,
-  min: int,
+  min: int64,
   errMsg: string = "",
   okMsg: string = ""): FieldData {.discardable.} =
   # validate the value length not less than the given min len
@@ -226,7 +226,7 @@ proc minLen*(
 
 proc maxLen*(
   self: FieldData,
-  max: int,
+  max: int64,
   errMsg: string = "",
   okMsg: string = ""): FieldData {.discardable.} =
   # validate the value length not larger than given max len
@@ -248,8 +248,8 @@ proc maxLen*(
 
 proc rangeLen*(
   self: FieldData,
-  min: int,
-  max: int,
+  min: int64,
+  max: int64,
   errMsg: string = "",
   okMsg: string = ""): FieldData {.discardable.} =
   # validate the value length is in given range

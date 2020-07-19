@@ -90,7 +90,7 @@ proc newZFCore*(): ZFCore {.gcsafe.} =
     if settingsJson.hasKey("http"):
       let httpSettings = settingsJson{"http"}
       if httpSettings.hasKey("port"):
-        settings.port = httpSettings{"port"}.getInt
+        settings.port = httpSettings{"port"}.getInt.Port
       if httpSettings.hasKey("address"):
         settings.address = httpSettings{"address"}.getStr
       if httpSettings.hasKey("reuseAddress"):
@@ -112,7 +112,7 @@ proc newZFCore*(): ZFCore {.gcsafe.} =
     return ZFCore(
       server: newZFBlast(
         address = settings.address,
-        port = Port(settings.port),
+        port = settings.port,
         reuseAddress = settings.reuseAddress,
         reusePort = settings.reusePort,
         maxBodyLength = settings.maxBodyLength,

@@ -15,10 +15,286 @@ export macros
 import zfcore
 import httpcontext
 
+macro fluentValidation*(x: untyped): untyped =
+  #
+  # initialise fluent validation
+  # make fluent validation more readable
+  # let validation = fluentValidation:
+  #   data "username" params.getOrDefault("username"):
+  #     must:
+  #       err "username is required."
+  #     minLen 8:
+  #       err "username must have min 8 chars."
+  #     email:
+  #       err "not valid email address."
+  #   data "password" params.getOrDefault("password"):
+  #     must:
+  #       err "password is required."
+  #     minLen 8:
+  #       err "password must have min 8 chars."
+  #
+  var fv = nnkCall.newTree(newIdentNode("newFluentValidation"))
+  let stmtList = newStmtList()
+  for child in x.children:
+    #
+    # define child kind is data
+    # get name and value parameter
+    #
+    let childKind = ($child[0]).strip
+    let name = ($child[1][0]).strip
+    let value = ($child[1][1])
+    case child.kind
+    of nnkCommand:
+      case childKind
+      of "data":
+        #
+        # initialize field data for validation
+        # za  hen pass the name and value as params
+        #
+        var fvData = nnkCall.newTree(
+          newIdentNode("newFieldData"),
+          newLit(name),
+          newLit(value)
+        )
+        for vChild in child[2]:
+          let vChildKind = vChild.kind
+          case vChildKind
+          of nnkIdent:
+            #
+            # this validate
+            # must
+            # num
+            #
+            case $vChild
+            of "must", "num", "email":
+              fvData = nnkCall.newTree(
+                nnkDotExpr.newTree(
+                  fvData,
+                  newIdentNode(($vChild).strip)
+                )
+              )
+
+          of nnkCall:
+            #
+            # this validate
+            # must:
+            #   ok ""
+            #   err ""
+            #
+            # num:
+            #   ok ""
+            #   err ""
+            #
+            let vChildKind = ($vChild[0]).strip
+            case vChildKind
+            of "must", "num", "email":
+              var ok = ""
+              var err = ""
+              for msg in vChild[1]:
+                case $msg[0]
+                of "ok":
+                  ok = $msg[1]
+                of "err":
+                  err = $msg[1]
+
+              fvData = nnkCall.newTree(
+                nnkDotExpr.newTree(
+                  fvData,
+                  newIdentNode(vChildKind)
+                ),
+                newLit(err),
+                newLit(ok)
+              )
+
+          of nnkCommand:
+            #
+            # this will validate
+            # reMatch "":
+            #   ok ""
+            #   err ""
+            #
+            # rangeLen 2 255:
+            #   ok ""
+            #   err ""
+            #
+            # etc
+            #
+            let vChildKind = ($vChild[0]).strip
+            case vChildKind
+            of "reMatch":
+              let reStr = $vChild[1]
+              var ok = ""
+              var err = ""
+              if vChild.len >= 3:
+                for msg in vChild[2]:
+                  case $msg[0]
+                  of "ok":
+                    ok = $msg[1]
+                  of "err":
+                    err = $msg[1]
+              
+              fvData = nnkCall.newTree(
+                nnkDotExpr.newTree(
+                  fvData,
+                  newIdentNode(vChildKind)
+                ),
+                newLit(reStr),
+                newLit(err),
+                newLit(ok)
+              )
+            
+            of "customErr", "customOk":
+              let msg = $vChild[1]
+              fvData = nnkCall.newTree(
+                nnkDotExpr.newTree(
+                  fvData,
+                  newIdentNode(vChildKind)
+                ),
+                newLit(msg)
+              )
+
+            of "rangeLen":
+              let vChildRangeKind = vChild[1].kind
+              case vChildRangeKind
+              of nnkCommand:
+                let minLen = vChild[1][0].intVal
+                let maxLen = vChild[1][1].intVal
+                var ok = ""
+                var err = ""
+                if vChild.len >= 3:
+                  for msg in vChild[2]:
+                    case $msg[0]
+                    of "ok":
+                      ok = $msg[1]
+                    of "err":
+                      err = $msg[1]
+              
+                fvData = nnkCall.newTree(
+                  nnkDotExpr.newTree(
+                    fvData,
+                    newIdentNode(vChildKind)
+                  ),
+                  newLit(minLen),
+                  newLit(maxLen),
+                  newLit(err),
+                  newLit(ok)
+                )
+
+              else:
+                discard
+
+            of "rangeNum":
+              let vChildRangeKind = vChild[1].kind
+              case vChildRangeKind
+              of nnkCommand:
+                let minVal = vChild[1][0].floatVal
+                let maxVal = vChild[1][1].floatVal
+                var ok = ""
+                var err = ""
+                if vChild.len >= 3:
+                  for msg in vChild[2]:
+                    case $msg[0]
+                    of "ok":
+                      ok = $msg[1]
+                    of "err":
+                      err = $msg[1]
+                
+                fvData = nnkCall.newTree(
+                  nnkDotExpr.newTree(
+                    fvData,
+                    newIdentNode(vChildKind)
+                  ),
+                  newLit(minVal),
+                  newLit(maxVal),
+                  newLit(err),
+                  newLit(ok)
+                )
+
+              else:
+                discard
+
+            of "maxNum", "minNum":
+              let vChildRangeKind = vChild[1].kind
+              case vChildRangeKind
+              of nnkCommand:
+                let val = vChild[1][0].floatVal
+                var ok = ""
+                var err = ""
+                if vChild.len >= 3:
+                  for msg in vChild[2]:
+                    case $msg[0]
+                    of "ok":
+                      ok = $msg[1]
+                    of "err":
+                      err = $msg[1]
+                
+                fvData = nnkCall.newTree(
+                  nnkDotExpr.newTree(
+                    fvData,
+                    newIdentNode(vChildKind)
+                  ),
+                  newLit(val),
+                  newLit(err),
+                  newLit(ok)
+                )
+
+              else:
+                discard
+            
+            of "minLen", "maxLen":
+              let vChildRangeKind = vChild[1].kind
+              case vChildRangeKind
+              of nnkCommand:
+                let val = vChild[1][0].intVal
+                var ok = ""
+                var err = ""
+                if vChild.len >= 3:
+                  for msg in vChild[2]:
+                    case $msg[0]
+                    of "ok":
+                      ok = $msg[1]
+                    of "err":
+                      err = $msg[1]
+                
+                fvData = nnkCall.newTree(
+                  nnkDotExpr.newTree(
+                    fvData,
+                    newIdentNode(vChildKind)
+                  ),
+                  newLit(val),
+                  newLit(err),
+                  newLit(ok)
+                )
+
+              else:
+                discard
+             
+            else:
+              discard
+
+          else:
+            discard
+
+        #
+        # data
+        #
+        fv = nnkCall.newTree(
+          nnkDotExpr.newTree(
+            fv,
+            newIdentNode("add")
+          ),
+          fvData
+        )
+
+    else:
+      discard
+
+  result = stmtList.add(fv)
+
 macro routes*(x: untyped): untyped =
   let stmtList = newStmtList()
-  for child in x.children():
-    let childKind = ($child[0]).strip()
+  for child in x.children:
+    let childKind = ($child[0]).strip
     case child.kind
     of nnkCall:
       let childStmtList = child[1]
