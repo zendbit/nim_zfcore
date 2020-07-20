@@ -382,9 +382,11 @@ let validation = newFluentValidation()
 access the validation result:
   validation.valids -> contain valids field on validation (JsonNode)
   validation.notValids -> contain notValids field on validation (JsonNode)
-  
+```
+
 with new macro we can transform the validation using this (make it easy to understand maybe :-)):
 
+```
 let validation = fluentValidation:
   data "username" params.getOrDefault("username"):
     must:
@@ -397,6 +399,11 @@ let validation = fluentValidation:
       err "Password is required."
     rangeLen 10 255:
       err "Min password length is 10, max is 255."
+      
+if validation.isValid:
+  echo validation.valids.pretty(2)
+else:
+  echo validation.notValids.pretty(2)
 ```
 
 Fluent Validation containts this procedures for validation each FieldData:
