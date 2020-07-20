@@ -380,8 +380,23 @@ let validation = newFluentValidation()
       .rangeLen(10, 255, "Min password length is 10, max is 255."))
             
 access the validation result:
-  validation.valids -> contain valids field on validation (Table[string, FieldData])
-  validation.notValids -> contain notValids field on validation (Table[string, FieldDat])
+  validation.valids -> contain valids field on validation (JsonNode)
+  validation.notValids -> contain notValids field on validation (JsonNode)
+  
+with new macro we can transform the validation using this (make it easy to understand maybe :-)):
+
+let validation = fluentValidation:
+  data "username" params.getOrDefault("username"):
+    must:
+      err "Username is required."
+      ok "Username available."
+    reMatch "([\w\W]+@[\w\W]+\.[\w])$":
+      err "Email format is not valid."
+  data "password" params.getOrDefault("password"):
+    must:
+      err "Password is required."
+    rangeLen 10 255:
+      err "Min password length is 10, max is 255."
 ```
 
 Fluent Validation containts this procedures for validation each FieldData:
