@@ -66,7 +66,7 @@ macro fluentValidation*(x: untyped): untyped =
             # num
             #
             case $vChild
-            of "must", "num", "email":
+            of "bool", "must", "num", "email":
               fvData = nnkCall.newTree(
                 nnkDotExpr.newTree(
                   fvData,
@@ -87,7 +87,7 @@ macro fluentValidation*(x: untyped): untyped =
             #
             let vChildKind = ($vChild[0]).strip
             case vChildKind
-            of "must", "num", "email":
+            of "bool", "must", "num", "email":
               var ok = ""
               var err = ""
               for msg in vChild[1]:

@@ -19,8 +19,8 @@
       .rangeLen(10, 255, "Min password length is 10, max is 255."))
 ]#
 
-import strutils, strformat, re, tables, parseutils
-export strutils, strformat, re, tables, parseutils
+import strutils, strformat, re, parseutils, json
+export strutils, strformat, re, parseutils, json
 
 #[
   FieldData is object model of field to be validated
@@ -34,6 +34,7 @@ type
     value: string
     msg: string
     isValid: bool
+    validationApplied: string
 
 proc newFieldData*(
   name: string,
@@ -52,6 +53,7 @@ proc must*(
   # errMsg for error msg
   # okMsg for success msg
   if self.msg == "":
+    self.validationApplied &= "|must"
     self.isValid = false
     if self.value == "":
       if errMsg != "":
@@ -74,9 +76,37 @@ proc num*(
   # errMsg for error msg
   # okMsg for success msg 
   if self.msg == "":
+    self.validationApplied &= "|num"
     self.isValid = false
     var res: float64
     self.isValid = self.value.strip.parseBiggestFloat(res, 0) == self.value.strip.len
+    if self.isValid:
+      self.msg = okMsg
+
+    else:
+      if errMsg != "":
+        self.msg = errMsg
+      else:
+        self.msg = "Value is not valid number."
+
+  return self
+
+proc bool*(
+  self: FieldData,
+  errMsg: string = "",
+  okMsg:string = ""): FieldData {.discardable.} =
+  # validate the value treat as number
+  # if value not number will not valid
+  # errMsg for error msg
+  # okMsg for success msg 
+  if self.msg == "":
+    self.validationApplied &= "|bool"
+    self.isValid = false
+    try:
+      discard self.value.strip.parseBool
+      self.isValid = true
+    except:
+      discard
     if self.isValid:
       self.msg = okMsg
 
@@ -98,6 +128,7 @@ proc rangeNum*(
   # errMsg for error msg
   # okMsg for success msg 
   if self.msg == "":
+    self.validationApplied &= "|rangeNum"
     var err = ""
     self.isValid = false
     var num: float64
@@ -129,6 +160,7 @@ proc maxNum*(
   # errMsg for error msg
   # okMsg for success msg 
   if self.msg == "":
+    self.validationApplied &= "|maxNum"
     self.isValid = false
     var err = ""
     var num: float64
@@ -160,6 +192,7 @@ proc minNum*(
   # errMsg for error msg
   # okMsg for success msg 
   if self.msg == "":
+    self.validationApplied &= "|minNum"
     self.isValid = false
     var err = ""
     var num: float64
@@ -211,6 +244,7 @@ proc minLen*(
   # errMsg for error msg
   # okMsg for success msg 
   if self.msg == "":
+    self.validationApplied &= "|minLen"
     self.isValid = false
     if self.value.len < min:
       if errMsg != "":
@@ -233,6 +267,7 @@ proc maxLen*(
   # errMsg for error msg
   # okMsg for success msg 
   if self.msg == "":
+    self.validationApplied &= "|maxLen"
     self.isValid = false
     if self.value.len > max:
       if errMsg != "":
@@ -256,6 +291,7 @@ proc rangeLen*(
   # errMsg for error msg
   # okMsg for success msg 
   if self.msg == "":
+    self.validationApplied &= "|rangeLen"
     self.isValid = false
     if (self.value.len > max or self.value.len < min):
       if errMsg != "":
@@ -278,6 +314,7 @@ proc reMatch*(
   # errMsg for error msg
   # okMsg for success msg 
   if self.msg == "":
+    self.validationApplied &= "|reMatch"
     self.isValid = false
     if not self.value.match(re regex):
       if errMsg != "":
@@ -299,6 +336,7 @@ proc email*(
   # errMsg for error msg
   # okMsg for success msg 
   if self.msg == "":
+    self.validationApplied &= "|email"
     var localErrMsg = errMsg
     if localErrMsg != "":
       localErrMsg = "Email address format is not valid."
@@ -319,30 +357,45 @@ proc email*(
 ]#
 type
   FluentValidation* = ref object
-    valids*: Table[string, FieldData]
-    notValids*: Table[string, FieldData]
+    valids*: JsonNode
+    notValids*: JsonNode
 
 proc newFluentValidation*(): FluentValidation =
   # create new fluent validation
   var instance = FluentValidation()
-  instance.valids = initTable[string, FieldData]()
-  instance.notValids = initTable[string, FieldData]()
+  instance.valids = %*{}
+  instance.notValids = %*{}
   return instance
+
+proc `%`(self: FieldData): JsonNode =
+  result = %*{
+      "name": self.name,
+      "msg": self.msg,
+      "isValid": self.isValid,
+      "value": self.value
+    }
+
+  if self.isValid:
+    if self.validationApplied.contains("Len") or
+      self.validationApplied.contains("num"):
+      result["value"] = %self.value.strip().parseBiggestInt
+    elif self.validationApplied.contains("bool"):
+      result["value"] = %self.value.strip().parseBool
 
 proc add*(
   self: FluentValidation,
   fieldData: FieldData): FluentValidation {.discardable.} =
   # add field data validation to the fluent validation
   if not fieldData.isValid:
-    self.notValids.add(fieldData.name, fieldData)
+    self.notValids.add(fieldData.name, %fieldData)
   else:
-    self.valids.add(fieldData.name, fieldData)
+    self.valids.add(fieldData.name, %fieldData)
   return self
 
 proc clear*(self: FluentValidation) =
   # clear fluent validation
-  clear(self.valids)
-  clear(self.notValids)
+  self.valids = %*{}
+  self.notValids = %*{}
 
 proc isValid*(self: FluentValidation): bool =
   # check if validation success (valid all passes)
