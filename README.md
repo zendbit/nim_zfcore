@@ -407,24 +407,26 @@ else:
 ```
 
 Fluent Validation containts this procedures for validation each FieldData:
-1. must(errMsg: string = "your err msg")
+1. must(errMsg: string = "your err msg", okMsg: string = "your ok msg")
 will return errMsg if value empty
-2. num(errMsg: string = "your err msg")
+2. num(errMsg: string = "your err msg", okMsg: string = "your ok msg")
 will return errMsg if value not a number
-3. rangeNum(min: float64, max: float64, errMsg: string = "your errMsg")
+3. rangeNum(min: float64, max: float64, errMsg: string = "your errMsg", okMsg: string = "your ok msg")
 will return errMsg if the number not in the range (min - max)
-4. minNum(min: float64, errMsg: string = "your errMsg")
+4. minNum(min: float64, errMsg: string = "your errMsg", okMsg: string = "your ok msg")
 will return errMsg if the value less than min
-5. maxNum(max: float64, errMsg: string = "your errMsg")
+5. maxNum(max: float64, errMsg: string = "your errMsg", okMsg: string = "your ok msg")
 will return errMsg if the value larger than max
-6. minLen(min: int, errMsg: string = "your errMsg")
+6. minLen(min: int, errMsg: string = "your errMsg", okMsg: string = "your ok msg")
 will return errMsg if value length less than min
-7. maxLen(max: int, errMsg: string = "your errMsg")
+7. maxLen(max: int, errMsg: string = "your errMsg", okMsg: string = "your ok msg")
 will return errMsg if value length more than max
-8. rangeLen(min: int, max: int, errMsg: "your errMsg")
+8. rangeLen(min: int, max: int, errMsg: "your errMsg", okMsg: string = "your ok msg")
 will return errMsg if value length not in range (min - max)
-9. reMatch(regex: string, errMsg: string = "your errMsg")
-eill return errMsg if the value not match with regex match pattern
+9. reMatch(regex: string, errMsg: string = "your errMsg", okMsg: string = "your ok msg")
+will return errMsg if the value not match with regex match pattern
+10. bool(errMsg: string = "your err msg", okMsg: string = "your ok msg")
+will return errMsg if the value is not bool type
 
 ## Core structure
 
