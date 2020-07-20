@@ -505,6 +505,6 @@ This is the settings model for the zenflow application
 
 The is the starting building block
 
-Thats it, feel free to modify and pull request if you have any idea, also this is the public domain we can share or you can cantact me on my email [amru.rosyada@amil.com](amru.rosyada@amil.com) to discuss further.
+Thats it, feel free to modify and pull request if you have any idea, also this is the public domain we can share or you can cantact me on my email [amru.rosyada@amil.com](amru.rosyada@gmail.com) to discuss further.
 
 This is production ready :-), feel free to send me a bug to solve.
