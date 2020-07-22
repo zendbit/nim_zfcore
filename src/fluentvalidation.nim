@@ -316,7 +316,7 @@ proc reMatch*(
   if self.msg == "":
     self.validationApplied &= "|reMatch"
     self.isValid = false
-    if not self.value.match(re regex):
+    if not self.value.match(re(regex)).isSome:
       if errMsg != "":
         self.msg = errMsg
       else:
