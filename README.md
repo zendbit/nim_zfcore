@@ -177,7 +177,7 @@ routes:
               "This is from the endpoint :-)",
               1,
               WSOpCode.TextFrame.uint8)
-            await ws.send()
+            ws.send()
           of WSOpCode.BinaryFrame.uint8:
             echo "Binary frame received"
           of WSOpCode.ContinuationFrame.uint8:
