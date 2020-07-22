@@ -16,7 +16,7 @@ nimble install zfcore
 
 # usage
 Example code, this is example code from web template of zendflow, for zendflow usage follow this link https://github.com/zendbit/zendflow
-```
+```nim
 #[
   zfcore web framework for nim language
   This framework if free to use and to modify
