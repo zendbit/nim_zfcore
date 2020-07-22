@@ -19,8 +19,8 @@
       .rangeLen(10, 255, "Min password length is 10, max is 255."))
 ]#
 
-import strutils, strformat, re, parseutils, json
-export strutils, strformat, re, parseutils, json
+import strutils, strformat, nre, parseutils, json
+export strutils, strformat, nre, parseutils, json
 
 #[
   FieldData is object model of field to be validated
