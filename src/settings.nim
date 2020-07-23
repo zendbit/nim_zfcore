@@ -47,6 +47,7 @@ type
     tmpDir*: string
     tmpUploadDir*: string
     tmpBodyDir*: string
+    tmpGzDir*: string
     readBodyBuffer*: int
     responseRangeBuffer*: int
     tmpCleanupDir*: seq[tuple[dirName: string, interval: int64]]
@@ -76,6 +77,7 @@ proc `%`*(settings: Settings): JsonNode =
     "tmpDir": settings.tmpDir,
     "tmpUploadDir": settings.tmpUploadDir,
     "tmpBodyDir": settings.tmpBodyDir,
+    "tmpGzDir": settings.tmpGzDir,
     "readBodyBuffer": settings.readBodyBuffer,
     "tmpCleanupDir": settings.tmpCleanupDir}
 
@@ -114,6 +116,7 @@ proc newSettings*(
     tmpDir: appRootDir.joinPath(".tmp"),
     tmpUploadDir: appRootDir.joinPath(".tmp", "upload"),
     tmpBodyDir: appRootDir.joinPath(".tmp", "body"),
+    tmpGzDir: appRootDir.joinPath(".tmp", "gzip"),
     tmpCleanupDir: tmpCleanupDir,
     reuseAddress: reuseAddress,
     reusePort: reusePort,
@@ -132,8 +135,12 @@ proc newSettings*(
     instance.tmpUploadDir.createDir
   if not instance.tmpBodyDir.existsDir:
     instance.tmpBodyDir.createDir
+  if not instance.tmpGzDir.existsDir:
+    instance.tmpGzDir.createDir
 
   instance.addTmpCleanupDir("upload")
+  instance.addTmpCleanupDir("body")
+  instance.addTmpCleanupDir("gzip")
 
   return instance
 

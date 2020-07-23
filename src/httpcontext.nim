@@ -12,8 +12,8 @@ export net, tables, strtabs, cookies,
   strutils, httpcore, os, times, base64, strformat, json
 
 # nimble
-import uri3, zip/gzipfiles, stdext/strutils_ext
-export uri3, gzipfiles, strutils_ext
+import uri3, zip/zlib, stdext/strutils_ext
+export uri3, strutils_ext
 
 # local
 import settings, formdata, websocket, apimsg
@@ -202,17 +202,30 @@ proc isSupportGz*(self: HttpContext, contentType: string): bool =
   return (accept.startsWith("gzip") or accept.contains("gzip")) and
     (typeToZip.startsWith("text/") or typeToZip.startsWith("message/") or
     typeToZip in ["application/json", "application/xml", "application/xhtml",
-    "application/xhtml+xml", "application/ld+json"])
+    "application/javascript", "application/xhtml+xml", "application/ld+json"])
 
 proc doResp(self: HttpContext) {.gcsafe.} =
   let contentType = self.response.headers.getHttpHeaderValues("Content-Type")
   if contentType == "":
     self.response.headers["Content-Type"] = "application/octet-stream"
 
-  if self.request.httpMethod == HttpHead:
+  if self.isSupportGz(contentType):
+    let gzContent = compress(self.response.body, stream=GZIP_STREAM)
+    if self.request.httpMethod != HttpHead:
+      self.response.body = gzContent
+      self.response.headers["Content-Encoding"] = "gzip"
+    else:
+      if self.response.body != "":
+        self.response.headers["Content-Length"] = $gzContent.len
+      # remove the body
+      # head request doesn,t need the body
+      self.response.body = ""
+
+  elif self.request.httpMethod == HttpHead:
     if self.request.headers.getHttpHeaderValues("Accept-Ranges") == "":
       self.response.headers["Accept-Ranges"] = "bytes"
-
+    # if not gzip support
+    # and the request is HttpHead
     self.response.headers["Content-Length"] = $self.response.body.len
     self.response.body = ""
 
