@@ -16,7 +16,7 @@ nimble install zfcore
 
 # usage
 Example code, this is example code from web template of zendflow, for zendflow usage follow this link https://github.com/zendbit/zendflow
-```
+```nim
 #[
   zfcore web framework for nim language
   This framework if free to use and to modify
@@ -326,7 +326,7 @@ ctx.clearCookie -> clearCookie
 ```
 
 Configuration file create file settings.json in the same level with the source
-```
+```javascript
 {
   "keepAliveMax": 100,
   "keepAliveTimeout": 15,
@@ -369,7 +369,7 @@ Configuration file create file settings.json in the same level with the source
 
 Starting from version 1.0.1 we added fluent validation
 
-```
+```nim
 let validation = newFluentValidation()
   validation
     .add(newFieldData("username", ctx.params["username"])
@@ -386,7 +386,7 @@ access the validation result:
 
 with new macro we can transform the validation using this (make it easy to understand maybe :-)):
 
-```
+```nim
 let validation = fluentValidation:
   data "username" params.getOrDefault("username"):
     must:
@@ -437,7 +437,7 @@ This folder contain zfcore engine. The zfcore folder contains .nim file of zendf
 zfcore contains:
 1. httpcontext.nim
 this will handle request context also contains the response context
-```
+```nim
 #[
     The field is widely used the asynchttpserver Request object but we add some field to its:
         url -> in ZendFlow we user uri3 from the nimble package
