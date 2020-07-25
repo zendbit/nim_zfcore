@@ -184,7 +184,6 @@ proc parse*(
     var tmpFieldData: seq[string] = @[]
     let stream = content.newFileStream
     var line = ""
-    var processLine = false
 
     while true:
       line &= stream.readChar

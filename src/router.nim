@@ -189,8 +189,8 @@ proc handleDynamicRoute(
     ctx.response.headers["Content-Type"] = staticContentType
     if ctx.response.headers.getHttpHeaderValues("Last-Modified") == "":
       ctx.response.headers["Last-Modified"] =
-        format(utc(getFileInfo(staticFilePath).lastAccessTime),
-          "ddd, dd MMM yyyy HH:mm:ss") & " GMT"
+        utc(getFileInfo(staticFilePath)
+          .lastAccessTime).format("ddd, dd MMM yyyy HH:mm:ss".initTimeFormat) & " GMT"
     
     # set static file path
     ctx.staticFile(staticFilePath)
@@ -235,7 +235,8 @@ proc executeProc*(
   except Exception as ex:
     echo ex.msg
     let apiMsg = newApiMsg(success=false,
-      error=(%*{"status": false, "error": ex.msg.split("\n")}))
+      error = %*{"status": false, "error": ex.msg.split("\n")},
+      data = %*{})
     ctx.response.headers["Content-Type"] = "application/json"
     ctx.response.body = (%apiMsg).pretty(2)
     ctx.response.httpCode = Http500

@@ -128,7 +128,7 @@ proc getContentRange*(
     self.staticFile(filePath)
 
   # handle range request
-  let apiMsg = newApiMsg(success = false)
+  let apiMsg = newApiMsg(success = false, error = %*{}, data = %*{})
   result = ("", newHttpHeaders(), apiMsg)
   if self.staticFile().existsFile:
     let staticFile = self.staticFile.open
