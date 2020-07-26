@@ -7,7 +7,7 @@
   Git: https://github.com/zendbit
 ]#
 # check if compile with gzip support
-if defined(zlib):
+when defined zlib:
   import zip/zlib
 
 import net, tables, strtabs, cookies,
@@ -198,8 +198,9 @@ proc mapContentype*(self: HttpContext) =
     # not need to keep the body after processing
     self.request.body = ""
 
-if defined(zlib)
-  proc isSupportGz*(self: HttpContext, contentType: string): bool =
+
+proc isSupportGz*(self: HttpContext, contentType: string): bool =
+  when defined zlib:
     # prepare gzip support
     let accept =
       self.request.headers.getHttpHeaderValues("accept-encoding").toLower
@@ -209,32 +210,30 @@ if defined(zlib)
       typeToZip in ["application/json", "application/xml", "application/xhtml",
       "application/javascript", "application/xhtml+xml", "application/ld+json"])
 
+proc gzCompress(content: string): string =
+  when defined zlib:
+    return compress(content, stream=GZIP_STREAM)
+  else:
+    return content
+
 proc doResp(self: HttpContext) {.gcsafe.} =
   let contentType = self.response.headers.getHttpHeaderValues("Content-Type")
   if contentType == "":
     self.response.headers["Content-Type"] = "application/octet-stream"
 
   # check if compile with gzip support or not
-  if defined(zlib):
-    if self.isSupportGz(contentType):
-      let gzContent = compress(self.response.body, stream=GZIP_STREAM)
-      if self.request.httpMethod != HttpHead:
-        self.response.body = gzContent
-        self.response.headers["Content-Encoding"] = "gzip"
-      else:
-        if self.response.body != "":
-          self.response.headers["Content-Length"] = $gzContent.len
-        # remove the body
-        # head request doesn,t need the body
-        self.response.body = ""
-    elif self.request.httpMethod == HttpHead:
-      if self.request.headers.getHttpHeaderValues("Accept-Ranges") == "":
-        self.response.headers["Accept-Ranges"] = "bytes"
-      # if not gzip support
-      # and the request is HttpHead
-      self.response.headers["Content-Length"] = $self.response.body.len
+  if self.isSupportGz(contentType):
+    let gzContent = self.response.body.gzCompress
+    if self.request.httpMethod != HttpHead:
+      self.response.body = gzContent
+      self.response.headers["Content-Encoding"] = "gzip"
+    else:
+      if self.response.body != "":
+        self.response.headers["Content-Length"] = $gzContent.len
+      # remove the body
+      # head request doesn,t need the body
       self.response.body = ""
-  else:
+  elif self.request.httpMethod == HttpHead:
     if self.request.headers.getHttpHeaderValues("Accept-Ranges") == "":
       self.response.headers["Accept-Ranges"] = "bytes"
     # if not gzip support
