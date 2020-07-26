@@ -201,7 +201,7 @@ proc cleanupThread(settings: Settings) =
         if timeInterval > dir.interval and dir.interval > 0:
           discard file.tryRemoveFile
 
-    5000.sleep
+    60000.sleep
 
 #[
   this proc is private for main dispatch of request
