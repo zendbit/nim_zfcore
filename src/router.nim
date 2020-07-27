@@ -186,11 +186,16 @@ proc handleDynamicRoute(
     route.thenDo(ctx)
 
   elif staticFound:
+    let fileInfo = staticFilePath.getFileInfo
     ctx.response.headers["Content-Type"] = staticContentType
+    if ctx.response.headers.getHttpHeaderValues("Cache-Control") == "":
+      ctx.response.headers["Cache-Control"] = "must-revalidate"
     if ctx.response.headers.getHttpHeaderValues("Last-Modified") == "":
       ctx.response.headers["Last-Modified"] =
-        utc(getFileInfo(staticFilePath)
-          .lastAccessTime).format("ddd, dd MMM yyyy HH:mm:ss".initTimeFormat) & " GMT"
+        fileInfo.lastWriteTime.utc().format("ddd, dd MMM yyyy HH:mm:ss".initTimeFormat) & " GMT"
+    if ctx.response.headers.getHttpHeaderValues("Date") == "":
+      ctx.response.headers["Date"] =
+        fileInfo.lastAccessTime.utc().format("ddd, dd MMM yyyy HH:mm:ss".initTimeFormat) & " GMT"
     
     # set static file path
     ctx.staticFile(staticFilePath)

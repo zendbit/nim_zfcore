@@ -43,6 +43,7 @@ type
     keepAliveMax*: int
     # Keep-Alive timeout
     keepAliveTimeout*: int
+    keepAlive*: bool
     staticDir*: string
     tmpDir*: string
     tmpUploadDir*: string
@@ -73,6 +74,7 @@ proc `%`*(settings: Settings): JsonNode =
     "sslSettings": settings.sslSettings,
     "keepAliveMax": settings.keepAliveMax,
     "keepAliveTimeout": settings.keepAliveTimeout,
+    "keepAlive": settings.keepAlive,
     "staticDir": settings.staticDir,
     "tmpDir": settings.tmpDir,
     "tmpUploadDir": settings.tmpUploadDir,
@@ -99,8 +101,9 @@ proc newSettings*(
   responseRangeBuffer: int = 51200,
   maxResponseBodyLength: int64 = 52428800,
   trace: bool = false,
-  keepAliveMax: int = 20,
+  keepAliveMax: int = 40,
   keepAliveTimeout: int = 10,
+  keepAlive: bool = false,
   sslSettings: SslSettings = nil,
   tmpCleanupDir: seq[tuple[dirName: string, interval: int64]] = @[]): Settings =
   #
@@ -127,6 +130,7 @@ proc newSettings*(
     trace: trace,
     keepAliveMax: keepAliveMax,
     keepAliveTimeout: keepAliveTimeout,
+    keepAlive: keepAlive,
     sslSettings: sslSettings)
 
   if not instance.tmpDir.existsDir:

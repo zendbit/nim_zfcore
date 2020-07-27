@@ -68,7 +68,9 @@ proc newHttpContext*(self: zfblast.HttpContext): HttpContext {.gcsafe.} =
     reParams: initTable[string, seq[string]](),
     formData: newFormData(),
     json: newJObject(),
-    settings: newSettings())
+    settings: newSettings(),
+    keepAliveCount: self.keepAliveCount,
+    keepAliveRequestTime: self.keepAliveRequestTime)
 
 proc setCookie*(
   self: HttpContext,

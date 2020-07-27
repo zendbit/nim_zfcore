@@ -77,6 +77,8 @@ proc newZFCore*(): ZFCore {.gcsafe.} =
       settings.keepAliveMax = settingsJson{"keepAliveMax"}.getInt
     if settingsJson.hasKey("keepAliveTimeout"):
       settings.keepAliveTimeout = settingsJson{"keepAliveTimeout"}.getInt
+    if settingsJson.hasKey("keepAlive"):
+      settings.keepAlive = settingsJson{"keepAlive"}.getBool
     if settingsJson.hasKey("maxBodyLength"):
       settings.maxBodyLength = settingsJson{"maxBodyLength"}.getInt
     if settingsJson.hasKey("readBodyBuffer"):
@@ -118,6 +120,7 @@ proc newZFCore*(): ZFCore {.gcsafe.} =
         maxBodyLength = settings.maxBodyLength,
         keepAliveMax = settings.keepAliveMax,
         keepAliveTimeout = settings.keepAliveTimeout,
+        keepAlive = settings.keepAlive,
         trace = settings.trace,
         sslSettings = settings.sslSettings,
         readBodyBuffer = settings.readBodyBuffer),
@@ -140,8 +143,9 @@ proc newZFCore*(): ZFCore {.gcsafe.} =
         sslSettings = nil,
         maxBodyLength = 268435456,
         readBodyBuffer = 1024,
-        keepAliveMax = 20,
-        keepAliveTimeout = 10),
+        keepAliveMax = 40,
+        keepAliveTimeout = 10,
+        keepAlive = false),
       r: newRouter(),
       settings: settings)
 
