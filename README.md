@@ -325,11 +325,10 @@ ctx.getCookie -> getCookie
 ctx.clearCookie -> clearCookie
 ```
 
-Configuration file create file settings.json in the same level with the source
+Configuration file create file settings.json in the same level with the source, keepAlive default is of
 ```javascript
 {
-  "keepAliveMax": 100,
-  "keepAliveTimeout": 15,
+  "keepAlive": false,
   "maxBodyLength": 268435456,
   "readBodyBuffer": 51200,
   "responseRangeBuffer": 51200,
