@@ -61,16 +61,13 @@ proc newHttpContext*(self: zfblast.HttpContext): HttpContext {.gcsafe.} =
     request: self.request,
     response: self.response,
     send: self.send,
-    keepAliveMax: self.keepAliveMax,
-    keepAliveTimeout: self.keepAliveTimeout,
     webSocket: self.webSocket,
     params: initTable[string, string](),
     reParams: initTable[string, seq[string]](),
     formData: newFormData(),
     json: newJObject(),
     settings: newSettings(),
-    keepAliveCount: self.keepAliveCount,
-    keepAliveRequestTime: self.keepAliveRequestTime)
+    keepAlive: self.keepAlive)
 
 proc setCookie*(
   self: HttpContext,

@@ -39,12 +39,11 @@ proc newZFCore*(settings: Settings): ZFCore {.gcsafe.} =
   return ZFCore(
     server: newZFBlast(
       address = settings.address,
-      port = Port(settings.port),
+      port = settings.port,
       reuseAddress = settings.reuseAddress,
       reusePort = settings.reusePort,
       maxBodyLength = settings.maxBodyLength,
-      keepAliveMax = settings.keepAliveMax,
-      keepAliveTimeout = settings.keepAliveTimeout,
+      keepAlive = settings.keepAlive,
       trace = settings.trace,
       sslSettings = settings.sslSettings),
     r: newRouter(),
@@ -72,11 +71,6 @@ proc newZFCore*(): ZFCore {.gcsafe.} =
       settings.appRootDir = appRootDir
     else:
       settings.appRootDir = getAppDir()
-    #if not settingsJson{"keepAliveMax"}.isNil:
-    if settingsJson.hasKey("keepAliveMax"):
-      settings.keepAliveMax = settingsJson{"keepAliveMax"}.getInt
-    if settingsJson.hasKey("keepAliveTimeout"):
-      settings.keepAliveTimeout = settingsJson{"keepAliveTimeout"}.getInt
     if settingsJson.hasKey("keepAlive"):
       settings.keepAlive = settingsJson{"keepAlive"}.getBool
     if settingsJson.hasKey("maxBodyLength"):
@@ -118,8 +112,6 @@ proc newZFCore*(): ZFCore {.gcsafe.} =
         reuseAddress = settings.reuseAddress,
         reusePort = settings.reusePort,
         maxBodyLength = settings.maxBodyLength,
-        keepAliveMax = settings.keepAliveMax,
-        keepAliveTimeout = settings.keepAliveTimeout,
         keepAlive = settings.keepAlive,
         trace = settings.trace,
         sslSettings = settings.sslSettings,
@@ -143,8 +135,6 @@ proc newZFCore*(): ZFCore {.gcsafe.} =
         sslSettings = nil,
         maxBodyLength = 268435456,
         readBodyBuffer = 1024,
-        keepAliveMax = 40,
-        keepAliveTimeout = 10,
         keepAlive = false),
       r: newRouter(),
       settings: settings)
