@@ -184,7 +184,7 @@ proc mapContentype*(self: HttpContext) =
 
     if contentType.find("application/x-www-form-urlencoded") != -1:
       var query = initTable[string, string]()
-      var uriToParse = self.request.body
+      var uriToParse = self.request.body.open().readAll
       if self.request.body.find("?") == -1: uriToParse = &"?{uriToParse}"
       for q in uriToParse.parseUri3().getAllQueries():
         query.add(q[0], q[1].decodeUri())
@@ -192,7 +192,7 @@ proc mapContentype*(self: HttpContext) =
       self.params = query
 
     if contentType.find("application/json") != -1:
-      self.json = parseJson(self.request.body)
+      self.json = parseJson(self.request.body.open().readAll)
 
     # not need to keep the body after processing
     self.request.body = ""
