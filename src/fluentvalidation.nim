@@ -82,7 +82,7 @@ proc num*(
   # okMsg for success msg 
   if self.msg == "":
     self.validationApplied &= "|num"
-    self.isValid = self.value.strip.tryParseBiggestUInt().ok and self.value.strip != ""
+    self.isValid = self.value.tryParseBiggestUInt().ok and self.value != ""
     if self.isValid:
       self.msg = okMsg
 
@@ -114,7 +114,7 @@ proc dec*(
   # okMsg for success msg 
   if self.msg == "":
     self.validationApplied &= "|dec"
-    self.isValid = self.value.strip.tryParseBiggestFloat().ok and self.value.strip != ""
+    self.isValid = self.value.tryParseBiggestFloat().ok and self.value != ""
     if self.isValid:
       self.msg = okMsg
 
@@ -136,7 +136,7 @@ proc bool*(
   # okMsg for success msg 
   if self.msg == "":
     self.validationApplied &= "|bool"
-    self.isValid = self.value.strip.tryParseBool().ok
+    self.isValid = self.value.tryParseBool().ok
     if self.isValid:
       self.msg = okMsg
 
@@ -160,9 +160,9 @@ proc rangeNum*(
   if self.msg == "":
     self.validationApplied &= "|rangeNum"
     var err = ""
-    let (ok, val) = self.value.strip.tryParseBiggestUInt()
+    let (ok, val) = self.value.tryParseBiggestUInt()
     self.isValid = false
-    if ok and self.value.strip != "":
+    if ok and self.value != "":
       if val < min or val > max:
         if errMsg != "":
             err = errMsg
@@ -193,9 +193,9 @@ proc rangeDec*(
   if self.msg == "":
     self.validationApplied &= "|rangeDec"
     var err = ""
-    let (ok, val) = self.value.strip.tryParseBiggestFloat()
+    let (ok, val) = self.value.tryParseBiggestFloat()
     self.isValid = false
-    if ok and self.value.strip != "":
+    if ok and self.value != "":
       if val < min or val > max:
         if errMsg != "":
             err = errMsg
@@ -226,8 +226,8 @@ proc maxNum*(
     self.validationApplied &= "|maxNum"
     self.isValid = false
     var err = ""
-    var (ok, val) = self.value.strip.tryParseBiggestUInt()
-    if ok and self.value.strip != "":
+    var (ok, val) = self.value.tryParseBiggestUInt()
+    if ok and self.value != "":
       if val > max:
         if errMsg != "":
           err = errMsg
@@ -258,8 +258,8 @@ proc maxDec*(
     self.validationApplied &= "|maxDec"
     self.isValid = false
     var err = ""
-    var (ok, val) = self.value.strip.tryParseBiggestFloat()
-    if ok and self.value.strip != "":
+    var (ok, val) = self.value.tryParseBiggestFloat()
+    if ok and self.value != "":
       if val > max:
         if errMsg != "":
           err = errMsg
@@ -290,8 +290,8 @@ proc minNum*(
     self.validationApplied &= "|minNum"
     self.isValid = false
     var err = ""
-    let (ok, val) = self.value.strip.tryParseBiggestUInt()
-    if ok and self.value.strip != "":
+    let (ok, val) = self.value.tryParseBiggestUInt()
+    if ok and self.value != "":
       if val < min:
         if errMsg != "":
           err = errMsg
@@ -322,8 +322,8 @@ proc minDec*(
     self.validationApplied &= "|minDec"
     self.isValid = false
     var err = ""
-    let (ok, val) = self.value.strip.tryParseBiggestFloat()
-    if ok and self.value.strip != "":
+    let (ok, val) = self.value.tryParseBiggestFloat()
+    if ok and self.value != "":
       if val < min:
         if errMsg != "":
           err = errMsg
@@ -504,9 +504,9 @@ proc `%`(self: FieldData): JsonNode =
   if self.isValid:
     if self.validationApplied.toLower().contains("num") or
       self.validationApplied.toLower().contains("dec"):
-      result["value"] = %self.value.strip().tryParseBiggestUInt().val
+      result["value"] = %self.value.tryParseBiggestUInt().val
     elif self.validationApplied.contains("bool"):
-      result["value"] = %self.value.strip().tryParseBool().val
+      result["value"] = %self.value.tryParseBool().val
 
 proc add*(
   self: FluentValidation,
@@ -556,7 +556,7 @@ macro fluentValidation*(x: untyped): untyped =
     # define child kind is data
     # get name and value parameter
     #
-    let childKind = ($child[0]).strip
+    let childKind = $child[0]
     case child.kind
     of nnkCommand:
       case childKind
@@ -589,7 +589,7 @@ macro fluentValidation*(x: untyped): untyped =
               fvData = nnkCall.newTree(
                 nnkDotExpr.newTree(
                   fvData,
-                  newIdentNode(($vChild).strip)
+                  newIdentNode($vChild)
                 )
               )
 
@@ -604,7 +604,7 @@ macro fluentValidation*(x: untyped): untyped =
             #   ok ""
             #   err ""
             #
-            let vChildKind = ($vChild[0]).strip
+            let vChildKind = $vChild[0]
             case vChildKind
             of "bool", "must", "num", "email":
               var ok = ""
@@ -640,7 +640,7 @@ macro fluentValidation*(x: untyped): untyped =
             #
             # etc
             #
-            let vChildKind = ($vChild[0]).strip
+            let vChildKind = $vChild[0]
             case vChildKind
             of "rangeLen", "rangeNum":
               case vChild[1].kind
