@@ -21,6 +21,7 @@
 
 import strutils, strformat, nre, parseutils, json, macros
 export strutils, strformat, nre, parseutils, json
+import stdext/[strutils_ext]
 
 #[
   FieldData is object model of field to be validated
@@ -32,9 +33,12 @@ type
   FieldData* = ref object
     name: string
     value: string
+    discardValue: string
     msg: string
     isValid: bool
     validationApplied: string
+
+const discardFlag = "####discard####"
 
 proc newFieldData*(
   name: string,
@@ -42,7 +46,8 @@ proc newFieldData*(
   # create new field data for validation
   return FieldData(
     name: name.strip(),
-    value: value.strip())
+    value: value.strip(),
+    discardValue: discardFlag)
 
 proc must*(
   self: FieldData,
@@ -77,10 +82,39 @@ proc num*(
   # okMsg for success msg 
   if self.msg == "":
     self.validationApplied &= "|num"
-    self.isValid = false
-    var res: float64
-    self.isValid = self.value.strip.parseBiggestFloat(res, 0) == self.value.strip.len and
-      self.value.strip != ""
+    self.isValid = self.value.strip.tryParseBiggestUInt().ok and self.value.strip != ""
+    if self.isValid:
+      self.msg = okMsg
+
+    else:
+      if errMsg != "":
+        self.msg = errMsg
+      else:
+        self.msg = "Value is not valid number."
+
+  return self
+
+proc discardIf*(
+  self: FieldData,
+  discardValue: string): FieldData {.discardable.} =
+  # validate the value treat as number
+  # if value not number will not valid
+  # errMsg for error msg
+  # okMsg for success msg
+  self.discardValue = discardValue
+  return self
+
+proc dec*(
+  self: FieldData,
+  errMsg: string = "",
+  okMsg:string = ""): FieldData {.discardable.} =
+  # validate the value treat as decimal
+  # if value not number will not valid
+  # errMsg for error msg
+  # okMsg for success msg 
+  if self.msg == "":
+    self.validationApplied &= "|dec"
+    self.isValid = self.value.strip.tryParseBiggestFloat().ok and self.value.strip != ""
     if self.isValid:
       self.msg = okMsg
 
@@ -102,12 +136,7 @@ proc bool*(
   # okMsg for success msg 
   if self.msg == "":
     self.validationApplied &= "|bool"
-    self.isValid = false
-    try:
-      discard self.value.strip.parseBool
-      self.isValid = true
-    except:
-      discard
+    self.isValid = self.value.strip.tryParseBool().ok
     if self.isValid:
       self.msg = okMsg
 
@@ -121,8 +150,8 @@ proc bool*(
 
 proc rangeNum*(
   self: FieldData,
-  min: float64,
-  max: float64,
+  min: BiggestUInt,
+  max: BiggestUint,
   errMsg: string = "",
   okMsg:string = ""): FieldData {.discardable.} =
   # validate the value in the range of given min and max
@@ -131,11 +160,43 @@ proc rangeNum*(
   if self.msg == "":
     self.validationApplied &= "|rangeNum"
     var err = ""
+    let (ok, val) = self.value.strip.tryParseBiggestUInt()
     self.isValid = false
-    var num: float64
-    if self.value.strip.parseBiggestFloat(num, 0) == self.value.strip.len and
-      self.value.strip != "":
-      if num < min or num > max:
+    if ok and self.value.strip != "":
+      if val < min or val > max:
+        if errMsg != "":
+            err = errMsg
+        else:
+            err = &"Value is not in range. ({min}-{max})"
+
+      else:
+        self.isValid = true
+        self.msg = okMsg
+
+    else:
+      err = &"Value is not in range. ({min}-{max})"
+
+    if err != "":
+      self.msg = err
+
+  return self
+
+proc rangeDec*(
+  self: FieldData,
+  min: BiggestFloat,
+  max: BiggestFloat,
+  errMsg: string = "",
+  okMsg:string = ""): FieldData {.discardable.} =
+  # validate the value in the range of given min and max
+  # errMsg for error msg
+  # okMsg for success msg 
+  if self.msg == "":
+    self.validationApplied &= "|rangeDec"
+    var err = ""
+    let (ok, val) = self.value.strip.tryParseBiggestFloat()
+    self.isValid = false
+    if ok and self.value.strip != "":
+      if val < min or val > max:
         if errMsg != "":
             err = errMsg
         else:
@@ -155,7 +216,7 @@ proc rangeNum*(
 
 proc maxNum*(
   self: FieldData,
-  max: float64,
+  max: BiggestUInt,
   errMsg: string = "",
   okMsg:string = ""): FieldData {.discardable.} =
   # validate value must not larger than given max value
@@ -165,10 +226,41 @@ proc maxNum*(
     self.validationApplied &= "|maxNum"
     self.isValid = false
     var err = ""
-    var num: float64
-    if self.value.strip.parseBiggestFloat(num, 0) == self.value.strip.len and
-      self.value.strip != "":
-      if num > max:
+    var (ok, val) = self.value.strip.tryParseBiggestUInt()
+    if ok and self.value.strip != "":
+      if val > max:
+        if errMsg != "":
+          err = errMsg
+        else:
+          err = &"Larger value not allowed. (>{max})"
+
+      else:
+        self.isValid = true
+        self.msg = okMsg
+
+    else:
+      err = &"Larger value not allowed. (>{max})"
+
+    if err != "":
+      self.msg = err
+
+  return self
+
+proc maxDec*(
+  self: FieldData,
+  max: BiggestFloat,
+  errMsg: string = "",
+  okMsg:string = ""): FieldData {.discardable.} =
+  # validate value must not larger than given max value
+  # errMsg for error msg
+  # okMsg for success msg 
+  if self.msg == "":
+    self.validationApplied &= "|maxDec"
+    self.isValid = false
+    var err = ""
+    var (ok, val) = self.value.strip.tryParseBiggestFloat()
+    if ok and self.value.strip != "":
+      if val > max:
         if errMsg != "":
           err = errMsg
         else:
@@ -188,20 +280,51 @@ proc maxNum*(
 
 proc minNum*(
   self: FieldData,
-  min: float64,
+  min: BiggestUInt,
   errMsg: string = "",
   okMsg:string = ""): FieldData {.discardable.} =
   # validate value must not less than given min value
   # errMsg for error msg
-  # okMsg for success msg 
+  # okMsg for success msg
   if self.msg == "":
     self.validationApplied &= "|minNum"
     self.isValid = false
     var err = ""
-    var num: float64
-    if self.value.strip.parseBiggestFloat(num, 0) == self.value.strip.len and
-      self.value.strip != "":
-      if num < min:
+    let (ok, val) = self.value.strip.tryParseBiggestUInt()
+    if ok and self.value.strip != "":
+      if val < min:
+        if errMsg != "":
+          err = errMsg
+        else:
+          err = &"Lower value not allowed. (<{min})"
+
+      else:
+        self.isValid = true
+        self.msg = okMsg
+
+    else:
+      err = &"Lower value not allowed. (<{min})"
+
+    if err != "":
+      self.msg = err
+
+  return self
+
+proc minDec*(
+  self: FieldData,
+  min: BiggestFloat,
+  errMsg: string = "",
+  okMsg:string = ""): FieldData {.discardable.} =
+  # validate value must not less than given min value
+  # errMsg for error msg
+  # okMsg for success msg
+  if self.msg == "":
+    self.validationApplied &= "|minDec"
+    self.isValid = false
+    var err = ""
+    let (ok, val) = self.value.strip.tryParseBiggestFloat()
+    if ok and self.value.strip != "":
+      if val < min:
         if errMsg != "":
           err = errMsg
         else:
@@ -241,12 +364,12 @@ proc customOk*(
 
 proc minLen*(
   self: FieldData,
-  min: int64,
+  min: int,
   errMsg: string = "",
   okMsg: string = ""): FieldData {.discardable.} =
   # validate the value length not less than the given min len
   # errMsg for error msg
-  # okMsg for success msg 
+  # okMsg for success msg
   if self.msg == "":
     self.validationApplied &= "|minLen"
     self.isValid = false
@@ -264,12 +387,12 @@ proc minLen*(
 
 proc maxLen*(
   self: FieldData,
-  max: int64,
+  max: int,
   errMsg: string = "",
   okMsg: string = ""): FieldData {.discardable.} =
   # validate the value length not larger than given max len
   # errMsg for error msg
-  # okMsg for success msg 
+  # okMsg for success msg
   if self.msg == "":
     self.validationApplied &= "|maxLen"
     self.isValid = false
@@ -282,13 +405,12 @@ proc maxLen*(
     else:
       self.isValid = true
       self.msg = okMsg
-
   return self
 
 proc rangeLen*(
   self: FieldData,
-  min: int64,
-  max: int64,
+  min: int,
+  max: int,
   errMsg: string = "",
   okMsg: string = ""): FieldData {.discardable.} =
   # validate the value length is in given range
@@ -380,21 +502,21 @@ proc `%`(self: FieldData): JsonNode =
     }
 
   if self.isValid:
-    if self.validationApplied.contains("Len") or
-      self.validationApplied.contains("num"):
-      result["value"] = %self.value.strip().parseBiggestInt
+    if self.validationApplied.toLower().contains("num") or
+      self.validationApplied.toLower().contains("dec"):
+      result["value"] = %self.value.strip().tryParseBiggestUInt().val
     elif self.validationApplied.contains("bool"):
-      result["value"] = %self.value.strip().parseBool
+      result["value"] = %self.value.strip().tryParseBool().val
 
 proc add*(
   self: FluentValidation,
   fieldData: FieldData): FluentValidation {.discardable.} =
   # add field data validation to the fluent validation
-  if not fieldData.isValid:
-    if fieldData.value != "":
+  if fieldData.discardValue != fieldData.value:
+    if not fieldData.isValid:
       self.notValids.add(fieldData.name, %fieldData)
-  else:
-    self.valids.add(fieldData.name, %fieldData)
+    else:
+      self.valids.add(fieldData.name, %fieldData)
   return self
 
 proc clear*(self: FluentValidation) =
@@ -435,34 +557,24 @@ macro fluentValidation*(x: untyped): untyped =
     # get name and value parameter
     #
     let childKind = ($child[0]).strip
-    #let name = ($child[1][0]).strip
-    #echo "######"
-    #echo childKind
-    #echo name
-    #let value = ($child[1][1])
-    #let value = ""
     case child.kind
     of nnkCommand:
       case childKind
       of "data":
         #
         # initialize field data for validation
-        # za  hen pass the name and value as params
+        # then pass the name and value as params
         #
         let name = child[1][0]
         let value = child[1][1]
         let nameKind = name.kind
-        let valueKind = value.kind
-        #var fvData = nnkCall.newTree(
-        #  newIdentNode("newFieldData"),
-        #  newLit(name),
-        #  newLit(value)
-        #)
+        let valueKind = value.kind 
         var fvData = nnkCall.newTree(
           newIdentNode("newFieldData"),
           name,
           value
         )
+        
         for vChild in child[2]:
           let vChildKind = vChild.kind
           case vChildKind
@@ -530,43 +642,8 @@ macro fluentValidation*(x: untyped): untyped =
             #
             let vChildKind = ($vChild[0]).strip
             case vChildKind
-            of "reMatch":
-              let reStr = vChild[1]
-              var ok = ""
-              var err = ""
-              if vChild.len >= 3:
-                for msg in vChild[2]:
-                  case $msg[0]
-                  of "ok":
-                    if not msg[1].isNil:
-                      ok = msg[1].strVal
-                  of "err":
-                    if not msg[1].isNil:
-                      err = msg[1].strVal
-              
-              fvData = nnkCall.newTree(
-                nnkDotExpr.newTree(
-                  fvData,
-                  newIdentNode(vChildKind)
-                ),
-                reStr, #regex
-                err.newLit,
-                ok.newLit
-              )
-            
-            of "customErr", "customOk":
-              let msg = vChild[1]
-              fvData = nnkCall.newTree(
-                nnkDotExpr.newTree(
-                  fvData,
-                  newIdentNode(vChildKind)
-                ),
-                msg
-              )
-
-            of "rangeLen":
-              let vChildRangeKind = vChild[1].kind
-              case vChildRangeKind
+            of "rangeLen", "rangeNum":
+              case vChild[1].kind
               of nnkCommand:
                 let minLen = vChild[1][0]
                 let maxLen = vChild[1][1]
@@ -587,70 +664,8 @@ macro fluentValidation*(x: untyped): untyped =
                     fvData,
                     newIdentNode(vChildKind)
                   ),
-                  minLen, #minLen
-                  maxLen, #maxLen
-                  err.newLit,
-                  ok.newLit
-                )
-
-              else:
-                discard
-
-            of "rangeNum":
-              let vChildRangeKind = vChild[1].kind
-              case vChildRangeKind
-              of nnkCommand:
-                let minVal = vChild[1][0]
-                let maxVal = vChild[1][1]
-                var ok = ""
-                var err = ""
-                if vChild.len >= 3:
-                  for msg in vChild[2]:
-                    case $msg[0]
-                    of "ok":
-                      if not msg[1].isNil:
-                        ok = msg[1].strVal
-                    of "err":
-                      if not msg[1].isNil:
-                        err = msg[1].strVal
-                
-                fvData = nnkCall.newTree(
-                  nnkDotExpr.newTree(
-                    fvData,
-                    newIdentNode(vChildKind)
-                  ),
-                  minVal, #minVal
-                  maxVal, #maxVal
-                  err.newLit,
-                  ok.newLit
-                )
-
-              else:
-                discard
-
-            of "maxNum", "minNum":
-              let vChildRangeKind = vChild[1].kind
-              case vChildRangeKind
-              of nnkCommand:
-                let val = vChild[1][0]
-                var ok = ""
-                var err = ""
-                if vChild.len >= 3:
-                  for msg in vChild[2]:
-                    case $msg[0]
-                    of "ok":
-                      if not msg[1].isNil:
-                        ok = msg[1].strVal
-                    of "err":
-                      if not msg[1].isNil:
-                        err = msg[1].strVal
-                
-                fvData = nnkCall.newTree(
-                  nnkDotExpr.newTree(
-                    fvData,
-                    newIdentNode(vChildKind)
-                  ),
-                  val, #value
+                  minLen,
+                  maxLen,
                   err.newLit,
                   ok.newLit
                 )
@@ -658,9 +673,19 @@ macro fluentValidation*(x: untyped): untyped =
               else:
                 discard
             
-            of "minLen", "maxLen":
-              let vChildRangeKind = vChild[1].kind
-              case vChildRangeKind
+            of "minLen", "maxLen", "maxNum", "minNum",
+              "discardIf", "reMatch", "customErr", "customOk":
+              case vChild[1].kind
+              of nnkIntLit, nnkStrLit:
+                let val = vChild[1]
+                fvData = nnkCall.newTree(
+                  nnkDotExpr.newTree(
+                    fvData,
+                    newIdentNode(vChildKind)
+                  ),
+                  val
+                )
+
               of nnkCommand:
                 let val = vChild[1][0]
                 var ok = ""
