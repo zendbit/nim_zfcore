@@ -508,19 +508,17 @@ proc `%`(self: FieldData): JsonNode =
     elif self.validationApplied.contains("bool"):
       result["value"] = %self.value.tryParseBool().val
 
-proc validPairs*(self: FluentValidation): seq[tuple[k: string, v: string]] =
-  # return valids validation result as seq kv pairs seq[k: string, v: string]
-  var kv: seq[tuple[k: string, v: string]]
+proc validPairs*(self: FluentValidation): JsonNode =
+  # return valids validation result as JsonNode pairs key value
+  result = %*{}
   for k, v in self.valids:
-    kv.add((k, v{"value"}.getStr))
-  return kv
+    result[k] = v{"value"}
 
-proc notValidPairs*(self: FluentValidation): seq[tuple[k: string, v: string]] =
-  # return not valids validation result as seq kv pairs seq[k: string, v: string]
-  var kv: seq[tuple[k: string, v: string]]
-  for k, v in self.notValids:
-    kv.add((k, v{"value"}.getStr))
-  return kv
+proc notValidPairs*(self: FluentValidation): JsonNode =
+  # return not valids validation result as JsonNode pairs key value
+  result = %*{}
+  for k, v in self.valids:
+    result[k] = v{"value"}
 
 proc add*(
   self: FluentValidation,
