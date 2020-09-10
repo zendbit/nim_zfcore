@@ -7,6 +7,8 @@
   Git: https://github.com/zendbit
 ]#
 import nre except toSeq
+import mimetypes
+export mimetypes
 
 # nimble
 import uri3
@@ -14,8 +16,8 @@ from zfblast import getHttpHeaderValues, trace
 export trace, getHttpHeaderValues
 
 # local
-import httpcontext, formdata, middleware, route, settings, mime
-export httpcontext, formdata, middleware, route, settings, mime
+import httpcontext, formdata, middleware, route, settings
+export httpcontext, formdata, middleware, route, settings
 
 type
   Router* = ref object of Middleware
@@ -132,8 +134,8 @@ proc handleStaticRoute(
           let ext = staticPath.match(re"[\w\W]+\.([\w]+)$")
           if ext.isSome:
             # if extension is defined then try to search the contentType
-            let mimeType = newMimeType().getMimeType(
-              ("." & ext.get.captures[0]).toLower)
+            let mimeType = newMimeTypes().getMimeType(
+              (ext.get.captures[0]).toLower)
             # override the contentType if we found it
             if mimeType != "":
               contentType = mimeType
