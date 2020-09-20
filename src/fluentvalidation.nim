@@ -19,9 +19,9 @@
       .rangeLen(10, 255, "Min password length is 10, max is 255."))
 ]#
 
-import strutils, strformat, nre, parseutils, json, macros
+import strutils, strformat, nre, parseutils, json, macros, times
 export strutils, strformat, nre, parseutils, json
-import stdext/[strutils_ext]
+import stdext/[strutilsExt]
 
 #[
   FieldData is object model of field to be validated
@@ -64,11 +64,36 @@ proc must*(
       if errMsg != "":
         self.msg = errMsg
       else:
-        self.msg =  "Value is required."
+        self.msg =  "required."
 
     else:
       self.isValid = true
       self.msg = okMsg
+
+  return self
+
+proc datetime*(
+  self: FieldData,
+  format: string,
+  errMsg: string = "",
+  okMsg:string = ""): FieldData {.discardable.} =
+  # validate the value treat as datetime format
+  # if value not datetime format will not valid
+  # errMsg for error msg
+  # okMsg for success msg 
+  if self.msg == "":
+    self.validationApplied &= "|datetime"
+    self.isValid = false
+    try:
+      discard self.value.parse(format)
+      self.isValid = not self.isValid
+      self.msg = okMsg
+
+    except:
+      if errMsg != "":
+        self.msg = errMsg
+      else:
+        self.msg = "not valid datetime format."
 
   return self
 
@@ -90,7 +115,7 @@ proc num*(
       if errMsg != "":
         self.msg = errMsg
       else:
-        self.msg = "Value is not valid number."
+        self.msg = "not valid number."
 
   return self
 
@@ -122,7 +147,7 @@ proc dec*(
       if errMsg != "":
         self.msg = errMsg
       else:
-        self.msg = "Value is not valid number."
+        self.msg = "not valid decimal number."
 
   return self
 
@@ -144,7 +169,7 @@ proc bool*(
       if errMsg != "":
         self.msg = errMsg
       else:
-        self.msg = "Value is not valid number."
+        self.msg = "not valid boolean."
 
   return self
 
@@ -164,7 +189,7 @@ proc inListStr*(
       if errMsg != "":
           err = errMsg
       else:
-          err = &"Value is not in {list}."
+          err = &"not in {list}."
 
     else:
       self.isValid = true
@@ -193,14 +218,14 @@ proc inListNum*(
         if errMsg != "":
             err = errMsg
         else:
-            err = &"Value is not in {list}."
+            err = &"not in {list}."
 
       else:
         self.isValid = true
         self.msg = okMsg
 
     else:
-      err = &"Value is not in {list}."
+      err = &"not in {list}."
 
     if err != "":
       self.msg = err
@@ -225,14 +250,14 @@ proc inListDec*(
         if errMsg != "":
             err = errMsg
         else:
-            err = &"Value is not in {list}."
+            err = &"not in {list}."
 
       else:
         self.isValid = true
         self.msg = okMsg
 
     else:
-      err = &"Value is not in {list}."
+      err = &"not in {list}."
 
     if err != "":
       self.msg = err
@@ -258,14 +283,14 @@ proc rangeNum*(
         if errMsg != "":
             err = errMsg
         else:
-            err = &"Value is not in range. ({min}-{max})"
+            err = &"not in range ({min}-{max})."
 
       else:
         self.isValid = true
         self.msg = okMsg
 
     else:
-      err = &"Value is not in range. ({min}-{max})"
+      err = &"not in range ({min}-{max})."
 
     if err != "":
       self.msg = err
@@ -291,14 +316,14 @@ proc rangeDec*(
         if errMsg != "":
             err = errMsg
         else:
-            err = &"Value is not in range. ({min}-{max})"
+            err = &"not in range ({min}-{max})."
 
       else:
         self.isValid = true
         self.msg = okMsg
 
     else:
-      err = &"Value is not in range. ({min}-{max})"
+      err = &"not in range ({min}-{max})."
 
     if err != "":
       self.msg = err
@@ -323,14 +348,14 @@ proc maxNum*(
         if errMsg != "":
           err = errMsg
         else:
-          err = &"Larger value not allowed. (>{max})"
+          err = &"not allowed (>{max})."
 
       else:
         self.isValid = true
         self.msg = okMsg
 
     else:
-      err = &"Larger value not allowed. (>{max})"
+      err = &"not allowed (>{max})."
 
     if err != "":
       self.msg = err
@@ -355,14 +380,14 @@ proc maxDec*(
         if errMsg != "":
           err = errMsg
         else:
-          err = &"Larger value not allowed. (>{max})"
+          err = &"not allowed (>{max})."
 
       else:
         self.isValid = true
         self.msg = okMsg
 
     else:
-      err = &"Larger value not allowed. (>{max})"
+      err = &"not allowed (>{max})."
 
     if err != "":
       self.msg = err
@@ -387,14 +412,14 @@ proc minNum*(
         if errMsg != "":
           err = errMsg
         else:
-          err = &"Lower value not allowed. (<{min})"
+          err = &"not allowed (<{min})."
 
       else:
         self.isValid = true
         self.msg = okMsg
 
     else:
-      err = &"Lower value not allowed. (<{min})"
+      err = &"not allowed (<{min})."
 
     if err != "":
       self.msg = err
@@ -419,14 +444,14 @@ proc minDec*(
         if errMsg != "":
           err = errMsg
         else:
-          err = &"Lower value not allowed. (<{min})"
+          err = &"not allowed (<{min})."
 
       else:
         self.isValid = true
         self.msg = okMsg
 
     else:
-      err = &"Lower value not allowed. (<{min})"
+      err = &"not allowed (<{min})."
 
     if err != "":
       self.msg = err
@@ -468,7 +493,7 @@ proc minLen*(
       if errMsg != "":
         self.msg = errMsg
       else:
-        self.msg = &"Lower value length not allowed. (<{min})"
+        self.msg = &"not allowed (<{min})."
 
     else:
       self.isValid = true
@@ -491,7 +516,7 @@ proc maxLen*(
       if errMsg != "":
         self.msg = errMsg
       else:
-        self.msg = &"Larger value length not allowed. (>{max})"
+        self.msg = &"not allowed (>{max})."
 
     else:
       self.isValid = true
@@ -514,7 +539,7 @@ proc rangeLen*(
       if errMsg != "":
         self.msg = errMsg
       else:
-        self.msg = &"Value length not in range. ({min}-{max})"
+        self.msg = &"not in range ({min}-{max})."
 
     else:
       self.isValid = true
@@ -537,7 +562,7 @@ proc reMatch*(
       if errMsg != "":
         self.msg = errMsg
       else:
-        self.msg = &"Value not match with pattern. ({regex})"
+        self.msg = &"not match with pattern ({regex})."
 
     else:
       self.isValid = true
@@ -556,7 +581,7 @@ proc email*(
     self.validationApplied &= "|email"
     var localErrMsg = errMsg
     if localErrMsg != "":
-      localErrMsg = "Email address format is not valid."
+      localErrMsg = "not valid email address."
 
     self.reMatch(
       fmt"([\w\.\-]+@[\w\.\-]+\.[\w\.\-]+)$",
@@ -688,7 +713,7 @@ macro fluentValidation*(x: untyped): untyped =
             # num
             #
             case $vChild
-            of "bool", "must", "num", "email":
+            of "bool", "must", "num", "email", "dec":
               fvData = nnkCall.newTree(
                 nnkDotExpr.newTree(
                   fvData,
@@ -709,7 +734,7 @@ macro fluentValidation*(x: untyped): untyped =
             #
             let vChildKind = $vChild[0]
             case vChildKind
-            of "bool", "must", "num", "email":
+            of "bool", "must", "num", "email", "dec":
               var ok = ""
               var err = ""
               for msg in vChild[1]:
@@ -776,8 +801,8 @@ macro fluentValidation*(x: untyped): untyped =
               else:
                 discard
             
-            of "minLen", "maxLen", "maxNum", "minNum",
-              "discardIf", "reMatch", "customErr", "customOk":
+            of "minLen", "maxLen", "maxNum", "minNum", "inListStr", "inListNum", "inListDec",
+              "datetime", "discardIf", "reMatch", "customErr", "customOk":
               case vChild[1].kind
               of nnkIntLit, nnkStrLit:
                 let val = vChild[1]
