@@ -12,8 +12,8 @@ export mimetypes
 
 # nimble
 import uri3
-from zfblast import getHttpHeaderValues, trace
-export trace, getHttpHeaderValues
+from zfblast import getValues, trace
+export trace, getValues
 
 # local
 import httpcontext, formdata, middleware, route, settings
@@ -190,12 +190,12 @@ proc handleDynamicRoute(
   elif staticFound:
     let fileInfo = staticFilePath.getFileInfo
     ctx.response.headers["Content-Type"] = staticContentType
-    if ctx.response.headers.getHttpHeaderValues("Cache-Control") == "":
+    if ctx.response.headers.getValues("Cache-Control") == "":
       ctx.response.headers["Cache-Control"] = "must-revalidate"
-    if ctx.response.headers.getHttpHeaderValues("Last-Modified") == "":
+    if ctx.response.headers.getValues("Last-Modified") == "":
       ctx.response.headers["Last-Modified"] =
         fileInfo.lastWriteTime.utc().format("ddd, dd MMM yyyy HH:mm:ss".initTimeFormat) & " GMT"
-    if ctx.response.headers.getHttpHeaderValues("Date") == "":
+    if ctx.response.headers.getValues("Date") == "":
       ctx.response.headers["Date"] =
         fileInfo.lastAccessTime.utc().format("ddd, dd MMM yyyy HH:mm:ss".initTimeFormat) & " GMT"
     
@@ -203,7 +203,7 @@ proc handleDynamicRoute(
     ctx.staticFile(staticFilePath)
 
     # check if header contains Range
-    let headRange = ctx.request.headers.getHttpHeaderValues("Range")
+    let headRange = ctx.request.headers.getValues("Range")
     if ctx.isSupportGz(staticContentType) or headRange == "":
       let staticFile = staticFilePath.open
       if ctx.settings.maxResponseBodyLength >= staticFile.getFileSize:

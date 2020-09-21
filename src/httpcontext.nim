@@ -24,7 +24,7 @@ import settings, formdata, websocket, apimsg
 export settings, formdata, websocket, apimsg
 
 import zfblast
-export send, getHttpHeaderValues, trace, Response, Request
+export send, getValues, trace, Response, Request
 
 type
   HttpContext* = ref object of zfblast.HttpContext
@@ -135,7 +135,7 @@ proc getContentRange*(
   result = ("", newHttpHeaders(), apiMsg)
   if self.staticFile().existsFile:
     let staticFile = self.staticFile.open
-    let rangeHead = self.request.headers.getHttpHeaderValues("Range")
+    let rangeHead = self.request.headers.getValues("Range")
     var httpHeaders = newHttpHeaders()
     let rangeParams = rangeHead.split("=")
     if rangeParams.len == 2 and rangeParams[0].toLower().strip == "bytes":
@@ -175,7 +175,7 @@ proc mapContentype*(self: HttpContext) =
   # HttpPost, HttpPut, HttpPatch will auto parse and extract the request, including the uploaded files
   # uploaded files will save to tmp folder
   #
-  let contentType = self.request.headers.getHttpHeaderValues("Content-Type").toLower
+  let contentType = self.request.headers.getValues("Content-Type").toLower
   if self.request.httpMethod in [HttpPost, HttpPut, HttpPatch]:
     if contentType.find("multipart/form-data") != -1:
       self.formData = newFormData().parse(
@@ -202,7 +202,7 @@ proc isSupportGz*(self: HttpContext, contentType: string): bool =
   when defined zlib:
     # prepare gzip support
     let accept =
-      self.request.headers.getHttpHeaderValues("accept-encoding").toLower
+      self.request.headers.getValues("accept-encoding").toLower
     let typeToZip = contentType.toLower
     return (accept.startsWith("gzip") or accept.contains("gzip")) and
       (typeToZip.startsWith("text/") or typeToZip.startsWith("message/") or
@@ -216,7 +216,7 @@ proc gzCompress(content: string): string =
     return content
 
 proc doResp(self: HttpContext) {.gcsafe.} =
-  let contentType = self.response.headers.getHttpHeaderValues("Content-Type")
+  let contentType = self.response.headers.getValues("Content-Type")
   if contentType == "":
     self.response.headers["Content-Type"] = "application/octet-stream"
 
@@ -233,7 +233,7 @@ proc doResp(self: HttpContext) {.gcsafe.} =
       # head request doesn,t need the body
       self.response.body = ""
   elif self.request.httpMethod == HttpHead:
-    if self.request.headers.getHttpHeaderValues("Accept-Ranges") == "":
+    if self.request.headers.getValues("Accept-Ranges") == "":
       self.response.headers["Accept-Ranges"] = "bytes"
     # if not gzip support
     # and the request is HttpHead
