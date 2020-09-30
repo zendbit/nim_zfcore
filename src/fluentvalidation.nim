@@ -21,7 +21,7 @@
 
 import strutils, strformat, nre, parseutils, json, macros, times
 export strutils, strformat, nre, parseutils, json
-import stdext/[strutilsExt]
+import stdext/[strutils_ext]
 
 #[
   FieldData is object model of field to be validated
@@ -684,6 +684,10 @@ macro fluentValidation*(x: untyped): untyped =
     # define child kind is data
     # get name and value parameter
     #
+    if child.kind == nnkCommentStmt:
+      stmtList.add(child)
+      continue
+
     let childKind = $child[0]
     case child.kind
     of nnkCommand:

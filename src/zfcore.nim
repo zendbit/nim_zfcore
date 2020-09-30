@@ -250,6 +250,10 @@ if not zfcoreInstance.settings.tmpDir.existsDir:
 macro routes*(x: untyped): untyped =
   let stmtList = newStmtList()
   for child in x.children:
+    if child.kind == nnkCommentStmt:
+      stmtList.add(child)
+      continue
+
     let childKind = ($child[0]).strip
     case child.kind
     of nnkCall:
