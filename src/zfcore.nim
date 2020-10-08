@@ -401,7 +401,10 @@ macro routes*(x: untyped): untyped =
 
   return stmtList
 
-macro resp*(httpCode: HttpCode, body: untyped, headers: HttpHeaders = nil) =
+macro resp*(
+  httpCode: HttpCode,
+  body: untyped,
+  headers: HttpHeaders = nil) =
   nnkCall.newTree(
     nnkDotExpr.newTree(
       newIdentNode("ctx"),
@@ -412,7 +415,10 @@ macro resp*(httpCode: HttpCode, body: untyped, headers: HttpHeaders = nil) =
     headers
   )
 
-macro respHtml*(httpCode: HttpCode, body: string, headers: HttpHeaders = nil) =
+macro respHtml*(
+  httpCode: HttpCode,
+  body: string,
+  headers: HttpHeaders = nil) =
   nnkCall.newTree(
     nnkDotExpr.newTree(
       newIdentNode("ctx"),

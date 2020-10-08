@@ -22,5 +22,8 @@ proc `%`*(self: ApiMsg): JsonNode =
   result["error"] = self.error
   result["data"] = self.data
 
-proc newApiMsg*(success: bool = false, error: JsonNode = %*{}, data: JsonNode = %*{}): ApiMsg =
+proc newApiMsg*(
+  success: bool = false,
+  error: JsonNode = %*{},
+  data: JsonNode = %*{}): ApiMsg =
   result = ApiMsg(success: success, error: error, data: data)

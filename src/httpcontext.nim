@@ -46,7 +46,9 @@ type
     settings*: Settings
     staticFilePath: string
 
-proc staticFile*(self: HttpContext, path: string = ""): string {.discardable.} =
+proc staticFile*(
+  self: HttpContext,
+  path: string = ""): string {.discardable.} =
   if path != "":
     self.staticFilePath = path
 
@@ -198,7 +200,9 @@ proc mapContentype*(self: HttpContext) =
     self.request.body = ""
 
 
-proc isSupportGz*(self: HttpContext, contentType: string): bool =
+proc isSupportGz*(
+  self: HttpContext,
+  contentType: string): bool =
   when defined zlib:
     # prepare gzip support
     let accept =

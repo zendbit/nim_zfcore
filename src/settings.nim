@@ -78,11 +78,18 @@ proc `%`*(settings: Settings): JsonNode =
     "readBodyBuffer": settings.readBodyBuffer,
     "tmpCleanupDir": settings.tmpCleanupDir}
 
-proc addTmpCleanupDir*(self: Settings, dirName: string, interval: int64 = 3600) =
+proc addTmpCleanupDir*(
+  self: Settings,
+  dirName: string,
+  interval: int64 = 3600) =
+
   if filter(self.tmpCleanupDir, (x: tuple[dirName: string, interval: int64]) => x.dirName == dirName).len == 0:
     self.tmpCleanupDir.add((dirName, interval))
 
-proc removeTmpCleanupDir*(self: Settings, dirname: string) =
+proc removeTmpCleanupDir*(
+  self: Settings,
+  dirname: string) =
+  
   self.tmpCleanupDir = filter(self.tmpCleanupDir, (x: tuple[dirName: string, interval: int64]) => x.dirName != dirname)
 
 proc newSettings*(
@@ -99,6 +106,7 @@ proc newSettings*(
   keepAlive: bool = false,
   sslSettings: SslSettings = nil,
   tmpCleanupDir: seq[tuple[dirName: string, interval: int64]] = @[]): Settings =
+
   #
   # this for instantiate new Settings with default parameter is:
   #   port -> 8080
