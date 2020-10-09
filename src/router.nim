@@ -32,6 +32,12 @@ type
 proc newRouter*(): Router {.gcsafe.} =
   return Router(routes: @[])
 
+proc getRoutes*(self: Router): seq[Route] =
+  #
+  # return registered routes
+  #
+  return self.routes
+
 proc matchesUri(
   pathSeg: seq[string],
   uriSeg: seq[string]):
@@ -49,7 +55,7 @@ proc matchesUri(
   if pathSeg.len != uriSeg.len:
     success = false
 
-  else:
+  elif pathSeg.join("") != uriSeg.join(""):
     for i in 0..high(pathSeg):
       # check if matches with <tag-param>, ex: /home/<id>/index.html
       let currentPathSeg = pathSeg[i].decodeUri(false)
@@ -81,12 +87,6 @@ proc matchesUri(
       if not success: break
 
   return (success: success, params: params, reParams: reParams)
-
-proc getRoutes*(self: Router): seq[Route] =
-  #
-  # return registered routes
-  #
-  return self.routes
 
 proc parseSegmentsFromPath(path: string): seq[string] =
   #
@@ -159,7 +159,7 @@ proc handleDynamicRoute(
   # map content type
   # extract and map based on content type
   ctx.mapContentype
-
+  
   # route to potensial uri
   # also extract the uri parameter
   let ctxSegments = ctx.request.url.getPath().parseSegmentsFromPath
@@ -177,8 +177,6 @@ proc handleDynamicRoute(
         ctx.params.add(qStr[0], qStr[1].decodeUri())
 
       ctx.reParams = matchesUri.reParams
-
-      break
 
   if route != nil:
     # execute middleware after routing before response

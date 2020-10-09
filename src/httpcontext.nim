@@ -16,7 +16,7 @@ export net, tables, strtabs, cookies,
   strutils, httpcore, os, times, base64, strformat, json
 
 # nimble
-import uri3, stdext/strutils_ext
+import uri3, stdext.strutils_ext
 export uri3, strutils_ext
 
 # local
