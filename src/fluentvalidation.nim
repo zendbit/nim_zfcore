@@ -173,7 +173,7 @@ proc bool*(
 
   return self
 
-proc inListStr*(
+proc list*(
   self: FieldData,
   list: openArray[string],
   errMsg: string = "",
@@ -182,7 +182,7 @@ proc inListStr*(
   # errMsg for error msg
   # okMsg for success msg 
   if self.msg == "":
-    self.validationApplied &= "|inListStr"
+    self.validationApplied &= "|listStr"
     var err = ""
     self.isValid = false
     if self.value notin list:
@@ -200,7 +200,7 @@ proc inListStr*(
 
   return self
 
-proc inListNum*(
+proc list*(
   self: FieldData,
   list: openArray[BiggestInt],
   errMsg: string = "",
@@ -209,7 +209,7 @@ proc inListNum*(
   # errMsg for error msg
   # okMsg for success msg 
   if self.msg == "":
-    self.validationApplied &= "|inListNum"
+    self.validationApplied &= "|listNum"
     var err = ""
     let (ok, val) = self.value.tryParseBiggestInt()
     self.isValid = false
@@ -232,7 +232,7 @@ proc inListNum*(
 
   return self
 
-proc inListDec*(
+proc list*(
   self: FieldData,
   list: openArray[BiggestFloat],
   errMsg: string = "",
@@ -241,7 +241,7 @@ proc inListDec*(
   # errMsg for error msg
   # okMsg for success msg 
   if self.msg == "":
-    self.validationApplied &= "|inListDec"
+    self.validationApplied &= "|listDec"
     var err = ""
     let (ok, val) = self.value.tryParseBiggestFloat()
     self.isValid = false
@@ -264,7 +264,7 @@ proc inListDec*(
 
   return self
 
-proc rangeNum*(
+proc range*(
   self: FieldData,
   min: BiggestInt,
   max: Biggestint,
@@ -297,7 +297,7 @@ proc rangeNum*(
 
   return self
 
-proc rangeDec*(
+proc range*(
   self: FieldData,
   min: BiggestFloat,
   max: BiggestFloat,
@@ -330,7 +330,7 @@ proc rangeDec*(
 
   return self
 
-proc maxNum*(
+proc max*(
   self: FieldData,
   max: BiggestInt,
   errMsg: string = "",
@@ -362,7 +362,7 @@ proc maxNum*(
 
   return self
 
-proc maxDec*(
+proc max*(
   self: FieldData,
   max: BiggestFloat,
   errMsg: string = "",
@@ -394,7 +394,7 @@ proc maxDec*(
 
   return self
 
-proc minNum*(
+proc min*(
   self: FieldData,
   min: BiggestInt,
   errMsg: string = "",
@@ -426,7 +426,7 @@ proc minNum*(
 
   return self
 
-proc minDec*(
+proc min*(
   self: FieldData,
   min: BiggestFloat,
   errMsg: string = "",
@@ -618,9 +618,10 @@ proc `%`(self: FieldData): JsonNode =
     }
 
   if self.isValid:
-    if self.validationApplied.toLower().contains("num") or
-      self.validationApplied.toLower().contains("dec"):
+    if self.validationApplied.toLower().contains("num"):
       result["value"] = %self.value.tryParseBiggestUInt().val
+    elif self.validationApplied.toLower().contains("dec"):
+      result["value"] = %self.value.tryParseBiggestFloat().val
     elif self.validationApplied.contains("bool"):
       result["value"] = %self.value.tryParseBool().val
 
@@ -774,11 +775,11 @@ macro fluentValidation*(x: untyped): untyped =
             #
             let vChildKind = $vChild[0]
             case vChildKind
-            of "rangeLen", "rangeNum":
+            of "rangeLen", "range":
+              let minLen = vChild[1][0]
+              let maxLen = vChild[1][1]
               case vChild[1].kind
               of nnkCommand:
-                let minLen = vChild[1][0]
-                let maxLen = vChild[1][1]
                 var ok = ""
                 var err = ""
                 if vChild.len >= 3:
@@ -803,21 +804,18 @@ macro fluentValidation*(x: untyped): untyped =
                 )
 
               else:
-                discard
-            
-            of "minLen", "maxLen", "maxNum", "minNum", "inListStr", "inListNum", "inListDec",
-              "datetime", "discardIf", "reMatch", "customErr", "customOk":
-              case vChild[1].kind
-              of nnkIntLit, nnkStrLit:
-                let val = vChild[1]
                 fvData = nnkCall.newTree(
                   nnkDotExpr.newTree(
                     fvData,
                     newIdentNode(vChildKind)
                   ),
-                  val
+                  minLen,
+                  maxLen
                 )
-
+            
+            of "minLen", "maxLen", "max", "min", "list",
+              "datetime", "discardIf", "reMatch", "customErr", "customOk":
+              case vChild[1].kind
               of nnkCommand:
                 let val = vChild[1][0]
                 var ok = ""
@@ -843,13 +841,20 @@ macro fluentValidation*(x: untyped): untyped =
                 )
 
               else:
-                discard
+                let val = vChild[1]
+                fvData = nnkCall.newTree(
+                  nnkDotExpr.newTree(
+                    fvData,
+                    newIdentNode(vChildKind)
+                  ),
+                  val
+                )
              
             else:
-              discard
+              echo &"{vChildKind} not found in fluent validation."
 
           else:
-            discard
+            stmtList.add(vChild)
 
         #
         # data
@@ -863,6 +868,6 @@ macro fluentValidation*(x: untyped): untyped =
         )
 
     else:
-      discard
+      stmtList.add(child)
 
   result = stmtList.add(fv)
