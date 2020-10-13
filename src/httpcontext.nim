@@ -199,7 +199,6 @@ proc mapContentype*(self: HttpContext) =
     # not need to keep the body after processing
     self.request.body = ""
 
-
 proc isSupportGz*(
   self: HttpContext,
   contentType: string): bool =

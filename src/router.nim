@@ -12,6 +12,7 @@ export mimetypes
 
 # nimble
 import uri3
+import apimsg
 from zfblast import getValues, trace
 export trace, getValues
 
@@ -148,14 +149,18 @@ proc handleStaticRoute(
 proc handleDynamicRoute(
   self: Router,
   ctx: HttpContext) {.gcsafe.} =
+  # call static route before the dynamic route
+  let (staticFound, staticFilePath, staticContentType) =
+    self.handleStaticRoute(ctx)
+  if staticFound:
+    # set static file path
+    ctx.staticFile(staticFilePath)
+
   # 
   # execute middleware before routing
   # handle dynamic route
   #
   if self.execBeforeRoute(ctx): return
-  # call static route before the dynamic route
-  let (staticFound, staticFilePath, staticContentType) =
-    self.handleStaticRoute(ctx)
   # map content type
   # extract and map based on content type
   ctx.mapContentype
@@ -196,9 +201,6 @@ proc handleDynamicRoute(
     if ctx.response.headers.getValues("Date") == "":
       ctx.response.headers["Date"] =
         fileInfo.lastAccessTime.utc().format("ddd, dd MMM yyyy HH:mm:ss".initTimeFormat) & " GMT"
-    
-    # set static file path
-    ctx.staticFile(staticFilePath)
 
     # check if header contains Range
     let headRange = ctx.request.headers.getValues("Range")
@@ -210,8 +212,9 @@ proc handleDynamicRoute(
         ctx.resp(Http406, %newApiMsg(
           success = false,
           error = %*{
-            "msg": &"use Range header (partial request) for response larger than {ctx.settings.maxResponseBodyLength div (1024*1024)} MB.",
-            "hint": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Range_requests"}))
+            "msg": &"use Range header (partial request) " &
+            &"for response larger than {ctx.settings.maxResponseBodyLength div (1024*1024)} MB. " & 
+            "https://developer.mozilla.org/en-US/docs/Web/HTTP/Range_requests"}))
       staticFile.close
     else:
       let contentRange = ctx.getContentRange
@@ -222,7 +225,8 @@ proc handleDynamicRoute(
 
   else:
     # default response if route does not match
-    ctx.resp(Http404, &"Resource not found {ctx.request.url.getPath()}")
+    ctx.resp(Http404, %newApiMsg(error = %*{
+      "msg": "not found {ctx.request.url.getPath()}."}))
 
 proc executeProc*(
   self: Router,

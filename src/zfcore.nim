@@ -247,7 +247,15 @@ if not zfcoreInstance.settings.tmpDir.existsDir:
 ###
 ### macros for the zfcore
 ###
-macro routes*(x: untyped): untyped =
+macro routes*(group, body: untyped = nil): untyped =
+  var x: NimNode = body
+  var routeGroup: string = ""
+  
+  if group.kind == nnkStmtList:
+    x = group
+  elif group.kind == nnkStrLit:
+    routeGroup = $group
+
   let stmtList = newStmtList()
   for child in x.children:
     if child.kind == nnkCommentStmt:
@@ -257,7 +265,9 @@ macro routes*(x: untyped): untyped =
     let childKind = ($child[0]).strip
     case child.kind
     of nnkCall:
-      let childStmtList = child[1]
+      var childStmtList: NimNode = child
+      if child.len > 1:
+        childStmtList = child[1]
       case childKind
       of "after":
         stmtList.add(
@@ -330,7 +340,7 @@ macro routes*(x: untyped): untyped =
         stmtList.add(child)
 
     of nnkCommand:
-      let route = ($child[1]).strip()
+      let route = routeGroup & ($child[1]).strip()
       case childKind
       of "get", "post", "head",
         "patch", "delete", "put",
@@ -390,16 +400,24 @@ macro routes*(x: untyped): untyped =
     else:
       stmtList.add(child)
 
-  stmtList.add(
-    nnkCall.newTree(
+  #stmtList.add(
+  #  nnkCall.newTree(
+  #    nnkDotExpr.newTree(
+  #      newIdentNode("zfcoreInstance"),
+  #      newIdentNode("serve")
+  #    )
+  #  )
+  #)
+
+  return stmtList
+
+macro emitServer*() =
+  nnkCall.newTree(
       nnkDotExpr.newTree(
         newIdentNode("zfcoreInstance"),
         newIdentNode("serve")
       )
     )
-  )
-
-  return stmtList
 
 macro resp*(
   httpCode: HttpCode,
