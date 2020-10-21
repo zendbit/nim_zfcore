@@ -277,7 +277,7 @@ macro routes*(group, body: untyped = nil): untyped =
                 newIdentNode("zfcoreInstance"),
                 newIdentNode("r")
               ),
-              newIdentNode("afterRoute")
+              newIdentNode("addAfterRoute")
             ),
             nnkLambda.newTree(
               newEmptyNode(),
@@ -313,7 +313,7 @@ macro routes*(group, body: untyped = nil): untyped =
                 newIdentNode("zfcoreInstance"),
                 newIdentNode("r")
               ),
-              newIdentNode("beforeRoute")
+              newIdentNode("addBeforeRoute")
             ),
             nnkLambda.newTree(
               newEmptyNode(),

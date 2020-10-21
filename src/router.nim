@@ -160,7 +160,9 @@ proc handleDynamicRoute(
   # execute middleware before routing
   # handle dynamic route
   #
-  if self.execBeforeRoute(ctx): return
+  #if self.execBeforeRoute(ctx): return
+  for pre in self.beforeRoutes:
+    if pre(ctx): return
   # map content type
   # extract and map based on content type
   ctx.mapContentype
@@ -185,7 +187,9 @@ proc handleDynamicRoute(
 
   if route != nil:
     # execute middleware after routing before response
-    if self.execAfterRoute(ctx, route): return
+    #if self.execAfterRoute(ctx, route): return
+    for post in self.afterRoutes:
+      if post(ctx, route): return
 
     # execute route callback
     route.thenDo(ctx)
