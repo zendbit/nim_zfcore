@@ -218,7 +218,7 @@ proc gzCompress(content: string): string =
   else:
     return content
 
-proc doResp(self: HttpContext) {.gcsafe.} =
+proc doResp(self: HttpContext) {.gcsafe async.} =
   let contentType = self.response.headers.getValues("Content-Type")
   if contentType == "":
     self.response.headers["Content-Type"] = "application/octet-stream"
@@ -243,13 +243,13 @@ proc doResp(self: HttpContext) {.gcsafe.} =
     self.response.headers["Content-Length"] = $self.response.body.len
     self.response.body = ""
 
-  self.send(self)
+  await self.send(self)
 
 proc resp*(
   self: HttpContext,
   httpCode: HttpCode,
   body: string,
-  headers: HttpHeaders = nil) {.gcsafe.} =
+  headers: HttpHeaders = nil) {.gcsafe async.} =
   #
   # response to the client
   # self.resp(Http200, "ok")
@@ -265,13 +265,13 @@ proc resp*(
       else:
         self.response.headers[k] = v
 
-  self.doResp
+  await self.doResp
 
 proc resp*(
   self: HttpContext,
   httpCode: HttpCode,
   body: JsonNode,
-  headers: HttpHeaders = nil) {.gcsafe.} =
+  headers: HttpHeaders = nil) {.gcsafe async.} =
   #
   # response as application/json to the client
   # let msg = %*{"status": true}
@@ -284,13 +284,13 @@ proc resp*(
     for k, v in headers.pairs:
       self.response.headers[k] = v
 
-  self.doResp
+  await self.doResp
 
 proc respHtml*(
   self: HttpContext,
   httpCode: HttpCode,
   body: string,
-  headers: HttpHeaders = nil) {.gcsafe.} =
+  headers: HttpHeaders = nil) {.gcsafe async.} =
   #
   # response as html to the client
   # self.respHtml(Http200, """<html><body>Nice...</body></html>""")
@@ -302,16 +302,16 @@ proc respHtml*(
     for k, v in headers.pairs:
       self.response.headers[k] = v
 
-  self.doResp
+  await self.doResp
 
 proc respRedirect*(
   self: HttpContext,
-  redirectTo: string) {.gcsafe.} =
+  redirectTo: string) {.gcsafe async.} =
   #
   # response redirect to the client
   # self.respRedirect("https://google.com")
   #
   self.response.httpCode = Http303
   self.response.headers["Location"] = @[redirectTo]
-  self.doResp
+  await self.doResp
 

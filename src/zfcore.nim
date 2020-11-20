@@ -145,13 +145,13 @@ proc newZFCore*(): ZFCore {.gcsafe.} =
 ]#
 proc httpMethodNotFoundAsync(
   self: ZFCore,
-  ctx: zfblast.HttpContext) {.gcsafe.} =
+  ctx: zfblast.HttpContext) {.gcsafe async.} =
 
   ctx.response.httpCode = Http500
   ctx.response.body =
     &"Request method not implemented: {ctx.request.httpMethod}"
 
-  ctx.send(ctx)
+  await ctx.send(ctx)
 
 #[
   this proc is private for sending request context to router, the request will process and parsed
@@ -159,10 +159,10 @@ proc httpMethodNotFoundAsync(
 ]#
 proc sendToRouter(
   self: ZFCore,
-  ctx: zfblast.HttpContext) {.gcsafe.} =
+  ctx: zfblast.HttpContext) {.gcsafe async.} =
 
   try:
-    self.r.executeProc(ctx, self.settings)
+    await self.r.executeProc(ctx, self.settings)
   except Exception as ex:
     if self.settings.trace:
       trace proc (): void =
@@ -202,7 +202,7 @@ proc cleanupThread(settings: Settings) =
 ]#
 proc mainHandler(
   self: ZFCore,
-  ctx: zfblast.HttpContext) {.gcsafe.} =
+  ctx: zfblast.HttpContext) {.gcsafe async.} =
 
   try:
     if ctx.request.httpmethod in [HttpGet, HttpPost, HttpPut, HttpPatch,
@@ -210,10 +210,10 @@ proc mainHandler(
       # set default headers content type
       ctx.response.headers["Content-Type"] = "text/plain; utf-8"
 
-      self.sendToRouter(ctx)
+      await self.sendToRouter(ctx)
 
     else:
-      httpMethodNotFoundAsync(self, ctx)
+      await httpMethodNotFoundAsync(self, ctx)
 
   except Exception as ex:
     if self.settings.trace:
@@ -229,14 +229,14 @@ proc mainHandler(
 #[
   this proc is for start the ZendFlow, this will serve forever :-)
 ]#
-proc serve*(self: ZFCore) {.gcsafe.} =
+proc serve*(self: ZFCore) {.gcsafe async.} =
   echo "Enjoy and take a cup of coffe :-)"
 
   # start cleanup thread
   spawn cleanupThread(self.settings.deepCopy)
 
-  self.server.serve proc (ctx: zfblast.HttpContext) {.gcsafe.} =
-    self.mainHandler(ctx)
+  self.server.serve proc (ctx: zfblast.HttpContext) {.gcsafe async.} =
+    await self.mainHandler(ctx)
 
 # zfcore instance
 let zfcoreInstance* {.global.} = newZFCore()
@@ -284,7 +284,13 @@ macro routes*(group, body: untyped = nil): untyped =
               newEmptyNode(),
               newEmptyNode(),
               nnkFormalParams.newTree(
-                newIdentNode("bool"),
+                nnkBracketExpr.newTree(
+                  newIdentNode("Future"),
+                  nnkDotExpr.newTree(
+                    newIdentNode("system"),
+                    newIdentNode("bool")
+                  )
+                ),
                 nnkIdentDefs.newTree(
                   newIdentNode("ctx"),
                   newIdentNode("HttpContext"),
@@ -298,6 +304,7 @@ macro routes*(group, body: untyped = nil): untyped =
               ),
               nnkPragma.newTree(
                 newIdentNode("gcsafe"),
+                newIdentNode("async")
               ),
               newEmptyNode(),
               childStmtList
@@ -320,7 +327,13 @@ macro routes*(group, body: untyped = nil): untyped =
               newEmptyNode(),
               newEmptyNode(),
               nnkFormalParams.newTree(
-                newIdentNode("bool"),
+                nnkBracketExpr.newTree(
+                  newIdentNode("Future"),
+                  nnkDotExpr.newTree(
+                    newIdentNode("system"),
+                    newIdentNode("bool")
+                  )
+                ),
                 nnkIdentDefs.newTree(
                   newIdentNode("ctx"),
                   newIdentNode("HttpContext"),
@@ -329,6 +342,7 @@ macro routes*(group, body: untyped = nil): untyped =
               ),
               nnkPragma.newTree(
                 newIdentNode("gcsafe"),
+                newIdentNode("async")
               ),
               newEmptyNode(),
               childStmtList
@@ -371,6 +385,7 @@ macro routes*(group, body: untyped = nil): untyped =
               ),
               nnkPragma.newTree(
                 newIdentNode("gcsafe"),
+                newIdentNode("async")
               ),
               newEmptyNode(),
               childStmtList
@@ -412,48 +427,60 @@ macro routes*(group, body: untyped = nil): untyped =
   return stmtList
 
 macro emitServer*() =
-  nnkCall.newTree(
-      nnkDotExpr.newTree(
-        newIdentNode("zfcoreInstance"),
-        newIdentNode("serve")
+  nnkCommand.newTree(
+    newIdentNode("waitFor"),
+    nnkCall.newTree(
+        nnkDotExpr.newTree(
+          newIdentNode("zfcoreInstance"),
+          newIdentNode("serve")
+        )
       )
-    )
+  )
 
 macro resp*(
   httpCode: HttpCode,
   body: untyped,
   headers: HttpHeaders = nil) =
-  nnkCall.newTree(
-    nnkDotExpr.newTree(
-      newIdentNode("ctx"),
-      newIdentNode("resp")
-    ),
-    httpCode,
-    body,
-    headers
+  nnkCommand.newTree(
+    newIdentNode("await"),
+    nnkCall.newTree(
+      nnkDotExpr.newTree(
+        newIdentNode("ctx"),
+        newIdentNode("resp")
+      ),
+      httpCode,
+      body,
+      headers
+    )
   )
 
 macro respHtml*(
   httpCode: HttpCode,
   body: string,
   headers: HttpHeaders = nil) =
-  nnkCall.newTree(
-    nnkDotExpr.newTree(
-      newIdentNode("ctx"),
-      newIdentNode("respHtml")
-    ),
-    httpCode,
-    body,
-    headers
+  nnkCommand.newTree(
+    newIdentNode("await"),
+    nnkCall.newTree(
+      nnkDotExpr.newTree(
+        newIdentNode("ctx"),
+        newIdentNode("respHtml")
+      ),
+      httpCode,
+      body,
+      headers
+    )
   )
 
 macro respRedirect*(redirectTo: string) =
-  nnkCall.newTree(
-    nnkDotExpr.newTree(
-      newIdentNode("ctx"),
-      newIdentNode("respRedirect")
-    ),
-    redirectTo
+  nnkCommand.newTree(
+    newIdentNode("await"),
+    nnkCall.newTree(
+      nnkDotExpr.newTree(
+        newIdentNode("ctx"),
+        newIdentNode("respRedirect")
+      ),
+      redirectTo
+    )
   )
 
 macro setCookie*(

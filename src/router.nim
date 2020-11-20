@@ -148,7 +148,7 @@ proc handleStaticRoute(
 
 proc handleDynamicRoute(
   self: Router,
-  ctx: HttpContext) {.gcsafe.} =
+  ctx: HttpContext) {.gcsafe async.} =
   # call static route before the dynamic route
   let (staticFound, staticFilePath, staticContentType) =
     self.handleStaticRoute(ctx)
@@ -162,7 +162,7 @@ proc handleDynamicRoute(
   #
   #if self.execBeforeRoute(ctx): return
   for pre in self.beforeRoutes:
-    if pre(ctx): return
+    if await pre(ctx): return
   # map content type
   # extract and map based on content type
   ctx.mapContentype
@@ -189,10 +189,10 @@ proc handleDynamicRoute(
     # execute middleware after routing before response
     #if self.execAfterRoute(ctx, route): return
     for post in self.afterRoutes:
-      if post(ctx, route): return
+      if await post(ctx, route): return
 
     # execute route callback
-    route.thenDo(ctx)
+    await route.thenDo(ctx)
 
   elif staticFound:
     let fileInfo = staticFilePath.getFileInfo
@@ -211,9 +211,9 @@ proc handleDynamicRoute(
     if ctx.isSupportGz(staticContentType) or headRange == "":
       let staticFile = staticFilePath.open
       if ctx.settings.maxResponseBodyLength >= staticFile.getFileSize:
-        ctx.resp(Http200, staticFile.readAll)
+        await ctx.resp(Http200, staticFile.readAll)
       else:
-        ctx.resp(Http406, %newApiMsg(
+        await ctx.resp(Http406, %newApiMsg(
           success = false,
           error = %*{
             "msg": &"use Range header (partial request) " &
@@ -223,19 +223,19 @@ proc handleDynamicRoute(
     else:
       let contentRange = ctx.getContentRange
       if contentRange.content != "":
-        ctx.resp(Http206, contentRange.content, contentRange.headers)
+        await ctx.resp(Http206, contentRange.content, contentRange.headers)
       else:
-        ctx.resp(Http406, %contentRange.errMsg)
+        await ctx.resp(Http406, %contentRange.errMsg)
 
   else:
     # default response if route does not match
-    ctx.resp(Http404, %newApiMsg(error = %*{
+    await ctx.resp(Http404, %newApiMsg(error = %*{
       "msg": "not found {ctx.request.url.getPath()}."}))
 
 proc executeProc*(
   self: Router,
   ctx: zfblast.HttpContext,
-  settings: Settings) {.gcsafe.} =
+  settings: Settings) {.gcsafe async.} =
   #
   # This proc will execute the registered callback procedure in route list.
   # asynchttpserver Request will convert to HttpContext.
@@ -244,7 +244,7 @@ proc executeProc*(
   try:
     var httpCtx = ctx.newHttpContext
     httpCtx.settings = settings
-    self.handleDynamicRoute(httpCtx)
+    await self.handleDynamicRoute(httpCtx)
   except Exception as ex:
     echo ex.msg
     let apiMsg = newApiMsg(success=false,
@@ -253,7 +253,7 @@ proc executeProc*(
     ctx.response.headers["Content-Type"] = "application/json"
     ctx.response.body = (%apiMsg).pretty(2)
     ctx.response.httpCode = Http500
-    ctx.send(ctx)
+    await ctx.send(ctx)
 
 proc static*(
   self: Router,
@@ -267,7 +267,7 @@ proc static*(
 proc get*(
   self: Router,
   path: string,
-  thenDo: proc (ctx: HttpContext) {.gcsafe.}) {.gcsafe.} =
+  thenDo: proc (ctx: HttpContext) {.gcsafe async.}) {.gcsafe.} =
   #
   # let zf = newZfCore()
   #
@@ -305,7 +305,7 @@ proc get*(
 proc post*(
   self: Router,
   path: string,
-  thenDo: proc (ctx: HttpContext) {.gcsafe.}) {.gcsafe.} =
+  thenDo: proc (ctx: HttpContext) {.gcsafe async.}) {.gcsafe.} =
   #
   # let zf = newZfCore()
   #
@@ -343,7 +343,7 @@ proc post*(
 proc put*(
   self: Router,
   path: string,
-  thenDo: proc (ctx: HttpContext) {.gcsafe.}) {.gcsafe.} =
+  thenDo: proc (ctx: HttpContext) {.gcsafe async.}) {.gcsafe.} =
   #
   # let zf = newZfCore()
   #
@@ -381,7 +381,7 @@ proc put*(
 proc delete*(
   self: Router,
   path: string,
-  thenDo: proc (ctx: HttpContext) {.gcsafe.}) {.gcsafe.} =
+  thenDo: proc (ctx: HttpContext) {.gcsafe async.}) {.gcsafe.} =
   #
   # let zf = newZfCore()
   #
@@ -419,7 +419,7 @@ proc delete*(
 proc patch*(
   self: Router,
   path: string,
-  thenDo: proc (ctx: HttpContext) {.gcsafe.}) {.gcsafe.} =
+  thenDo: proc (ctx: HttpContext) {.gcsafe async.}) {.gcsafe.} =
   #
   # let zf = newZfCore()
   #
@@ -457,7 +457,7 @@ proc patch*(
 proc head*(
   self: Router,
   path: string,
-  thenDo: proc (ctx: HttpContext) {.gcsafe.}) {.gcsafe.} =
+  thenDo: proc (ctx: HttpContext) {.gcsafe async.}) {.gcsafe.} =
   #
   # let zf = newZfCore()
   #
@@ -495,7 +495,7 @@ proc head*(
 proc options*(
   self: Router,
   path: string,
-  thenDo: proc (ctx: HttpContext) {.gcsafe.}) {.gcsafe.}=
+  thenDo: proc (ctx: HttpContext) {.gcsafe async.}) {.gcsafe.}=
   #
   # let zf = newZfCore()
   #
@@ -533,7 +533,7 @@ proc options*(
 proc trace*(
   self: Router,
   path: string,
-  thenDo: proc (ctx: HttpContext) {.gcsafe.}) {.gcsafe.} =
+  thenDo: proc (ctx: HttpContext) {.gcsafe async.}) {.gcsafe.} =
   #
   # let zf = newZfCore()
   #
@@ -571,7 +571,7 @@ proc trace*(
 proc connect*(
   self: Router,
   path: string,
-  thenDo: proc (ctx: HttpContext) {.gcsafe.}) {.gcsafe.} =
+  thenDo: proc (ctx: HttpContext) {.gcsafe async.}) {.gcsafe.} =
   #
   # let zf = newZfCore()
   #
