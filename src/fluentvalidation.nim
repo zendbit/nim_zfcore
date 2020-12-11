@@ -592,27 +592,27 @@ proc email*(
 
 proc check*(
   self: FieldData,
-  cond: bool,
+  cond: proc (): bool,
   errMsg: string = "",
   okMsg:string = ""): FieldData {.discardable.} =
   # check condition if true or false
   # errMsg for error msg
-  # okMsg for success msg 
+  # okMsg for success msg
   if self.msg == "":
     self.validationApplied &= "|check"
     self.isValid = false
     var err = ""
-    var (ok, val) = self.value.tryParseBool()
-    if ok and self.value != "":
-      if not val:
-        if errMsg != "":
-          err = errMsg
-        else:
-          err = &"invalid condition (false)."
-
+    if not cond():
+      if errMsg != "":
+        self.msg = errMsg
       else:
-        self.isValid = true
-        self.msg = okMsg
+        self.msg = &"invalid check condition."
+
+    else:
+      self.isValid = true
+      self.msg = okMsg
+
+  return self
 
 #[
   Fluent validation model
@@ -734,7 +734,6 @@ macro fluentValidation*(x: untyped): untyped =
         
         for vChild in child[2]:
           let vChildKind = vChild.kind
-          echo vChildKind
           case vChildKind
           of nnkIdent:
             #
@@ -839,7 +838,7 @@ macro fluentValidation*(x: untyped): untyped =
                 )
             
             of "minLen", "maxLen", "max", "min", "list",
-              "datetime", "discardIf", "reMatch", "customErr", "customOk":
+              "datetime", "discardIf", "reMatch", "customErr", "customOk", "check":
               case vChild[1].kind
               of nnkCommand:
                 let val = vChild[1][0]
