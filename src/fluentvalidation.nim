@@ -590,6 +590,30 @@ proc email*(
 
   return self
 
+proc check*(
+  self: FieldData,
+  cond: bool,
+  errMsg: string = "",
+  okMsg:string = ""): FieldData {.discardable.} =
+  # check condition if true or false
+  # errMsg for error msg
+  # okMsg for success msg 
+  if self.msg == "":
+    self.validationApplied &= "|check"
+    self.isValid = false
+    var err = ""
+    var (ok, val) = self.value.tryParseBool()
+    if ok and self.value != "":
+      if not val:
+        if errMsg != "":
+          err = errMsg
+        else:
+          err = &"invalid condition (false)."
+
+      else:
+        self.isValid = true
+        self.msg = okMsg
+
 #[
   Fluent validation model
   this will handle and register FieldData model
@@ -701,7 +725,7 @@ macro fluentValidation*(x: untyped): untyped =
         let name = child[1][0]
         let value = child[1][1]
         let nameKind = name.kind
-        let valueKind = value.kind 
+        let valueKind = value.kind
         var fvData = nnkCall.newTree(
           newIdentNode("newFieldData"),
           name,
@@ -710,6 +734,7 @@ macro fluentValidation*(x: untyped): untyped =
         
         for vChild in child[2]:
           let vChildKind = vChild.kind
+          echo vChildKind
           case vChildKind
           of nnkIdent:
             #
