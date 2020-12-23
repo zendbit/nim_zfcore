@@ -33,12 +33,10 @@ type
   FieldData* = ref object
     name: string
     value: string
-    discardValue: string
+    discardValues: seq[string]
     msg: string
     isValid: bool
     validationApplied: string
-
-const discardFlag = "####discard####"
 
 proc newFieldData*(
   name: string,
@@ -47,7 +45,7 @@ proc newFieldData*(
   return FieldData(
     name: name.strip(),
     value: value.strip(),
-    discardValue: discardFlag)
+    discardValues: @[])
 
 proc must*(
   self: FieldData,
@@ -126,7 +124,18 @@ proc discardIf*(
   # if value not number will not valid
   # errMsg for error msg
   # okMsg for success msg
-  self.discardValue = discardValue
+  #self.discardValue = discardValue
+  self.discardValues.add(discardValue)
+  return self
+
+proc discardIf*(
+  self: FieldData,
+  discardValues: seq[string]): FieldData {.discardable.} =
+  # validate the value treat as number
+  # if value not number will not valid
+  # errMsg for error msg
+  # okMsg for success msg
+  self.discardValues = discardValues
   return self
 
 proc dec*(
@@ -665,7 +674,9 @@ proc add*(
   self: FluentValidation,
   fieldData: FieldData): FluentValidation {.discardable.} =
   # add field data validation to the fluent validation
-  if fieldData.discardValue != fieldData.value:
+  #if fieldData.discardValue != fieldData.value or
+  #  (fieldData.value notin fieldData.discardValues):
+  if fieldData.value notin fieldData.discardValues:
     if not fieldData.isValid:
       self.notValids.add(fieldData.name, %fieldData)
     else:
