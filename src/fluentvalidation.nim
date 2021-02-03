@@ -117,20 +117,23 @@ proc num*(
 
   return self
 
-proc discardIf*(
+proc discardVal*(
   self: FieldData,
-  discardValue: string): FieldData {.discardable.} =
+  discardValue: string,
+  errMsg: string = "",
+  okMsg: string = ""): FieldData {.discardable.} =
   # validate the value treat as number
   # if value not number will not valid
   # errMsg for error msg
   # okMsg for success msg
-  #self.discardValue = discardValue
   self.discardValues.add(discardValue)
   return self
 
-proc discardIf*(
+proc discardVal*(
   self: FieldData,
-  discardValues: seq[string]): FieldData {.discardable.} =
+  discardValues: seq[string],
+  errMsg: string = "",
+  okMsg: string = ""): FieldData {.discardable.} =
   # validate the value treat as number
   # if value not number will not valid
   # errMsg for error msg
@@ -849,10 +852,10 @@ macro fluentValidation*(x: untyped): untyped =
                 )
             
             of "minLen", "maxLen", "max", "min", "list",
-              "datetime", "discardIf", "reMatch", "customErr", "customOk", "check":
-              case vChild[1].kind
+              "datetime", "discardVal", "reMatch", "customErr", "customOk", "check":
+              case vChild.kind
               of nnkCommand:
-                let val = vChild[1][0]
+                let val = vChild[1]
                 var ok = ""
                 var err = ""
                 if vChild.len >= 3:
