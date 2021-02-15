@@ -51,7 +51,7 @@ proc newZFCore*(settings: Settings): ZFCore {.gcsafe.} =
 
 proc zfJsonSettings*() : JsonNode =
   try:
-    let sOp = open(ZF_SETTINGS_FILE)
+    let sOp = open(getAppDir().joinPath(ZF_SETTINGS_FILE))
     let settingsJson = sOp.readAll()
     sOp.close()
     result = parseJson(settingsJson)
@@ -62,7 +62,10 @@ proc zfJsonSettings*() : JsonNode =
 
 # read setting from file
 proc newZFCore*(): ZFCore {.gcsafe.} =
-  let settingsJson = zfJsonSettings()
+  var settingsJson = zfJsonSettings(){"core"}
+  if settingsJson.isNil:
+    settingsJson = %*{}
+
   if settingsJson.len != 0:
     let settings = newSettings()
     settings.sslSettings = SslSettings()
