@@ -145,5 +145,5 @@ proc newSettings*(
   instance.addTmpCleanupDir("body")
   instance.addTmpCleanupDir("gzip")
 
-  return instance
+  result = instance
 

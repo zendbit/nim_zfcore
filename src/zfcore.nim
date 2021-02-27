@@ -108,7 +108,7 @@ proc newZFCore*(): ZFCore {.gcsafe.} =
           settings.sslSettings.verify = httpSettings{"verify"}.getBool
 
 
-    return ZFCore(
+    result = ZFCore(
       server: newZFBlast(
         address = settings.address,
         port = settings.port,
@@ -128,7 +128,7 @@ proc newZFCore*(): ZFCore {.gcsafe.} =
     echo ""
     let settings = newSettings()
     settings.appRootDir = getAppDir()
-    return ZFCore(
+    result = ZFCore(
       server: newZFBlast(
         address = "0.0.0.0",
         port = Port(8080),
@@ -503,7 +503,7 @@ macro setCookie*(
   )
 
 macro getCookie*(): untyped =
-  return nnkCall.newTree(
+  result = nnkCall.newTree(
     nnkDotExpr.newTree(
       newIdentNode("ctx"),
       newIdentNode("getCookie")
@@ -520,55 +520,55 @@ macro clearCookie*(cookies: untyped) =
   )
 
 macro req*: untyped =
-  return nnkDotExpr.newTree(
+  result = nnkDotExpr.newTree(
     newIdentNode("ctx"),
     newIdentNode("request")
   )
 
 macro res*: untyped =
-  return nnkDotExpr.newTree(
+  result = nnkDotExpr.newTree(
     newIdentNode("ctx"),
     newIdentNode("response")
   )
 
 macro config*: untyped =
-  return nnkDotExpr.newTree(
+  result = nnkDotExpr.newTree(
     newIdentNode("ctx"),
     newIdentNode("settings")
   )
 
 macro client*: untyped =
-  return nnkDotExpr.newTree(
+  result = nnkDotExpr.newTree(
     newIdentNode("ctx"),
     newIdentNode("client")
   )
 
 macro ws*: untyped =
-  return nnkDotExpr.newTree(
+  result = nnkDotExpr.newTree(
     newIdentNode("ctx"),
     newIdentNode("webSocket")
   )
 
 macro params*: untyped =
-  return nnkDotExpr.newTree(
+  result = nnkDotExpr.newTree(
     newIdentNode("ctx"),
     newIdentNode("params")
   )
 
 macro reParams*: untyped =
-  return nnkDotExpr.newTree(
+  result = nnkDotExpr.newTree(
     newIdentNode("ctx"),
     newIdentNode("reParams")
   )
 
 macro formData*: untyped =
-  return nnkDotExpr.newTree(
+  result = nnkDotExpr.newTree(
     newIdentNode("ctx"),
     newIdentNode("formData")
   )
 
 macro json*: JsonNode =
-  return nnkDotExpr.newTree(
+  result = nnkDotExpr.newTree(
     newIdentNode("ctx"),
     newIdentNode("json")
   )

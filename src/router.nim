@@ -31,13 +31,13 @@ type
     staticRoute*: Route
 
 proc newRouter*(): Router {.gcsafe.} =
-  return Router(routes: @[])
+  result = Router(routes: @[])
 
 proc getRoutes*(self: Router): seq[Route] =
   #
   # return registered routes
   #
-  return self.routes
+  result = self.routes
 
 proc matchesUri(
   pathSeg: seq[string],
@@ -87,13 +87,13 @@ proc matchesUri(
       # break and continue if current route not match
       if not success: break
 
-  return (success: success, params: params, reParams: reParams)
+  result = (success: success, params: params, reParams: reParams)
 
 proc parseSegmentsFromPath(path: string): seq[string] =
   #
   # get path segment from the given path
   #
-  return parseUri3(path).getPathSegments()
+  result = parseUri3(path).getPathSegments()
 
 proc handleStaticRoute(
   self: Router,
@@ -141,7 +141,7 @@ proc handleStaticRoute(
             if mimeType != "":
               contentType = mimeType
 
-          return (
+          result = (
             found: true,
             filePath: staticSearchDir,
             contentType: contentType)

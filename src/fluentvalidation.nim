@@ -68,7 +68,7 @@ proc must*(
       self.isValid = true
       self.msg = okMsg
 
-  return self
+  result = self
 
 proc datetime*(
   self: FieldData,
@@ -93,7 +93,7 @@ proc datetime*(
       else:
         self.msg = "not valid datetime format."
 
-  return self
+  result = self
 
 proc num*(
   self: FieldData,
@@ -115,7 +115,7 @@ proc num*(
       else:
         self.msg = "not valid number."
 
-  return self
+  result = self
 
 proc discardVal*(
   self: FieldData,
@@ -127,7 +127,7 @@ proc discardVal*(
   # errMsg for error msg
   # okMsg for success msg
   self.discardValues.add(discardValue)
-  return self
+  result = self
 
 proc discardVal*(
   self: FieldData,
@@ -139,7 +139,7 @@ proc discardVal*(
   # errMsg for error msg
   # okMsg for success msg
   self.discardValues = discardValues
-  return self
+  result = self
 
 proc dec*(
   self: FieldData,
@@ -161,7 +161,7 @@ proc dec*(
       else:
         self.msg = "not valid decimal number."
 
-  return self
+  result = self
 
 proc bool*(
   self: FieldData,
@@ -183,7 +183,7 @@ proc bool*(
       else:
         self.msg = "not valid boolean."
 
-  return self
+  result = self
 
 proc list*(
   self: FieldData,
@@ -210,7 +210,7 @@ proc list*(
     if err != "":
       self.msg = err
 
-  return self
+  result = self
 
 proc list*(
   self: FieldData,
@@ -242,7 +242,7 @@ proc list*(
     if err != "":
       self.msg = err
 
-  return self
+  result = self
 
 proc list*(
   self: FieldData,
@@ -274,7 +274,7 @@ proc list*(
     if err != "":
       self.msg = err
 
-  return self
+  result = self
 
 proc range*(
   self: FieldData,
@@ -307,7 +307,7 @@ proc range*(
     if err != "":
       self.msg = err
 
-  return self
+  result = self
 
 proc range*(
   self: FieldData,
@@ -340,7 +340,7 @@ proc range*(
     if err != "":
       self.msg = err
 
-  return self
+  result = self
 
 proc max*(
   self: FieldData,
@@ -372,7 +372,7 @@ proc max*(
     if err != "":
       self.msg = err
 
-  return self
+  result = self
 
 proc max*(
   self: FieldData,
@@ -404,7 +404,7 @@ proc max*(
     if err != "":
       self.msg = err
 
-  return self
+  result = self
 
 proc min*(
   self: FieldData,
@@ -436,7 +436,7 @@ proc min*(
     if err != "":
       self.msg = err
 
-  return self
+  result = self
 
 proc min*(
   self: FieldData,
@@ -468,7 +468,7 @@ proc min*(
     if err != "":
       self.msg = err
 
-  return self
+  result = self
 
 proc customErr*(
   self: FieldData,
@@ -478,7 +478,7 @@ proc customErr*(
   self.msg =  errMsg
   self.isValid = false
 
-  return self
+  result = self
 
 proc customOk*(
   self: FieldData,
@@ -488,7 +488,7 @@ proc customOk*(
   self.msg =  okMsg
   self.isValid = true
 
-  return self
+  result = self
 
 proc minLen*(
   self: FieldData,
@@ -511,7 +511,7 @@ proc minLen*(
       self.isValid = true
       self.msg = okMsg
 
-  return self
+  result = self
 
 proc maxLen*(
   self: FieldData,
@@ -533,7 +533,7 @@ proc maxLen*(
     else:
       self.isValid = true
       self.msg = okMsg
-  return self
+  result = self
 
 proc rangeLen*(
   self: FieldData,
@@ -557,7 +557,7 @@ proc rangeLen*(
       self.isValid = true
       self.msg = okMsg
 
-  return self
+  result = self
 
 proc reMatch*(
   self: FieldData,
@@ -580,7 +580,7 @@ proc reMatch*(
       self.isValid = true
       self.msg = okMsg
 
-  return self
+  result = self
 
 proc email*(
   self: FieldData,
@@ -600,7 +600,7 @@ proc email*(
       localErrMsg,
       okMsg)
 
-  return self
+  result = self
 
 proc check*(
   self: FieldData,
@@ -624,7 +624,7 @@ proc check*(
       self.isValid = true
       self.msg = okMsg
 
-  return self
+  result = self
 
 #[
   Fluent validation model
@@ -684,7 +684,7 @@ proc add*(
       self.notValids.add(fieldData.name, %fieldData)
     else:
       self.valids.add(fieldData.name, %fieldData)
-  return self
+  result = self
 
 proc clear*(self: FluentValidation) =
   # clear fluent validation
@@ -693,7 +693,7 @@ proc clear*(self: FluentValidation) =
 
 proc isValid*(self: FluentValidation): bool =
   # check if validation success (valid all passes)
-  return self.notValids.len == 0
+  result = self.notValids.len == 0
 
 ###
 ### macros for the fluent validation

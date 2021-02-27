@@ -27,7 +27,7 @@ proc newMiddleware*(): Middleware {.gcsafe.} =
   #
   # create new middleware
   #
-  return Middleware()
+  result = Middleware()
 
 proc addBeforeRoute*(
   self: Middleware,
@@ -48,10 +48,10 @@ proc addAfterRoute*(
   self.post.add(post)
 
 proc beforeRoutes*(self: Middleware): seq[PreRoute] =
-  return self.pre
+  result = self.pre
 
 proc afterRoutes*(self: Middleware): seq[PostRoute] =
-  return self.post
+  result = self.post
 
 #proc execBeforeRoute*(
 #  self: Middleware, ctx: HttpContext): bool {.gcsafe.} =

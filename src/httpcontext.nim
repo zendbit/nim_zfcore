@@ -52,7 +52,7 @@ proc staticFile*(
   if path != "":
     self.staticFilePath = path
 
-  return self.staticFilePath
+  result = self.staticFilePath
 
 proc newHttpContext*(self: zfblast.HttpContext): HttpContext {.gcsafe.} =
   #
@@ -108,7 +108,7 @@ proc getCookie*(self: HttpContext): StringTableRef =
   if cookie != "":
     return parseCookies(cookie)
 
-  return newStringTable()
+  result = newStringTable()
 
 proc clearCookie*(
   self: HttpContext,
@@ -214,9 +214,9 @@ proc isSupportGz*(
 
 proc gzCompress(content: string): string =
   when defined zlib:
-    return compress(content, stream=GZIP_STREAM)
+    result = compress(content, stream=GZIP_STREAM)
   else:
-    return content
+    result = content
 
 proc doResp(self: HttpContext) {.gcsafe async.} =
   let contentType = self.response.headers.getValues("Content-Type")

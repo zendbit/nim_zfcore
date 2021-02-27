@@ -92,7 +92,7 @@ proc newFormData*(): FormData =
   #
   # create new form data
   #
-  return FormData(fields: @[], files: @[])
+  result = FormData(fields: @[], files: @[])
 
 #[
   Get field of form data by name and will return teh FieldData object
@@ -147,7 +147,7 @@ proc getFields*(self: FormData): seq[FieldData] =
   #
   # get all fields data of the forms, return sequence of FieldData
   #
-  return self.fields
+  result = self.fields
 
 #[
   Get all the uploaded files from the multipart forms
@@ -156,7 +156,7 @@ proc getFiles*(self: FormData): seq[FileData] =
   #
   # get all uploaded files, return sequence of FileData
   #
-  return self.files
+  result = self.files
 
 #[
   Start parsing the multipart data content
@@ -334,4 +334,4 @@ proc parse*(
     # remove the content buffer from the temp
     content.removeFile
 
-  return self
+  result = self
