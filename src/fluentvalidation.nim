@@ -1,34 +1,34 @@
-#[
-  zfcore web framework for nim language
-  This framework if free to use and to modify
-  License: BSD
-  Author: Amru Rosyada
-  Email: amru.rosyada@gmail.com
-  Git: https://github.com/zendbit
-]#
+##
+##  zfcore web framework for nim language
+##  This framework if free to use and to modify
+##  License: BSD
+##  Author: Amru Rosyada
+##  Email: amru.rosyada@gmail.com
+##  Git: https://github.com/zendbit/nim.zfcore
+##
 
-#[
-  Fluent validation for make easy to validate value
-  let validation = newFluentValidation()
-  validation
-    .add(newFieldData("username", ctx.params["username"])
-      .must("Username is required.")
-      .reMatch("([\w\W]+@[\w\W]+\.[\w])$", "Email format is not valid."))
-    .add(newFieldData("password", ctx.params["password"])
-      .must("Password is required.")
-      .rangeLen(10, 255, "Min password length is 10, max is 255."))
-]#
+##  Fluent validation for make easy to validate value
+##  let validation = newFluentValidation()
+##  validation
+##    .add(newFieldData("username", ctx.params["username"])
+##      .must("Username is required.")
+##      .reMatch("([\w\W]+@[\w\W]+\.[\w])$", "Email format is not valid."))
+##    .add(newFieldData("password", ctx.params["password"])
+##      .must("Password is required.")
+##      .rangeLen(10, 255, "Min password length is 10, max is 255."))
+##
 
 import strutils, strformat, nre, parseutils, json, macros, times
 export strutils, strformat, nre, parseutils, json
 import stdext/[strutils_ext]
 
-#[
-  FieldData is object model of field to be validated
-  name is field name
-  value is the value of the field
-  msg is valued when the validation contain an error
-]#
+##
+##  FieldData is object model of field to be validated
+##  name is field name
+##  value is the value of the field
+##  msg is valued when the validation contain an error
+##
+
 type
   FieldData* = ref object
     name: string

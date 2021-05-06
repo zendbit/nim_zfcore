@@ -1,11 +1,12 @@
-#[
-  zfcore web framework for nim language
-  This framework if free to use and to modify
-  License: BSD
-  Author: Amru Rosyada
-  Email: amru.rosyada@gmail.com
-  Git: https://github.com/zendbit
-]#
+##
+##  zfcore web framework for nim language
+##  This framework if free to use and to modify
+##  License: BSD
+##  Author: Amru Rosyada
+##  Email: amru.rosyada@gmail.com
+##  Git: https://github.com/zendbit/nim.zfcore
+##
+
 import nre except toSeq
 import mimetypes
 export mimetypes
@@ -22,21 +23,28 @@ export httpcontext, formdata, middleware, route, settings
 
 type
   Router* = ref object of Middleware
-    #
-    # router will contains registered Route
-    # this is the hearts of zfcore
-    # statisRoute is for file serving
-    #
+    ##
+    ##  router type:
+    ##
+    ##  router will contains registered Route
+    ##  this is the hearts of zfcore
+    ##  statisRoute is for file serving
+    ##
     routes*: seq[Route]
     staticRoute*: Route
 
 proc newRouter*(): Router {.gcsafe.} =
+  ##
+  ##  new router
+  ##
   result = Router(routes: @[])
 
 proc getRoutes*(self: Router): seq[Route] =
-  #
-  # return registered routes
-  #
+  ##
+  ##  get routes:
+  ##
+  ##  return registered routes.
+  ##
   result = self.routes
 
 proc matchesUri(
@@ -46,9 +54,11 @@ proc matchesUri(
     success: bool,
     params: Table[string, string],
     reParams: Table[string, seq[string]]] =
-  #
-  # check if request url match with one of registered route
-  #
+  ##
+  ##  matches url:
+  ##
+  ##  check if request url match with one of registered route.
+  ##
   var success = true
   var reParams = initTable[string,seq[string]]()
   var params = initTable[string,string]()
@@ -90,9 +100,11 @@ proc matchesUri(
   result = (success: success, params: params, reParams: reParams)
 
 proc parseSegmentsFromPath(path: string): seq[string] =
-  #
-  # get path segment from the given path
-  #
+  ##
+  ##  parse segment from path:
+  ##
+  ##  get path segment from the given path.
+  ##
   result = parseUri3(path).getPathSegments()
 
 proc handleStaticRoute(
@@ -102,18 +114,22 @@ proc handleStaticRoute(
     found: bool,
     filePath: string,
     contentType: string] {.gcsafe.} =
-  # Handle static resource, this should be only allow get method
-  # all static resource should be access using prefix /s/
-  # example static di is in this form:
-  #   www/styles/*.css
-  #   www/js/*.js
-  #   www/img/*.jpg
-  #   etc
-  # we can call from the url using this form:
-  #   /s/style/*.css
-  #   /s/js/*.js
-  #   /s/img/*.jpg
-  #   etc
+  ##
+  ##  handle static route:
+  ##
+  ##  Handle static resource, this should be only allow get method
+  ##  all static resource should be access using prefix /s/
+  ##  example static di is in this form:
+  ##    www/styles/*.css
+  ##    www/js/*.js
+  ##    www/img/*.jpg
+  ##    etc
+  ##  we can call from the url using this form:
+  ##    /s/style/*.css
+  ##    /s/js/*.js
+  ##    /s/img/*.jpg
+  ##    etc
+  ##
   if not self.staticRoute.isNil:
     # get route from the path
     var routePath = self.staticRoute.path.decodeUri()
@@ -149,6 +165,11 @@ proc handleStaticRoute(
 proc handleDynamicRoute(
   self: Router,
   ctx: HttpContext) {.gcsafe async.} =
+  ##
+  ##  handle dynamic route:
+  ##
+  ##  handle dynamic route from the path, midleware action, static routes.
+  ##
   # call static route before the dynamic route
   let (staticFound, staticFilePath, staticContentType) =
     self.handleStaticRoute(ctx)
@@ -236,11 +257,13 @@ proc executeProc*(
   self: Router,
   ctx: zfblast.HttpContext,
   settings: Settings) {.gcsafe async.} =
-  #
-  # This proc will execute the registered callback procedure in route list.
-  # asynchttpserver Request will convert to HttpContext.
-  # beforeRoute and afterRoute middleware will evaluated here
-  #
+  ##
+  ##  execute proc:
+  ##
+  ##  This proc will execute the registered callback procedure in route list.
+  ##  asynchttpserver Request will convert to HttpContext.
+  ##  beforeRoute and afterRoute middleware will evaluated here
+  ##
   try:
     var httpCtx = ctx.newHttpContext
     httpCtx.settings = settings
@@ -258,6 +281,11 @@ proc executeProc*(
 proc static*(
   self: Router,
   path: string) {.gcsafe.} =
+  ##
+  ##  static:
+  ##
+  ##  register static route.
+  ##
   self.staticRoute = Route(
     path: path,
     httpMethod: HttpGet,
@@ -268,35 +296,37 @@ proc get*(
   self: Router,
   path: string,
   thenDo: proc (ctx: HttpContext) {.gcsafe async.}) {.gcsafe.} =
-  #
-  # let zf = newZfCore()
-  #
-  ### Register the post route to the framework
-  ### example with regex to extract the segment
-  ### this regex will match with /home/123_12345/test
-  ### the regex will capture ids -> @["123", "12345"]
-  ### the <body> parameter will capture body -> test
-  # zf.r.get("/home/<ids:re[([0-9]+)_([0-9]+)]:len[2]>/<body>", proc (
-  #   ctx: HttpContext): Future[void] {.async.} =
-  #   echo "Welcome home"
-  #   echo $ctx.reParams["ids"]
-  #   echo $ctx.params["body"]
-  #   ctx.resp(Http200, "Hello World"))
-  #
-  # ### without regex
-  # ### will accept from /home
-  # zf.r.get("/home", proc (
-  #   ctx: HttpContext): Future[void] {.async.} =
-  #
-  #   #### your code here
-  #
-  #   ctx.resp(Http200, "Hello World"))
-  #
-  # ### start the server
-  #
-  # zf.serve()
-  #
-  #
+  ##
+  ##  register get route:
+  ##
+  ##  let zf = newZfCore()
+  ##
+  ##  Register the post route to the framework
+  ##  example with regex to extract the segment
+  ##  this regex will match with /home/123_12345/test
+  ##  the regex will capture ids -> @["123", "12345"]
+  ##  the <body> parameter will capture body -> test
+  ##
+  ##  zf.r.get("/home/<ids:re[([0-9]+)_([0-9]+)]:len[2]>/<body>", proc (
+  ##    ctx: HttpContext): Future[void] {.async.} =
+  ##    echo "Welcome home"
+  ##    echo $ctx.reParams["ids"]
+  ##    echo $ctx.params["body"]
+  ##    ctx.resp(Http200, "Hello World"))
+  ##
+  ##  ### without regex
+  ##  ### will accept from /home
+  ##  zf.r.get("/home", proc (
+  ##    ctx: HttpContext): Future[void] {.async.} =
+  ##
+  ##    #### your code here
+  ##
+  ##    ctx.resp(Http200, "Hello World"))
+  ##
+  ##  ### start the server
+  ##
+  ##  zf.serve()
+  ##
   let path = path.cleanUri
   self.routes.add(Route(path: path,
     httpMethod: HttpGet,
@@ -307,35 +337,37 @@ proc post*(
   self: Router,
   path: string,
   thenDo: proc (ctx: HttpContext) {.gcsafe async.}) {.gcsafe.} =
-  #
-  # let zf = newZfCore()
-  #
-  ### Register the post route to the framework
-  ### example with regex to extract the segment
-  ### this regex will match with /home/123_12345/test
-  ### the regex will capture ids -> @["123", "12345"]
-  ### the <body> parameter will capture body -> test
-  # zf.r.post("/home/<ids:re[([0-9]+)_([0-9]+)]:len[2]>/<body>", proc (
-  #   ctx: HttpContext): Future[void] {.async.} =
-  #   echo "Welcome home"
-  #   echo $ctx.reParams["ids"]
-  #   echo $ctx.params["body"]
-  #   ctx.resp(Http200, "Hello World"))
-  #
-  ### without regex
-  ### will accept from /home
-  # zf.r.post("/home", proc (
-  #   ctx: HttpContext): Future[void] {.async.} =
-  #
-  #   #### your code here
-  #
-  #   ctx.resp(Http200, "Hello World"))
-  #
-  # ### start the server
-  #
-  # zf.serve()
-  #
-  #
+  ##
+  ##  register post route:
+  ##
+  ##  let zf = newZfCore()
+  ##
+  ##  Register the post route to the framework
+  ##  example with regex to extract the segment
+  ##  this regex will match with /home/123_12345/test
+  ##  the regex will capture ids -> @["123", "12345"]
+  ##  the <body> parameter will capture body -> test
+  ##
+  ##  zf.r.post("/home/<ids:re[([0-9]+)_([0-9]+)]:len[2]>/<body>", proc (
+  ##    ctx: HttpContext): Future[void] {.async.} =
+  ##    echo "Welcome home"
+  ##    echo $ctx.reParams["ids"]
+  ##    echo $ctx.params["body"]
+  ##    ctx.resp(Http200, "Hello World"))
+  ##
+  ##  ### without regex
+  ##  ### will accept from /home
+  ##  zf.r.post("/home", proc (
+  ##    ctx: HttpContext): Future[void] {.async.} =
+  ##
+  ##    #### your code here
+  ##
+  ##    ctx.resp(Http200, "Hello World"))
+  ##
+  ##  ### start the server
+  ##
+  ##  zf.serve()
+  ##
   let path = path.cleanUri
   self.routes.add(Route(path: path,
     httpMethod: HttpPost,
@@ -346,35 +378,37 @@ proc put*(
   self: Router,
   path: string,
   thenDo: proc (ctx: HttpContext) {.gcsafe async.}) {.gcsafe.} =
-  #
-  # let zf = newZfCore()
-  #
-  ### Register the post route to the framework
-  ### example with regex to extract the segment
-  ### this regex will match with /home/123_12345/test
-  ### the regex will capture ids -> @["123", "12345"]
-  ### the <body> parameter will capture body -> test
-  # zf.r.put("/home/<ids:re[([0-9]+)_([0-9]+)]:len[2]>/<body>", proc (
-  #   ctx: HttpContext): Future[void] {.async.} =
-  #   echo "Welcome home"
-  #   echo $ctx.reParams["ids"]
-  #   echo $ctx.params["body"]
-  #   ctx.resp(Http200, "Hello World"))
-  #
-  ### without regex
-  ### will accept from /home
-  # zf.r.put("/home", proc (
-  #   ctx: HttpContext): Future[void] {.async.} =
-  #
-  #   #### your code here
-  #
-  #   ctx.resp(Http200, "Hello World"))
-  #
-  # ### start the server
-  #
-  # zf.serve()
-  #
-  #
+  ##
+  ##  register put route:
+  ##
+  ##  let zf = newZfCore()
+  ##
+  ##  Register the post route to the framework
+  ##  example with regex to extract the segment
+  ##  this regex will match with /home/123_12345/test
+  ##  the regex will capture ids -> @["123", "12345"]
+  ##  the <body> parameter will capture body -> test
+  ##
+  ##  zf.r.put("/home/<ids:re[([0-9]+)_([0-9]+)]:len[2]>/<body>", proc (
+  ##    ctx: HttpContext): Future[void] {.async.} =
+  ##    echo "Welcome home"
+  ##    echo $ctx.reParams["ids"]
+  ##    echo $ctx.params["body"]
+  ##    ctx.resp(Http200, "Hello World"))
+  ##
+  ##  ### without regex
+  ##  ### will accept from /home
+  ##  zf.r.put("/home", proc (
+  ##    ctx: HttpContext): Future[void] {.async.} =
+  ##
+  ##    #### your code here
+  ##
+  ##    ctx.resp(Http200, "Hello World"))
+  ##
+  ##  ### start the server
+  ##
+  ##  zf.serve()
+  ##
   let path = path.cleanUri
   self.routes.add(Route(path: path,
     httpMethod: HttpPut,
@@ -385,35 +419,37 @@ proc delete*(
   self: Router,
   path: string,
   thenDo: proc (ctx: HttpContext) {.gcsafe async.}) {.gcsafe.} =
-  #
-  # let zf = newZfCore()
-  #
-  ### Register the post route to the framework
-  ### example with regex to extract the segment
-  ### this regex will match with /home/123_12345/test
-  ### the regex will capture ids -> @["123", "12345"]
-  ### the <body> parameter will capture body -> test
-  # zf.r.delete("/home/<ids:re[([0-9]+)_([0-9]+)]:len[2]>/<body>", proc (
-  #   ctx: HttpContext): Future[void] {.async.} =
-  #   echo "Welcome home"
-  #   echo $ctx.reParams["ids"]
-  #   echo $ctx.params["body"]
-  #   ctx.resp(Http200, "Hello World"))
-  #
-  ### without regex
-  ### will accept from /home
-  # zf.r.delete("/home", proc (
-  #   ctx: HttpContext): Future[void] {.async.} =
-  #
-  #   #### your code here
-  #
-  #   ctx.resp(Http200, "Hello World"))
-  #
-  ### start the server
-  #
-  # zf.serve()
-  #
-  #
+  ##
+  ##  register delete route:
+  ##
+  ##  let zf = newZfCore()
+  ##
+  ##  Register the post route to the framework
+  ##  example with regex to extract the segment
+  ##  this regex will match with /home/123_12345/test
+  ##  the regex will capture ids -> @["123", "12345"]
+  ##  the <body> parameter will capture body -> test
+  ##
+  ##  zf.r.delete("/home/<ids:re[([0-9]+)_([0-9]+)]:len[2]>/<body>", proc (
+  ##    ctx: HttpContext): Future[void] {.async.} =
+  ##    echo "Welcome home"
+  ##    echo $ctx.reParams["ids"]
+  ##    echo $ctx.params["body"]
+  ##    ctx.resp(Http200, "Hello World"))
+  ##
+  ##  ### without regex
+  ##  ### will accept from /home
+  ##  zf.r.delete("/home", proc (
+  ##    ctx: HttpContext): Future[void] {.async.} =
+  ##
+  ##    #### your code here
+  ##
+  ##    ctx.resp(Http200, "Hello World"))
+  ##
+  ##  ### start the server
+  ##
+  ##  zf.serve()
+  ##
   let path = path.cleanUri
   self.routes.add(Route(path: path,
     httpMethod: HttpDelete,
@@ -424,35 +460,37 @@ proc patch*(
   self: Router,
   path: string,
   thenDo: proc (ctx: HttpContext) {.gcsafe async.}) {.gcsafe.} =
-  #
-  # let zf = newZfCore()
-  #
-  ### Register the post route to the framework
-  ### example with regex to extract the segment
-  ### this regex will match with /home/123_12345/test
-  ### the regex will capture ids -> @["123", "12345"]
-  ### the <body> parameter will capture body -> test
-  # zf.r.patch("/home/<ids:re[([0-9]+)_([0-9]+)]:len[2]>/<body>", proc (
-  #   ctx: HttpContext): Future[void] {.async.} =
-  #   echo "Welcome home"
-  #   echo $ctx.reParams["ids"]
-  #   echo $ctx.params["body"]
-  #   ctx.resp(Http200, "Hello World"))
-  #
-  ### without regex
-  ### will accept from /home
-  # zf.r.patch("/home", proc (
-  #   ctx: HttpContext): Future[void] {.async.} =
-  #
-  #   #### your code here
-  #
-  #   ctx.resp(Http200, "Hello World"))
-  #
-  ### start the server
-  #
-  # zf.serve()
-  #
-  #
+  ##
+  ##  register patch route:
+  ##
+  ##  let zf = newZfCore()
+  ##
+  ##  Register the post route to the framework
+  ##  example with regex to extract the segment
+  ##  this regex will match with /home/123_12345/test
+  ##  the regex will capture ids -> @["123", "12345"]
+  ##  the <body> parameter will capture body -> test
+  ##
+  ##  zf.r.patch("/home/<ids:re[([0-9]+)_([0-9]+)]:len[2]>/<body>", proc (
+  ##    ctx: HttpContext): Future[void] {.async.} =
+  ##    echo "Welcome home"
+  ##    echo $ctx.reParams["ids"]
+  ##    echo $ctx.params["body"]
+  ##    ctx.resp(Http200, "Hello World"))
+  ##
+  ##  ### without regex
+  ##  ### will accept from /home
+  ##  zf.r.patch("/home", proc (
+  ##    ctx: HttpContext): Future[void] {.async.} =
+  ##
+  ##    #### your code here
+  ##
+  ##    ctx.resp(Http200, "Hello World"))
+  ##
+  ##  ### start the server
+  ##
+  ##  zf.serve()
+  ##
   let path = path.cleanUri
   self.routes.add(Route(path: path,
     httpMethod: HttpPatch,
@@ -463,35 +501,37 @@ proc head*(
   self: Router,
   path: string,
   thenDo: proc (ctx: HttpContext) {.gcsafe async.}) {.gcsafe.} =
-  #
-  # let zf = newZfCore()
-  #
-  ### Register the post route to the framework
-  ### example with regex to extract the segment
-  ### this regex will match with /home/123_12345/test
-  ### the regex will capture ids -> @["123", "12345"]
-  ### the <body> parameter will capture body -> test
-  # zf.r.get("/home/<ids:re[([0-9]+)_([0-9]+)]:len[2]>/<body>", proc (
-  #   ctx: HttpContext): Future[void] {.async.} =
-  #   echo "Welcome home"
-  #   echo $ctx.reParams["ids"]
-  #   echo $ctx.params["body"]
-  #   ctx.resp(Http200, "Hello World"))
-  #
-  ### without regex
-  ### will accept from /home
-  # zf.r.get("/home", proc (
-  #   ctx: HttpContext): Future[void] {.async.} =
-  #
-  #   #### your code here
-  #
-  #   ctx.resp(Http200, "Hello World"))
-  #
-  ### start the server
-  #
-  # zf.serve()
-  #
-  #
+  ##
+  ##  register head route:
+  ##
+  ##  let zf = newZfCore()
+  ##
+  ##  Register the post route to the framework
+  ##  example with regex to extract the segment
+  ##  this regex will match with /home/123_12345/test
+  ##  the regex will capture ids -> @["123", "12345"]
+  ##  the <body> parameter will capture body -> test
+  ##
+  ##  zf.r.head("/home/<ids:re[([0-9]+)_([0-9]+)]:len[2]>/<body>", proc (
+  ##    ctx: HttpContext): Future[void] {.async.} =
+  ##    echo "Welcome home"
+  ##    echo $ctx.reParams["ids"]
+  ##    echo $ctx.params["body"]
+  ##    ctx.resp(Http200, "Hello World"))
+  ##
+  ##  ### without regex
+  ##  ### will accept from /home
+  ##  zf.r.head("/home", proc (
+  ##    ctx: HttpContext): Future[void] {.async.} =
+  ##
+  ##    #### your code here
+  ##
+  ##    ctx.resp(Http200, "Hello World"))
+  ##
+  ##  ### start the server
+  ##
+  ##  zf.serve()
+  ##
   let path = path.cleanUri
   self.routes.add(Route(path: path,
     httpMethod: HttpHead,
@@ -502,35 +542,37 @@ proc options*(
   self: Router,
   path: string,
   thenDo: proc (ctx: HttpContext) {.gcsafe async.}) {.gcsafe.}=
-  #
-  # let zf = newZfCore()
-  #
-  ### Register the post route to the framework
-  ### example with regex to extract the segment
-  ### this regex will match with /home/123_12345/test
-  ### the regex will capture ids -> @["123", "12345"]
-  ### the <body> parameter will capture body -> test
-  # zf.r.options("/home/<ids:re[([0-9]+)_([0-9]+)]:len[2]>/<body>", proc (
-  #   ctx: HttpContext): Future[void] {.async.} =
-  #   echo "Welcome home"
-  #   echo $ctx.reParams["ids"]
-  #   echo $ctx.params["body"]
-  #   ctx.resp(Http200, "Hello World"))
-  #
-  ### without regex
-  ### will accept from /home
-  # zf.r.options("/home", proc (
-  #   ctx: HttpContext): Future[void] {.async.} =
-  #
-  #   #### your code here
-  #
-  #   ctx.resp(Http200, "Hello World"))
-  #
-  ### start the server
-  #
-  # zf.serve()
-  #
-  #
+  ##
+  ##  register options route:
+  ##
+  ##  let zf = newZfCore()
+  ##
+  ##  Register the post route to the framework
+  ##  example with regex to extract the segment
+  ##  this regex will match with /home/123_12345/test
+  ##  the regex will capture ids -> @["123", "12345"]
+  ##  the <body> parameter will capture body -> test
+  ##
+  ##  zf.r.options("/home/<ids:re[([0-9]+)_([0-9]+)]:len[2]>/<body>", proc (
+  ##    ctx: HttpContext): Future[void] {.async.} =
+  ##    echo "Welcome home"
+  ##    echo $ctx.reParams["ids"]
+  ##    echo $ctx.params["body"]
+  ##    ctx.resp(Http200, "Hello World"))
+  ##
+  ##  ### without regex
+  ##  ### will accept from /home
+  ##  zf.r.options("/home", proc (
+  ##    ctx: HttpContext): Future[void] {.async.} =
+  ##
+  ##    #### your code here
+  ##
+  ##    ctx.resp(Http200, "Hello World"))
+  ##
+  ##  ### start the server
+  ##
+  ##  zf.serve()
+  ##
   let path = path.cleanUri
   self.routes.add(Route(path: path,
     httpMethod: HttpOptions,
@@ -541,35 +583,37 @@ proc trace*(
   self: Router,
   path: string,
   thenDo: proc (ctx: HttpContext) {.gcsafe async.}) {.gcsafe.} =
-  #
-  # let zf = newZfCore()
-  #
-  ### Register the post route to the framework
-  ### example with regex to extract the segment
-  ### this regex will match with /home/123_12345/test
-  ### the regex will capture ids -> @["123", "12345"]
-  ### the <body> parameter will capture body -> test
-  # zf.r.get("/home/<ids:re[([0-9]+)_([0-9]+)]:len[2]>/<body>", proc (
-  #   ctx: HttpContext): Future[void] {.async.} =
-  #   echo "Welcome home"
-  #   echo $ctx.reParams["ids"]
-  #   echo $ctx.params["body"]
-  #   ctx.resp(Http200, "Hello World"))
-  #
-  ### without regex
-  ### will accept from /home
-  # zf.r.get("/home", proc (
-  #   ctx: HttpContext): Future[void] {.async.} =
-  #
-  #   #### your code here
-  #
-  #   ctx.resp(Http200, "Hello World"))
-  #
-  ### start the server
-  #
-  # zf.serve()
-  #
-  #
+  ##
+  ##  register trace route:
+  ##
+  ##  let zf = newZfCore()
+  ##
+  ##  Register the post route to the framework
+  ##  example with regex to extract the segment
+  ##  this regex will match with /home/123_12345/test
+  ##  the regex will capture ids -> @["123", "12345"]
+  ##  the <body> parameter will capture body -> test
+  ##
+  ##  zf.r.trace("/home/<ids:re[([0-9]+)_([0-9]+)]:len[2]>/<body>", proc (
+  ##    ctx: HttpContext): Future[void] {.async.} =
+  ##    echo "Welcome home"
+  ##    echo $ctx.reParams["ids"]
+  ##    echo $ctx.params["body"]
+  ##    ctx.resp(Http200, "Hello World"))
+  ##
+  ##  ### without regex
+  ##  ### will accept from /home
+  ##  zf.r.trace("/home", proc (
+  ##    ctx: HttpContext): Future[void] {.async.} =
+  ##
+  ##    #### your code here
+  ##
+  ##    ctx.resp(Http200, "Hello World"))
+  ##
+  ##  ### start the server
+  ##
+  ##  zf.serve()
+  ##
   let path = path.cleanUri
   self.routes.add(Route(path: path,
     httpMethod: HttpTrace,
@@ -580,35 +624,37 @@ proc connect*(
   self: Router,
   path: string,
   thenDo: proc (ctx: HttpContext) {.gcsafe async.}) {.gcsafe.} =
-  #
-  # let zf = newZfCore()
-  #
-  ### Register the post route to the framework
-  ### example with regex to extract the segment
-  ### this regex will match with /home/123_12345/test
-  ### the regex will capture ids -> @["123", "12345"]
-  ### the <body> parameter will capture body -> test
-  # zf.r.get("/home/<ids:re[([0-9]+)_([0-9]+)]:len[2]>/<body>", proc (
-  #   ctx: HttpContext): Future[void] {.async.} =
-  #   echo "Welcome home"
-  #   echo $ctx.reParams["ids"]
-  #   echo $ctx.params["body"]
-  #   ctx.resp(Http200, "Hello World"))
-  #
-  ### without regex
-  ### will accept from /home
-  # zf.r.get("/home", proc (
-  #   ctx: HttpContext): Future[void] {.async.} =
-  #
-  #   #### your code here
-  #
-  #   ctx.resp(Http200, "Hello World"))
-  #
-  ### start the server
-  #
-  # zf.serve()
-  #
-  #
+  ##
+  ##  register connect route:
+  ##
+  ##  let zf = newZfCore()
+  ##
+  ##  Register the post route to the framework
+  ##  example with regex to extract the segment
+  ##  this regex will match with /home/123_12345/test
+  ##  the regex will capture ids -> @["123", "12345"]
+  ##  the <body> parameter will capture body -> test
+  ##
+  ##  zf.r.connect("/home/<ids:re[([0-9]+)_([0-9]+)]:len[2]>/<body>", proc (
+  ##    ctx: HttpContext): Future[void] {.async.} =
+  ##    echo "Welcome home"
+  ##    echo $ctx.reParams["ids"]
+  ##    echo $ctx.params["body"]
+  ##    ctx.resp(Http200, "Hello World"))
+  ##
+  ##  ### without regex
+  ##  ### will accept from /home
+  ##  zf.r.connect("/home", proc (
+  ##    ctx: HttpContext): Future[void] {.async.} =
+  ##
+  ##    #### your code here
+  ##
+  ##    ctx.resp(Http200, "Hello World"))
+  ##
+  ##  ### start the server
+  ##
+  ##  zf.serve()
+  ##
   let path = path.cleanUri
   self.routes.add(Route(path: path,
     httpMethod: HttpConnect,

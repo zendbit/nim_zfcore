@@ -1,11 +1,12 @@
-#[
-  zfcore web framework for nim language
-  This framework if free to use and to modify
-  License: BSD
-  Author: Amru Rosyada
-  Email: amru.rosyada@gmail.com
-  Git: https://github.com/zendbit
-]#
+##
+##  zfcore web framework for nim language
+##  This framework if free to use and to modify
+##  License: BSD
+##  Author: Amru Rosyada
+##  Email: amru.rosyada@gmail.com
+##  Git: https://github.com/zendbit/nim.zfcore
+##
+
 import streams, strutils, os, times
 export streams, strutils, os, times
 
@@ -26,6 +27,11 @@ type
     content
 
   FieldData* = ref object of RootObj
+    ##
+    ##  field data type:
+    ##
+    ##  FieldData will store field type of form / multipart data.
+    ##
     name*: string
     contentDisposition*: string
     content*: string
@@ -33,15 +39,22 @@ type
 type
   # inherit from FieldData
   FileData* = ref object of FieldData
+    ##
+    ##  file data type:
+    ##
+    ##  FileData will store file data extension, this contains all FieldData field type also.
+    ##
     filename*: string
     contentType*: string
 
 proc moveFileTo*(
   self: FileData,
   destFilePath: string): bool {.discardable.} =
-  #
-  # Move uploaded file to the destination
-  #
+  ##
+  ##  move file to:
+  ##
+  ##  will the uploaded file to the destFilePath location.
+  ##
   let destDir = destFilePath.rsplit(DirSep, 1)[0]
 
   if destDir.existsDir:
@@ -61,9 +74,11 @@ proc moveFileTo*(
 proc moveFileToDir*(
   self: FileData,
   destDirPath: string): bool {.discardable.} =
-  #
-  # move uploaded file into the directory
-  #
+  ##
+  ## move file to dir:
+  ##
+  ## move uploaded file into the destDirPath directory location.
+  ##
   let destFilePath = destDirPath.joinPath(self.content.splitPath[1])
 
   if destDirPath.existsDir:
@@ -82,6 +97,11 @@ proc moveFileToDir*(
 
 type
   FormData* = ref object
+    ##
+    ##  form data type:
+    ##
+    ##  type for handle form, multipart and multi files upload.
+    ##
     fields: seq[FieldData]
     files: seq[FileData]
 
@@ -89,9 +109,11 @@ type
   Create form data instance with default tmp to stored uploded files
 ]#
 proc newFormData*(): FormData =
-  #
-  # create new form data
-  #
+  ##
+  ##  create new form data:
+  ##
+  ##  create new form data type.
+  ##
   result = FormData(fields: @[], files: @[])
 
 #[
@@ -100,9 +122,11 @@ proc newFormData*(): FormData =
 proc getField*(
   self: FormData,
   name: string): FieldData =
-  #
-  # get field data by name return FieldData
-  #
+  ##
+  ##  get field:
+  ##
+  ##  get form field data (FormData) by the name.
+  ##
   for field in self.fields:
     if field.name == name:
       result = field
@@ -115,10 +139,12 @@ proc getField*(
 proc getFileByName*(
   self: FormData,
   name: string): FileData =
-  #
-  # get uploaded file by name, return FileData
-  # saved file location in the FileData.content
-  #
+  ##
+  ##  get file by name:
+  ##
+  ##  get uploaded file by form name.
+  ##  saved file location in the FileData.content.
+  ##
   for file in self.files:
     if file.name == name:
       result = file
@@ -131,10 +157,12 @@ proc getFileByName*(
 proc getFileByFileName*(
   self: FormData,
   name: string): FileData =
-  #
-  # get uploaded file by filename, return FileData
-  # saved file location in the FileData.content
-  #
+  ##
+  ##  get file by filename:
+  ##
+  ##  get uploaded file by filename, return FileData
+  ##  saved file location in the FileData.content
+  ##
   for file in self.files:
     if file.filename == name:
       result = file
@@ -144,18 +172,22 @@ proc getFileByFileName*(
   Get all field of the form data parameter
 ]#
 proc getFields*(self: FormData): seq[FieldData] =
-  #
-  # get all fields data of the forms, return sequence of FieldData
-  #
+  ##
+  ##  get fields:
+  ##
+  ##  get all fields data of the forms, return sequence of FieldData
+  ##
   result = self.fields
 
 #[
   Get all the uploaded files from the multipart forms
 ]#
 proc getFiles*(self: FormData): seq[FileData] =
-  #
-  # get all uploaded files, return sequence of FileData
-  #
+  ##
+  ##  get files:
+  ##
+  ##  get all uploaded files, return sequence of FileData
+  ##
   result = self.files
 
 #[
@@ -168,11 +200,13 @@ proc parse*(
   settings: Settings,
   allowedMime: seq[string] = @[],
   allowedExt: seq[string] = @[]): FormData =
-  #
-  # parse multipart content data string
-  # allowedMime is list of allowed mime when uploading the file
-  # allowedExt is list of allowed ext when uploading the file
-  #
+  ##
+  ##  parse form data:
+  ##
+  ##  parse multipart content data string
+  ##  allowedMime is list of allowed mime when uploading the file
+  ##  allowedExt is list of allowed ext when uploading the file
+  ##
   if content != "":
     #var buff = content.split("\n")
     var boundary = ""

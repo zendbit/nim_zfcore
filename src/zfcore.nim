@@ -1,11 +1,11 @@
-#[
-  zfcore web framework for nim language
-  This framework if free to use and to modify
-  License: BSD
-  Author: Amru Rosyada
-  Email: amru.rosyada@gmail.com
-  Git: https://github.com/zendbit
-]#
+##
+##  zfcore web framework for nim language
+##  This framework if free to use and to modify
+##  License: BSD
+##  Author: Amru Rosyada
+##  Email: amru.rosyada@gmail.com
+##  Git: https://github.com/zendbit/nim.zfcore
+##
 
 from zfblast import HttpContext, newZFBlast, ZFBlast, serve
 
@@ -25,8 +25,10 @@ const ZF_SETTINGS_FILE* = "settings.json"
 ]#
 type
   ZFCore* = ref object
-    # port to zfblast server
-    # server: AsyncHttpServer
+    ##
+    ##  port to zfblast server
+    ##  server: AsyncHttpServer
+    ##
     server: ZFBlast
     r*: Router
     settings*: Settings
@@ -36,6 +38,11 @@ type
   default value will run on port 8080, bind address 0.0.0.0 and staticDir point to www folder
 ]#
 proc newZFCore*(settings: Settings): ZFCore {.gcsafe.} =
+  ##
+  ##  new zfcore object:
+  ##
+  ##  create zfcore object with given settings.
+  ##
   return ZFCore(
     server: newZFBlast(
       address = settings.address,
@@ -50,6 +57,11 @@ proc newZFCore*(settings: Settings): ZFCore {.gcsafe.} =
     settings: settings)
 
 proc zfJsonSettings*() : JsonNode =
+  ##
+  ##  json settings:
+  ##
+  ##  will try to read settings.json, if not exists will use default setting.
+  ##
   try:
     let sOp = open(getAppDir().joinPath(ZF_SETTINGS_FILE))
     let settingsJson = sOp.readAll()
@@ -60,8 +72,12 @@ proc zfJsonSettings*() : JsonNode =
     result = %*{}
 
 
-# read setting from file
 proc newZFCore*(): ZFCore {.gcsafe.} =
+  ##
+  ##  new zfcore:
+  ##
+  ##  try read settings.json if not exists will use default settings.
+  ##
   var settingsJson = zfJsonSettings(){"core"}
   if settingsJson.isNil:
     settingsJson = %*{}
@@ -149,6 +165,9 @@ proc newZFCore*(): ZFCore {.gcsafe.} =
 proc httpMethodNotFoundAsync(
   self: ZFCore,
   ctx: zfblast.HttpContext) {.gcsafe async.} =
+  ##
+  ##  return response if not found.
+  ##
 
   ctx.response.httpCode = Http500
   ctx.response.body =
@@ -163,7 +182,9 @@ proc httpMethodNotFoundAsync(
 proc sendToRouter(
   self: ZFCore,
   ctx: zfblast.HttpContext) {.gcsafe async.} =
-
+  ##
+  ##  send request data to the router
+  ##
   try:
     await self.r.executeProc(ctx, self.settings)
   except Exception as ex:
@@ -182,10 +203,10 @@ proc sendToRouter(
 ]#
 
 proc cleanupThread(settings: Settings) =
-  #
-  # cleanup process will spawn new thread if not exist
-  # to check folder to cleanup
-  #
+  ##
+  ##  cleanup process will spawn new thread if not exist
+  ##  to check folder to cleanup
+  ##
   while true:
     for dir in settings.tmpCleanupDir:
       var toCleanup = settings.tmpDir.joinPath(dir.dirName, "*")
@@ -206,7 +227,9 @@ proc cleanupThread(settings: Settings) =
 proc mainHandler(
   self: ZFCore,
   ctx: zfblast.HttpContext) {.gcsafe async.} =
-
+  ##
+  ##  zfcore main handler for dispatch request.
+  ##
   try:
     if ctx.request.httpmethod in [HttpGet, HttpPost, HttpPut, HttpPatch,
       HttpDelete, HttpHead, HttpTrace, HttpOptions, HttpConnect]:
@@ -233,6 +256,9 @@ proc mainHandler(
   this proc is for start the ZendFlow, this will serve forever :-)
 ]#
 proc serve*(self: ZFCore) {.gcsafe async.} =
+  ##
+  ##  start serve the zfcore sever.
+  ##
   echo "Enjoy and take a cup of coffe :-)"
 
   # start cleanup thread
@@ -251,6 +277,21 @@ if not zfcoreInstance.settings.tmpDir.existsDir:
 ### macros for the zfcore
 ###
 macro routes*(group, body: untyped = nil): untyped =
+  ##
+  ##  routes macro:
+  ##
+  ##  register route
+  ##  
+  ##  routet("/api"):
+  ##    # accessed with /api
+  ##    get "/":
+  ##      # html response
+  ##      Http200.respHtml("hello")
+  ##    # accessed with /api/register
+  ##    post "/register":
+  ##      # json response
+  ##      Http200.resp(%*{"registered": true})
+  ##
   var x: NimNode = body
   var routeGroup: string = ""
   
@@ -430,6 +471,14 @@ macro routes*(group, body: untyped = nil): untyped =
   return stmtList
 
 macro emitServer*() =
+  ##
+  ##  start server:
+  ##  routes:
+  ##    get "/":
+  ##      Http200.respHtml("Hello")
+  ##
+  ##    emitServer
+  ##
   nnkCommand.newTree(
     newIdentNode("waitFor"),
     nnkCall.newTree(
@@ -444,6 +493,13 @@ macro resp*(
   httpCode: HttpCode,
   body: untyped,
   headers: HttpHeaders = nil) =
+  ##
+  ##  resp macro:
+  ##
+  ##  routes:
+  ##    get "/":
+  ##      Http200.resp("hello", newHttpHeaders([("Content-Type", "text/html")]))
+  ##
   nnkCommand.newTree(
     newIdentNode("await"),
     nnkCall.newTree(
@@ -461,6 +517,13 @@ macro respHtml*(
   httpCode: HttpCode,
   body: string,
   headers: HttpHeaders = nil) =
+  ##
+  ##  resp html macro:
+  ##
+  ##  routes:
+  ##    get "/":
+  ##      Http200.respHtml("hello", newHttpHeaders([("key", "val")]))
+  ##
   nnkCommand.newTree(
     newIdentNode("await"),
     nnkCall.newTree(
@@ -475,6 +538,13 @@ macro respHtml*(
   )
 
 macro respRedirect*(redirectTo: string) =
+  ##
+  ##  resp redirect macro:
+  ##
+  ##  routes:
+  ##    get "/":
+  ##      respRedirectTo("/home")
+  ##
   nnkCommand.newTree(
     newIdentNode("await"),
     nnkCall.newTree(
@@ -490,6 +560,16 @@ macro setCookie*(
   cookies: StringTableRef, domain: untyped = "",
   path: untyped = "", expires: untyped = "",
   secure: untyped = false) =
+  ##
+  ##  get cookie:
+  ##
+  ##  route:
+  ##    get "/setcookie":
+  ##      setCookie({"name": "John", "city": "Monaco"}.newStringTable)
+  ##      Http200.respHtml("set cookie")
+  ##    get "/getcookie":
+  ##      Http200.resp(%getCookie())
+  ##
   nnkCall.newTree(
     nnkDotExpr.newTree(
       newIdentNode("ctx"),
@@ -503,6 +583,16 @@ macro setCookie*(
   )
 
 macro getCookie*(): untyped =
+  ##
+  ##  get cookie:
+  ##
+  ##  route:
+  ##    get "/setcookie":
+  ##      setCookie({"name": "John", "city": "Monaco"}.newStringTable)
+  ##      Http200.respHtml("set cookie")
+  ##    get "/getcookie":
+  ##      Http200.resp(%getCookie())
+  ##
   result = nnkCall.newTree(
     nnkDotExpr.newTree(
       newIdentNode("ctx"),
@@ -511,6 +601,18 @@ macro getCookie*(): untyped =
   )
 
 macro clearCookie*(cookies: untyped) =
+  ##
+  ##  clear cookie:
+  ##
+  ##  route:
+  ##    get "/setcookie":
+  ##      setCookie({"name": "John", "city": "Monaco"}.newStringTable)
+  ##      Http200.respHtml("set cookie")
+  ##    get "/getcookie":
+  ##      Http200.resp(%getCookie())
+  ##    get "/clearcookie":
+  ##      Http200.respHtml("clear cookie")
+  ##
   nnkCall.newTree(
     nnkDotExpr.newTree(
       newIdentNode("ctx"),
@@ -520,54 +622,208 @@ macro clearCookie*(cookies: untyped) =
   )
 
 macro req*: untyped =
+  ##
+  ##  get request information:
+  ##
+  ##  route:
+  ##    get "/":
+  ##      # req type is zfcore Request
+  ##      let request = req
+  ##      echo %request.headers
+  ##      Http200.respHtml("Hello")
+  ##
   result = nnkDotExpr.newTree(
     newIdentNode("ctx"),
     newIdentNode("request")
   )
 
 macro res*: untyped =
+  ##
+  ##  get response information:
+  ##
+  ##  route:
+  ##    get "/":
+  ##      # res type is zfcore Response
+  ##      let response = res
+  ##      echo %reponse.headers
+  ##      Http200.respHtml("Hello")
+  ##
   result = nnkDotExpr.newTree(
     newIdentNode("ctx"),
     newIdentNode("response")
   )
 
 macro config*: untyped =
+  ##
+  ##  get zfcore config information:
+  ##
+  ##  route:
+  ##    get "/":
+  ##      echo config
+  ##      Http200.respHtml("Hello")
+  ##
   result = nnkDotExpr.newTree(
     newIdentNode("ctx"),
     newIdentNode("settings")
   )
 
 macro client*: untyped =
+  ##
+  ##  get zfcore client information:
+  ##
+  ##  route:
+  ##    get "/":
+  ##      ## client is socket object
+  ##      echo client.getPeerAddr()
+  ##      Http200.respHtml("Hello")
+  ##
   result = nnkDotExpr.newTree(
     newIdentNode("ctx"),
     newIdentNode("client")
   )
 
 macro ws*: untyped =
+  ##  # websocket example :-)
+  ##  get "/ws":
+  ##    #
+  ##    # ctx instance of HttpCtx exposed here :-)
+  ##    # ws is shorthand of ctx.websocket
+  ##    #
+  ##    if not ws.isNil:
+  ##      case ws.state:
+  ##      of WSState.HandShake:
+  ##        echo "HandShake state"
+  ##        # this state will evaluate
+  ##        # right before handshake process
+  ##        # in here we can add the additionals response headers
+  ##        # normaly we can skip this step
+  ##        # about the handshake:
+  ##        # handshake is using http headers
+  ##        # this process is only happen 1 time
+  ##        # after handshake success then the protocol will be switch to the websocket
+  ##        # you can check the handshake header request in
+  ##        # -> ws.handShakeReqHeaders this is the HtttpHeaders type
+  ##        # and you also can add the additional headers information in the response handshake
+  ##        # by adding the:
+  ##        # -> ws.handShakeResHeaders
+  ##      of WSState.Open:
+  ##        echo "Open state"
+  ##        # in this state all swaping process will accur
+  ##        # like send or received message
+  ##        case ws.statusCode:
+  ##        of WSStatusCode.Ok:
+  ##          case ws.inFrame.opCode:
+  ##          of WSOpCode.TextFrame.uint8:
+  ##            echo "Text frame received"
+  ##            echo &"Fin {ws.inFrame.fin}"
+  ##            echo &"Rsv1 {ws.inFrame.rsv1}"
+  ##            echo &"Rsv2 {ws.inFrame.rsv2}"
+  ##            echo &"Rsv3 {ws.inFrame.rsv3}"
+  ##            echo &"OpCode {ws.inFrame.opCode}"
+  ##            echo &"Mask {ws.inFrame.mask}"
+  ##            echo &"Mask Key {ws.inFrame.maskKey}"
+  ##            echo &"PayloadData {ws.inFrame.payloadData}"
+  ##            echo &"PayloadLen {ws.inFrame.payloadLen}"
+  ##            # how to show decoded data
+  ##            # we can use the encodeDecode
+  ##            echo ""
+  ##            echo "Received data (decoded):"
+  ##            echo ws.inFrame.encodeDecode()
+  ##            # let send the data to the client
+  ##            # set fin to 1 if this is independent message
+  ##            # 1 meaning for read and finish
+  ##            # if you want to use continues frame
+  ##            # set it to 0
+  ##            # for more information about web socket frame and protocol
+  ##            # refer to the web socket documentation ro the RFC document
+  ##            #
+  ##            # WSOpCodeEnum:
+  ##            # WSOpCode* = enum
+  ##            #    ContinuationFrame = 0x0
+  ##            #    TextFrame = 0x1
+  ##            #    BinaryFrame = 0x2
+  ##            #    ConnectionClose = 0x8
+  ##            ws.outFrame = newWSFrame(
+  ##              "This is from the endpoint :-)",
+  ##              1,
+  ##              WSOpCode.TextFrame.uint8)
+  ##            await ws.send()
+  ##          of WSOpCode.BinaryFrame.uint8:
+  ##            echo "Binary frame received"
+  ##          of WSOpCode.ContinuationFrame.uint8:
+  ##            # the frame continues from previous frame
+  ##            echo "Continuation frame received"
+  ##          of WSOpCode.ConnectionClose.uint8:
+  ##            echo "Connection close frame received"
+  ##          else:
+  ##              discard
+  ##        else:
+  ##            echo &"Failed status code {ws.statusCode}"
+  ##      of WSState.Close:
+  ##        echo "Close state"
+  ##        # this state will execute if the connection close
+  ##
   result = nnkDotExpr.newTree(
     newIdentNode("ctx"),
     newIdentNode("webSocket")
   )
 
 macro params*: untyped =
+  ##
+  ##  get zfcore client information:
+  ##
+  ##  route:
+  ##    # param from query string
+  ##    # /param?hello=world
+  ##    get "/param":
+  ##      # echo %param
+  ##      Http200.respHtml("Hello")
+  ##
   result = nnkDotExpr.newTree(
     newIdentNode("ctx"),
     newIdentNode("params")
   )
 
 macro reParams*: untyped =
+  ##
+  ##  get zfcore client information:
+  ##
+  ##  route:
+  ##    # regex param
+  ##    # accept /reparam/1
+  ##    # accept /reparam/2
+  ##    get "/reparam/<id:[0-9]>":
+  ##      echo %reParam
+  ##      Http200.respHtml("Hello")
+  ##
   result = nnkDotExpr.newTree(
     newIdentNode("ctx"),
     newIdentNode("reParams")
   )
 
 macro formData*: untyped =
+  ##
+  ##  get zfcore client information:
+  ##
+  ##  route:
+  ##    post "/formdata":
+  ##      let formData = formData
+  ##      Http200.respHtml("Hello")
+  ##
   result = nnkDotExpr.newTree(
     newIdentNode("ctx"),
     newIdentNode("formData")
   )
 
 macro json*: JsonNode =
+  ##
+  ##  get zfcore client information:
+  ##
+  ##  route:
+  ##    post "/json":
+  ##      echo json
+  ##      Http200.respHtml("Hello")
+  ##
   result = nnkDotExpr.newTree(
     newIdentNode("ctx"),
     newIdentNode("json")

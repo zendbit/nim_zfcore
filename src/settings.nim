@@ -1,11 +1,11 @@
-#[
-  zfcore web framework for nim language
-  This framework if free to use and to modify
-  License: BSD
-  Author: Amru Rosyada
-  Email: amru.rosyada@gmail.com
-  Git: https://github.com/zendbit
-]#
+##
+##  zfcore web framework for nim language
+##  This framework if free to use and to modify
+##  License: BSD
+##  Author: Amru Rosyada
+##  Email: amru.rosyada@gmail.com
+##  Git: https://github.com/zendbit/nim.zfcore
+##
 
 import os, sugar, sequtils, net, json
 export os, sugar, sequtils, net, json
@@ -15,18 +15,19 @@ export SslSettings
 
 type
   Settings* = ref object
-    #
-    # This is setting definition
-    # will be much changes on the future:
-    #   port:int -> port to be use for the sever
-    #   staticDir:string -> where the static directory, and will serve public resource like .css, .jpg, .js etc
-    #   address:string -> is address to be bind for starting the server
-    #
-    # port to zfblast ssl setting
-    # SslSettings* = ref object
-    #    certFile*: string
-    #    keyFile*: string
-    #
+    ##
+    ##  This is setting definition
+    ##  will be much changes on the future:
+    ##  
+    ##  port:int -> port to be use for the sever
+    ##  staticDir:string -> where the static directory, and will serve public resource like .css, .jpg, .js etc
+    ##  address:string -> is address to be bind for starting the server
+    ##
+    ##  port to zfblast ssl setting
+    ##  SslSettings* = ref object
+    ##    certFile*: string
+    ##    keyFile*: string
+    ##
     port*: Port
     address*: string
     reuseAddress*: bool
@@ -82,14 +83,23 @@ proc addTmpCleanupDir*(
   self: Settings,
   dirName: string,
   interval: int64 = 3600) =
-
+  ##
+  ##  add cleanup dir:
+  ##
+  ##  register directory for cleanup.
+  ##  the system using folder .tmp for cache the data and will check and cleanup the folder with interval in seconds.
+  ##
   if filter(self.tmpCleanupDir, (x: tuple[dirName: string, interval: int64]) => x.dirName == dirName).len == 0:
     self.tmpCleanupDir.add((dirName, interval))
 
 proc removeTmpCleanupDir*(
   self: Settings,
   dirname: string) =
-  
+  ##
+  ##  remove cleanup dir:
+  ##
+  ##  remove direcotory from cleanup.
+  ##
   self.tmpCleanupDir = filter(self.tmpCleanupDir, (x: tuple[dirName: string, interval: int64]) => x.dirName != dirname)
 
 proc newSettings*(
@@ -107,12 +117,12 @@ proc newSettings*(
   sslSettings: SslSettings = nil,
   tmpCleanupDir: seq[tuple[dirName: string, interval: int64]] = @[]): Settings =
 
-  #
-  # this for instantiate new Settings with default parameter is:
-  #   port -> 8080
-  #   address -> 0.0.0.0
-  #   staticDir -> www
-  #
+  ##
+  ##  this for instantiate new Settings with default parameter is:
+  ##  port -> 8080
+  ##  address -> 0.0.0.0
+  ##  staticDir -> www
+  ##
   var instance = Settings(
     port: port,
     address: address,

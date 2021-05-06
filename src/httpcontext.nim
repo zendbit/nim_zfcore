@@ -1,11 +1,12 @@
-#[
-  zfcore web framework for nim language
-  This framework if free to use and to modify
-  License: BSD
-  Author: Amru Rosyada
-  Email: amru.rosyada@gmail.com
-  Git: https://github.com/zendbit
-]#
+##
+##  zfcore web framework for nim language
+##  This framework if free to use and to modify
+##  License: BSD
+##  Author: Amru Rosyada
+##  Email: amru.rosyada@gmail.com
+##  Git: https://github.com/zendbit/nim.zfcore
+##
+
 # check if compile with gzip support
 when defined zlib:
   import zip/zlib
@@ -28,17 +29,17 @@ export send, getValues, trace, Response, Request
 
 type
   HttpContext* = ref object of zfblast.HttpContext
-    # 
-    # The field is widely used the zfblast HttpContext object but we add some field to its:
-    # request -> Request object
-    # response -> Response object
-    # settings -> this is the shared settings
-    #
-    # params -> is table of the captured query string and path segment
-    # reParams -> is table of the captured regex match with the segment
-    # formData -> is FormData object and will capture if we use the multipart form
-    # json -> this will capture the application/json body from the post/put/patch method
-    #
+    ## 
+    ##  The field is widely used the zfblast HttpContext object but we add some field to its:
+    ##  request -> Request object
+    ##  response -> Response object
+    ##  settings -> this is the shared settings
+    ##
+    ##  params -> is table of the captured query string and path segment
+    ##  reParams -> is table of the captured regex match with the segment
+    ##  formData -> is FormData object and will capture if we use the multipart form
+    ##  json -> this will capture the application/json body from the post/put/patch method
+    ##
     params*: Table[string, string]
     reParams*: Table[string, seq[string]]
     formData*: FormData
@@ -49,15 +50,22 @@ type
 proc staticFile*(
   self: HttpContext,
   path: string = ""): string {.discardable.} =
+  ##
+  ##  static file:
+  ##
+  ##  static file path will set if serving the static file.
+  ##
   if path != "":
     self.staticFilePath = path
 
   result = self.staticFilePath
 
 proc newHttpContext*(self: zfblast.HttpContext): HttpContext {.gcsafe.} =
-  #
-  # create new HttpContext from the zfblast HttpContext
-  #
+  ##
+  ##  new zfblast httpcontext:
+  ##
+  ##  create new HttpContext from the zfblast HttpContext
+  ##
   return HttpContext(
     client: self.client,
     request: self.request,
@@ -78,11 +86,12 @@ proc setCookie*(
   path: string = "",
   expires: string = "",
   secure: bool = false) =
-  #
-  # create cookie
-  # cookies is StringTableRef
-  # setCookie({"username": "bond"}.newStringTable)
-  #
+  ##
+  ##  create cookie
+  ##
+  ##  cookies is StringTableRef
+  ##  setCookie({"username": "bond"}.newStringTable)
+  ##
   var cookieList: seq[string] = @[]
   for k, v in cookies:
     cookieList.add(k & "=" & v)
@@ -99,11 +108,13 @@ proc setCookie*(
   self.response.headers.add("Set-Cookie", join(cookieList, ";"))
 
 proc getCookie*(self: HttpContext): StringTableRef =
-  #
-  # get cookies, return StringTableRef
-  # if self.getCookies().hasKey("username"):
-  #   dosomethings
-  #
+  ##
+  ##  get cookie:
+  ##
+  ##  get cookies, return StringTableRef
+  ##  if self.getCookies().hasKey("username"):
+  ##    dosomethings
+  ##
   var cookie = self.request.headers.getOrDefault("cookie")
   if cookie != "":
     return parseCookies(cookie)
@@ -113,22 +124,24 @@ proc getCookie*(self: HttpContext): StringTableRef =
 proc clearCookie*(
   self: HttpContext,
   cookies: StringTableRef) =
-  #
-  # clear cookie
-  # let cookies = self.getCookies
-  # self.clearCookie(cookies)
-  #
+  ##
+  ##  clear cookie:
+  ##
+  ##  let cookies = self.getCookies
+  ##  self.clearCookie(cookies)
+  ##
   self.setCookie(cookies, expires = "Thu, 01 Jan 1970 00:00:00 GMT")
 
 proc getContentRange*(
   self: HttpContext,
   filePath: string = ""): tuple[content: string, headers: HttpHeaders, errMsg: ApiMsg] =
-  #
-  # get content range of file
-  # will check request header from client if request contain Range: bytes=<start>-<stop>
-  # then return requested data with length of the requested file
-  # this method will defend then web server from overload of large request process
-  #
+  ##
+  ##  get content range of file:
+  ##
+  ##  will check request header from client if request contain Range: bytes=<start>-<stop>
+  ##  then return requested data with length of the requested file
+  ##  this method will defend then web server from overload of large request process
+  ##
   if filePath != "":
     self.staticFile(filePath)
 
@@ -174,9 +187,12 @@ proc getContentRange*(
     apiMsg.error["msg"] = % &"failed retrieve file."
 
 proc mapContentype*(self: HttpContext) =
-  # HttpPost, HttpPut, HttpPatch will auto parse and extract the request, including the uploaded files
-  # uploaded files will save to tmp folder
-  #
+  ##
+  ## map content type:
+  ##
+  ##  HttpPost, HttpPut, HttpPatch will auto parse and extract the request, including the uploaded files
+  ##  uploaded files will save to tmp folder
+  ##
   let contentType = self.request.headers.getValues("Content-Type").toLower
   if self.request.httpMethod in [HttpPost, HttpPut, HttpPatch]:
     if contentType.find("multipart/form-data") != -1:
@@ -202,6 +218,11 @@ proc mapContentype*(self: HttpContext) =
 proc isSupportGz*(
   self: HttpContext,
   contentType: string): bool =
+  ##
+  ##  is support gz:
+  ##
+  ##  check if client support gz compression. if supported then compress theresponse to gz.
+  ##
   when defined zlib:
     # prepare gzip support
     let accept =
@@ -213,12 +234,22 @@ proc isSupportGz*(
       "application/javascript", "application/xhtml+xml", "application/ld+json"])
 
 proc gzCompress(content: string): string =
+  ##
+  ##  gz compress:
+  ##
+  ##  will compress content to gz.
+  ##
   when defined zlib:
     result = compress(content, stream=GZIP_STREAM)
   else:
     result = content
 
 proc doResp(self: HttpContext) {.gcsafe async.} =
+  ##
+  ##  go resp:
+  ##
+  ##  check response header and content to match with the client request specification.
+  ##
   let contentType = self.response.headers.getValues("Content-Type")
   if contentType == "":
     self.response.headers["Content-Type"] = "application/octet-stream"
@@ -250,10 +281,12 @@ proc resp*(
   httpCode: HttpCode,
   body: string,
   headers: HttpHeaders = nil) {.gcsafe async.} =
-  #
-  # response to the client
-  # self.resp(Http200, "ok")
-  #
+  ##
+  ##  resp:
+  ##
+  ##  response to the client
+  ##  self.resp(Http200, "ok")
+  ##
   self.response.httpCode = httpCode
   self.response.body = body
   if not headers.isNil:
@@ -272,11 +305,13 @@ proc resp*(
   httpCode: HttpCode,
   body: JsonNode,
   headers: HttpHeaders = nil) {.gcsafe async.} =
-  #
-  # response as application/json to the client
-  # let msg = %*{"status": true}
-  # self.resp(Http200, msg)
-  #
+  ##
+  ##  resp:
+  ##
+  ##  response as application/json to the client
+  ##  let msg = %*{"status": true}
+  ##  self.resp(Http200, msg)
+  ##
   self.response.httpCode = httpCode
   self.response.headers["Content-Type"] = @["application/json"]
   self.response.body = $body
@@ -291,10 +326,12 @@ proc respHtml*(
   httpCode: HttpCode,
   body: string,
   headers: HttpHeaders = nil) {.gcsafe async.} =
-  #
-  # response as html to the client
-  # self.respHtml(Http200, """<html><body>Nice...</body></html>""")
-  #
+  ##
+  ##  resp html:
+  ##
+  ##  response as html to the client
+  ##  self.respHtml(Http200, """<html><body>Nice...</body></html>""")
+  ##
   self.response.httpCode = httpCode
   self.response.headers["Content-Type"] = @["text/html", "charset=utf-8"]
   self.response.body = $body
@@ -307,10 +344,12 @@ proc respHtml*(
 proc respRedirect*(
   self: HttpContext,
   redirectTo: string) {.gcsafe async.} =
-  #
-  # response redirect to the client
-  # self.respRedirect("https://google.com")
-  #
+  ##
+  ##  resp redirect:
+  ##
+  ##  response redirect to the client
+  ##  self.respRedirect("https://google.com")
+  ##
   self.response.httpCode = Http303
   self.response.headers["Location"] = @[redirectTo]
   await self.doResp
