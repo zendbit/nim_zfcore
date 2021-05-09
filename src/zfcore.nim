@@ -10,9 +10,9 @@
 from zfblast import HttpContext, newZFBlast, ZFBlast, serve
 
 import router, route, httpcontext, formdata, settings,
-  fluentvalidation, apimsg, threadpool, macros
+  fluentvalidation, apimsg, respmsg, threadpool, macros
 export httpcontext, router, route, formdata, settings,
-  fluentvalidation, apimsg
+  fluentvalidation, apimsg, respmsg
 
 const ZF_SETTINGS_FILE* = "settings.json"
 
