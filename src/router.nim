@@ -14,7 +14,7 @@ export mimetypes
 # nimble
 import uri3
 import apimsg
-from zfblast import getValues, trace, cleanUri
+from zfblast import getValues, trace
 export trace, getValues
 
 # local
@@ -327,7 +327,6 @@ proc get*(
   ##
   ##  zf.serve()
   ##
-  let path = path.cleanUri
   self.routes.add(Route(path: path,
     httpMethod: HttpGet,
     thenDo: thenDo,
@@ -368,7 +367,6 @@ proc post*(
   ##
   ##  zf.serve()
   ##
-  let path = path.cleanUri
   self.routes.add(Route(path: path,
     httpMethod: HttpPost,
     thenDo: thenDo,
@@ -409,7 +407,6 @@ proc put*(
   ##
   ##  zf.serve()
   ##
-  let path = path.cleanUri
   self.routes.add(Route(path: path,
     httpMethod: HttpPut,
     thenDo: thenDo,
@@ -450,7 +447,6 @@ proc delete*(
   ##
   ##  zf.serve()
   ##
-  let path = path.cleanUri
   self.routes.add(Route(path: path,
     httpMethod: HttpDelete,
     thenDo: thenDo,
@@ -491,7 +487,6 @@ proc patch*(
   ##
   ##  zf.serve()
   ##
-  let path = path.cleanUri
   self.routes.add(Route(path: path,
     httpMethod: HttpPatch,
     thenDo: thenDo,
@@ -532,7 +527,6 @@ proc head*(
   ##
   ##  zf.serve()
   ##
-  let path = path.cleanUri
   self.routes.add(Route(path: path,
     httpMethod: HttpHead,
     thenDo: thenDo,
@@ -573,7 +567,6 @@ proc options*(
   ##
   ##  zf.serve()
   ##
-  let path = path.cleanUri
   self.routes.add(Route(path: path,
     httpMethod: HttpOptions,
     thenDo: thenDo,
@@ -614,7 +607,6 @@ proc trace*(
   ##
   ##  zf.serve()
   ##
-  let path = path.cleanUri
   self.routes.add(Route(path: path,
     httpMethod: HttpTrace,
     thenDo: thenDo,
@@ -655,7 +647,6 @@ proc connect*(
   ##
   ##  zf.serve()
   ##
-  let path = path.cleanUri
   self.routes.add(Route(path: path,
     httpMethod: HttpConnect,
     thenDo: thenDo,
