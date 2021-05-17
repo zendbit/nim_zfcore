@@ -6,21 +6,46 @@
 ##  Email: amru.rosyada@gmail.com
 ##  Git: https://github.com/zendbit/nim.zfcore
 ##
-import httpcore
-export httpcore
-import apimsg
-export apimsg
+
+import json, httpcore
+export json, httpcore
 
 type
   RespMsg* = ref object
-    msg*: ApiMsg
-    httpCode*: HttpCode
+    ##
+    ## api msg type:
+    ##
+    ## Api message type for standard json output.
+    ##
+    status*: HttpCode
+    success*: bool
+    error*: JsonNode
+    data*: JsonNode
+
+proc `%`*(self: ApiMsg): JsonNode =
+  ##
+  ##  api msg to JsonNode:
+  ##
+  ##  convert api msg type to JsonNode.
+  ##
+  result = %*{}
+  result["status"] = % $self.status
+  result["success"] = %self.success
+  result["error"] = self.error
+  result["data"] = self.data
 
 proc newRespMsg*(
-  httpCode: HttpCode = Http406,
   success: bool = false,
-  data: JsonNode = %*{},
-  error: JsonNode = %*{}): RespMsg =
-  return RespMsg(
-    httpCode: httpCode,
-    msg: newApiMsg(success=success, data=data, error=error))
+  status: HttpCode = Http406,
+  error: JsonNode = %*{},
+  data: JsonNode = %*{}): ApiMsg =
+  ##
+  ##  new api msg:
+  ##
+  ##  create new api msg type.
+  ##
+  result = ApiMsg(
+    status: status,
+    success: success,
+    error: error,
+    data: data)
