@@ -44,7 +44,7 @@ proc newRespMsg*(
   ##
   ##  create new api msg type.
   ##
-  result = ApiMsg(
+  result = RespMsg(
     status: status,
     success: success,
     error: error,

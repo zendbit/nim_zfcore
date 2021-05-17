@@ -13,7 +13,7 @@ export mimetypes
 
 # nimble
 import uri3
-import apimsg
+import respmsg
 from zfblast import getValues, trace
 export trace, getValues
 
