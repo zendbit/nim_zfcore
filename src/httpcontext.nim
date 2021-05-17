@@ -21,8 +21,8 @@ import uri3, stdext.strutils_ext
 export uri3, strutils_ext
 
 # local
-import settings, formdata, websocket, apimsg
-export settings, formdata, websocket, apimsg
+import settings, formdata, websocket, respmsg
+export settings, formdata, websocket, respmsg
 
 import zfblast
 export send, getValues, trace, Response, Request
@@ -134,7 +134,7 @@ proc clearCookie*(
 
 proc getContentRange*(
   self: HttpContext,
-  filePath: string = ""): tuple[content: string, headers: HttpHeaders, errMsg: ApiMsg] =
+  filePath: string = ""): tuple[content: string, headers: HttpHeaders, errMsg: RespMsg] =
   ##
   ##  get content range of file:
   ##
@@ -146,8 +146,8 @@ proc getContentRange*(
     self.staticFile(filePath)
 
   # handle range request
-  let apiMsg = newApiMsg(success = false, error = %*{}, data = %*{})
-  result = ("", newHttpHeaders(), apiMsg)
+  let respMsg = newRespMsg(success = false, error = %*{}, data = %*{})
+  result = ("", newHttpHeaders(), respMsg)
   if self.staticFile().existsFile:
     let staticFile = self.staticFile.open
     let rangeHead = self.request.headers.getValues("Range")
@@ -169,22 +169,22 @@ proc getContentRange*(
               discard staticFile.readChars(charBuffer, 0, charBuffer.len - 1)
               httpHeaders["Content-Range"] = &"bytes {rangeStart}-{rangeEnd}/{staticFile.getFileSize}"
               httpheaders["Max-Range"] = $self.settings.responseRangebuffer
-              apiMsg.success = true
-              result = (charBuffer, httpHeaders, apiMsg)
+              respMsg.success = true
+              result = (charBuffer, httpHeaders, respMsg)
             else:
-              apiMsg.error["msg"] = %"range not valid, max range {rangeLen} bytes."
+              respMsg.error["msg"] = %"range not valid, max range {rangeLen} bytes."
           else:
-            apiMsg.error["msg"] = %"invalid range value."
+            respMsg.error["msg"] = %"invalid range value."
         else:
-          apiMsg.error["msg"] = %"range definition invalid."
+          respMsg.error["msg"] = %"range definition invalid."
       else:
-        apiMsg.error["msg"] = %"multipart range is not supported."
+        respMsg.error["msg"] = %"multipart range is not supported."
     else:
-      apiMsg.error["msg"] = %"range header value invalid, only accept bytes."
+      respMsg.error["msg"] = %"range header value invalid, only accept bytes."
     # close flie
     staticFile.close
   else:
-    apiMsg.error["msg"] = % &"failed retrieve file."
+    respMsg.error["msg"] = % &"failed retrieve file."
 
 proc mapContentype*(self: HttpContext) =
   ##

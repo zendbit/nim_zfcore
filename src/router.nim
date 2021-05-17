@@ -234,7 +234,7 @@ proc handleDynamicRoute(
       if ctx.settings.maxResponseBodyLength >= staticFile.getFileSize:
         await ctx.resp(Http200, staticFile.readAll)
       else:
-        await ctx.resp(Http406, %newApiMsg(
+        await ctx.resp(Http406, %newRespMsg(
           success = false,
           error = %*{
             "msg": &"use Range header (partial request) " &
@@ -250,7 +250,7 @@ proc handleDynamicRoute(
 
   else:
     # default response if route does not match
-    await ctx.resp(Http404, %newApiMsg(error = %*{
+    await ctx.resp(Http404, %newRespMsg(error = %*{
       "msg": "not found {ctx.request.url.getPath()}."}))
 
 proc executeProc*(
@@ -270,11 +270,11 @@ proc executeProc*(
     await self.handleDynamicRoute(httpCtx)
   except Exception as ex:
     echo ex.msg
-    let apiMsg = newApiMsg(success=false,
+    let respMsg = newRespMsg(success=false,
       error = %*{"status": false, "error": ex.msg.split("\n")},
       data = %*{})
     ctx.response.headers["Content-Type"] = "application/json"
-    ctx.response.body = (%apiMsg).pretty(2)
+    ctx.response.body = (%respMsg).pretty(2)
     ctx.response.httpCode = Http500
     await ctx.send(ctx)
 
