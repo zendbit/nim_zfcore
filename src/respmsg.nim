@@ -22,7 +22,7 @@ type
     error*: JsonNode
     data*: JsonNode
 
-proc `%`*(self: ApiMsg): JsonNode =
+proc `%`*(self: RespMsg): JsonNode =
   ##
   ##  api msg to JsonNode:
   ##
