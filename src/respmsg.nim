@@ -38,7 +38,7 @@ proc newRespMsg*(
   success: bool = false,
   status: HttpCode = Http406,
   error: JsonNode = %*{},
-  data: JsonNode = %*{}): ApiMsg =
+  data: JsonNode = %*{}): RespMsg =
   ##
   ##  new api msg:
   ##
