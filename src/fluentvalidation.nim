@@ -163,7 +163,7 @@ proc dec*(
 
   result = self
 
-proc bool*(
+proc boolean*(
   self: FieldData,
   errMsg: string = "",
   okMsg:string = ""): FieldData {.discardable.} =
