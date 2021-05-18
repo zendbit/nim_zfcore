@@ -491,7 +491,7 @@ macro emitServer*() =
 
 macro resp*(
   httpCode: HttpCode,
-  body: untyped,
+  body: typed,
   headers: HttpHeaders = nil) =
   ##
   ##  resp macro:
@@ -500,6 +500,7 @@ macro resp*(
   ##    get "/":
   ##      Http200.resp("hello", newHttpHeaders([("Content-Type", "text/html")]))
   ##
+
   nnkCommand.newTree(
     newIdentNode("await"),
     nnkCall.newTree(
