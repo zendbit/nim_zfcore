@@ -83,7 +83,7 @@ proc setCookie*(
   self: HttpContext,
   cookies: StringTableRef,
   domain: string = "",
-  path: string = "",
+  path: string = "/",
   expires: string = "",
   secure: bool = false) =
   ##
