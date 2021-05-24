@@ -40,7 +40,8 @@ proc newRouter*(): Router {.gcsafe.} =
   result = Router(routes: @[])
 
 proc clearPath(path: string): string =
-  if path.endsWith("/"):
+  result = path
+  if path.endsWith("/") and path != "/":
     result = path.substr(0, path.high - 1)
 
 proc getRoutes*(self: Router): seq[Route] =
@@ -176,8 +177,9 @@ proc handleDynamicRoute(
   ##
   
   ##  redirect to base url if last page contains /
-  if ctx.request.url.getPath().endsWith("/"):
-    await ctx.respRedirect(ctx.request.url.getPath().clearPath)
+  let reqPath = ctx.request.url.getPath()
+  if reqPath.endsWith("/") and reqPath != "/":
+    await ctx.respRedirect(reqPath.clearPath)
     return
 
   # call static route before the dynamic route
@@ -200,7 +202,7 @@ proc handleDynamicRoute(
   
   # route to potensial uri
   # also extract the uri parameter
-  let ctxSegments = ctx.request.url.getPath().parseSegmentsFromPath
+  let ctxSegments = reqPath.parseSegmentsFromPath
   #var exec: proc (ctx: HttpContext): Future[void] {.gcsafe.}
   var route: Route
   for r in self.routes:
