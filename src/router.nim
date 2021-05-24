@@ -39,6 +39,10 @@ proc newRouter*(): Router {.gcsafe.} =
   ##
   result = Router(routes: @[])
 
+proc clearPath(path: string): string =
+  if path.endsWith("/"):
+    result = path.substr(0, path.high - 1)
+
 proc getRoutes*(self: Router): seq[Route] =
   ##
   ##  get routes:
@@ -170,6 +174,12 @@ proc handleDynamicRoute(
   ##
   ##  handle dynamic route from the path, midleware action, static routes.
   ##
+  
+  ##  redirect to base url if last page contains /
+  if ctx.request.url.getPath().endsWith("/"):
+    await ctx.respRedirect(ctx.request.url.getPath().clearPath)
+    return
+
   # call static route before the dynamic route
   let (staticFound, staticFilePath, staticContentType) =
     self.handleStaticRoute(ctx)
@@ -286,6 +296,7 @@ proc static*(
   ##
   ##  register static route.
   ##
+  let path = path.clearPath
   self.staticRoute = Route(
     path: path,
     httpMethod: HttpGet,
@@ -327,6 +338,7 @@ proc get*(
   ##
   ##  zf.serve()
   ##
+  let path = path.clearPath
   self.routes.add(Route(path: path,
     httpMethod: HttpGet,
     thenDo: thenDo,
@@ -367,6 +379,7 @@ proc post*(
   ##
   ##  zf.serve()
   ##
+  let path = path.clearPath
   self.routes.add(Route(path: path,
     httpMethod: HttpPost,
     thenDo: thenDo,
@@ -407,6 +420,7 @@ proc put*(
   ##
   ##  zf.serve()
   ##
+  let path = path.clearPath
   self.routes.add(Route(path: path,
     httpMethod: HttpPut,
     thenDo: thenDo,
@@ -447,6 +461,7 @@ proc delete*(
   ##
   ##  zf.serve()
   ##
+  let path = path.clearPath
   self.routes.add(Route(path: path,
     httpMethod: HttpDelete,
     thenDo: thenDo,
@@ -487,6 +502,7 @@ proc patch*(
   ##
   ##  zf.serve()
   ##
+  let path = path.clearPath
   self.routes.add(Route(path: path,
     httpMethod: HttpPatch,
     thenDo: thenDo,
@@ -527,6 +543,7 @@ proc head*(
   ##
   ##  zf.serve()
   ##
+  let path = path.clearPath
   self.routes.add(Route(path: path,
     httpMethod: HttpHead,
     thenDo: thenDo,
@@ -567,6 +584,7 @@ proc options*(
   ##
   ##  zf.serve()
   ##
+  let path = path.clearPath
   self.routes.add(Route(path: path,
     httpMethod: HttpOptions,
     thenDo: thenDo,
@@ -607,6 +625,7 @@ proc trace*(
   ##
   ##  zf.serve()
   ##
+  let path = path.clearPath
   self.routes.add(Route(path: path,
     httpMethod: HttpTrace,
     thenDo: thenDo,
@@ -647,6 +666,7 @@ proc connect*(
   ##
   ##  zf.serve()
   ##
+  let path = path.clearPath
   self.routes.add(Route(path: path,
     httpMethod: HttpConnect,
     thenDo: thenDo,
