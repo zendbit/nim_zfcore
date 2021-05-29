@@ -298,7 +298,7 @@ macro routes*(group, body: untyped = nil): untyped =
   if group.kind == nnkStmtList:
     x = group
   elif group.kind == nnkStrLit:
-    routeGroup = $group
+    routeGroup = group.strVal
 
   let stmtList = newStmtList()
   for child in x.children:
@@ -306,7 +306,7 @@ macro routes*(group, body: untyped = nil): untyped =
       stmtList.add(child)
       continue
 
-    let childKind = ($child[0]).strip
+    let childKind = (child[0].strVal).strip
     case child.kind
     of nnkCall:
       var childStmtList: NimNode = child
@@ -398,7 +398,7 @@ macro routes*(group, body: untyped = nil): untyped =
         stmtList.add(child)
 
     of nnkCommand:
-      let route = routeGroup & ($child[1]).strip()
+      let route = routeGroup & (child[1].strVal).strip()
       case childKind
       of "get", "post", "head",
         "patch", "delete", "put",

@@ -727,7 +727,7 @@ macro fluentValidation*(x: untyped): untyped =
       stmtList.add(child)
       continue
 
-    let childKind = $child[0]
+    let childKind = child[0].strVal
     case child.kind
     of nnkCommand:
       case childKind
@@ -755,12 +755,12 @@ macro fluentValidation*(x: untyped): untyped =
             # must
             # num
             #
-            case $vChild
+            case vChild.strVal
             of "bool", "must", "num", "email", "dec":
               fvData = nnkCall.newTree(
                 nnkDotExpr.newTree(
                   fvData,
-                  newIdentNode($vChild)
+                  newIdentNode(vChild.strVal)
                 )
               )
 
@@ -775,13 +775,13 @@ macro fluentValidation*(x: untyped): untyped =
             #   ok ""
             #   err ""
             #
-            let vChildKind = $vChild[0]
+            let vChildKind = vChild[0].strVal
             case vChildKind
             of "bool", "must", "num", "email", "dec":
               var ok = ""
               var err = ""
               for msg in vChild[1]:
-                case $msg[0]
+                case msg[0].strVal
                 of "ok":
                   if not msg[1].isNil:
                     ok = msg[1].strVal
@@ -811,7 +811,7 @@ macro fluentValidation*(x: untyped): untyped =
             #
             # etc
             #
-            let vChildKind = $vChild[0]
+            let vChildKind = vChild[0].strVal
             case vChildKind
             of "rangeLen", "range":
               let minLen = vChild[1][0]
@@ -822,7 +822,7 @@ macro fluentValidation*(x: untyped): untyped =
                 var err = ""
                 if vChild.len >= 3:
                   for msg in vChild[2]:
-                    case $msg[0]
+                    case msg[0].strVal
                     of "ok":
                       if not msg[1].isNil:
                         ok = msg[1].strVal
@@ -860,7 +860,7 @@ macro fluentValidation*(x: untyped): untyped =
                 var err = ""
                 if vChild.len >= 3:
                   for msg in vChild[2]:
-                    case $msg[0]
+                    case msg[0].strVal
                     of "ok":
                       if not msg[1].isNil:
                         ok = msg[1].strVal
