@@ -194,7 +194,7 @@ proc mapContentype*(self: HttpContext) =
   ##  uploaded files will save to tmp folder
   ##
   let contentType = self.request.headers.getValues("Content-Type").toLower
-  if self.request.httpMethod in [HttpPost, HttpPut, HttpPatch]:
+  if self.request.httpMethod in [HttpPost, HttpPut, HttpPatch, HttpDelete]:
     if contentType.find("multipart/form-data") != -1:
       self.formData = newFormData().parse(
         self.request.body,
