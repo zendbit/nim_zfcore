@@ -7,11 +7,7 @@ from version 1.0.6 already support web socket
 
 # Install from nimble
 ```
-use develop mode for the latest version:
-nimble develop zfcore
-
-or use the nimble version but not guarantee point to the latest version:
-nimble install zfcore
+nimble install zfcore@#head
 ```
 
 # usage
