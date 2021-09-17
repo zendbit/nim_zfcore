@@ -7,11 +7,7 @@ from version 1.0.6 already support web socket
 
 # Install from nimble
 ```
-use develop mode for the latest version:
-nimble develop zfcore
-
-or use the nimble version but not guarantee point to the latest version:
-nimble install zfcore
+nimble install zfcore@#head
 ```
 
 # usage
@@ -328,22 +324,24 @@ ctx.clearCookie -> clearCookie
 Configuration file create file settings.json in the same level with the source, keepAlive default is of
 ```javascript
 {
-  "keepAlive": false,
-  "maxBodyLength": 268435456,
-  "readBodyBuffer": 51200,
-  "responseRangeBuffer": 51200,
-  "maxResponseBodyLength": 52428800,
-  "trace": false,
-  "http": {
-    "port": 8080,
-    "address": "0.0.0.0",
-    "reuseAddress": true,
-    "reusePort": false,
-    "secure": {
-      "cert": "ssl/certificate.pem",
-      "key": "ssl/key.pem",
-      "verify": true,
-      "port": 8443
+  "core": {
+    "keepAlive": false,
+    "maxBodyLength": 268435456,
+    "readBodyBuffer": 51200,
+    "responseRangeBuffer": 51200,
+    "maxResponseBodyLength": 52428800,
+    "trace": false,
+    "http": {
+      "port": 8080,
+      "address": "0.0.0.0",
+      "reuseAddress": true,
+      "reusePort": false,
+      "secure": {
+        "cert": "ssl/devel-selfsigned.pem",
+        "key": "ssl/devel-selfsigned-key.pem",
+        "verify": true,
+        "port": 8443
+      }
     }
   },
   "database": {
