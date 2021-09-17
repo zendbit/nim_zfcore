@@ -14,7 +14,8 @@ export mimetypes
 # nimble
 import uri3
 import respmsg
-from zfblast import getValues, trace
+import zfblast/server as zfbserver
+from zfblast/server import getValues, trace
 export trace, getValues
 
 # local
@@ -114,7 +115,7 @@ proc parseSegmentsFromPath(path: string): seq[string] =
 
 proc handleStaticRoute(
   self: Router,
-  ctx: HttpContext):
+  ctx: httpcontext.HttpContext):
   tuple[
     found: bool,
     filePath: string,
@@ -169,7 +170,7 @@ proc handleStaticRoute(
 
 proc handleDynamicRoute(
   self: Router,
-  ctx: HttpContext) {.gcsafe async.} =
+  ctx: httpcontext.HttpContext) {.gcsafe async.} =
   ##
   ##  handle dynamic route:
   ##
@@ -267,7 +268,7 @@ proc handleDynamicRoute(
 
 proc executeProc*(
   self: Router,
-  ctx: zfblast.HttpContext,
+  ctx: zfbserver.HttpContext,
   settings: Settings) {.gcsafe async.} =
   ##
   ##  execute proc:
@@ -308,7 +309,7 @@ proc static*(
 proc get*(
   self: Router,
   path: string,
-  thenDo: proc (ctx: HttpContext) {.gcsafe async.}) {.gcsafe.} =
+  thenDo: proc (ctx: httpcontext.HttpContext) {.gcsafe async.}) {.gcsafe.} =
   ##
   ##  register get route:
   ##
@@ -349,7 +350,7 @@ proc get*(
 proc post*(
   self: Router,
   path: string,
-  thenDo: proc (ctx: HttpContext) {.gcsafe async.}) {.gcsafe.} =
+  thenDo: proc (ctx: httpcontext.HttpContext) {.gcsafe async.}) {.gcsafe.} =
   ##
   ##  register post route:
   ##
@@ -390,7 +391,7 @@ proc post*(
 proc put*(
   self: Router,
   path: string,
-  thenDo: proc (ctx: HttpContext) {.gcsafe async.}) {.gcsafe.} =
+  thenDo: proc (ctx: httpcontext.HttpContext) {.gcsafe async.}) {.gcsafe.} =
   ##
   ##  register put route:
   ##
@@ -431,7 +432,7 @@ proc put*(
 proc delete*(
   self: Router,
   path: string,
-  thenDo: proc (ctx: HttpContext) {.gcsafe async.}) {.gcsafe.} =
+  thenDo: proc (ctx: httpcontext.HttpContext) {.gcsafe async.}) {.gcsafe.} =
   ##
   ##  register delete route:
   ##
@@ -472,7 +473,7 @@ proc delete*(
 proc patch*(
   self: Router,
   path: string,
-  thenDo: proc (ctx: HttpContext) {.gcsafe async.}) {.gcsafe.} =
+  thenDo: proc (ctx: httpcontext.HttpContext) {.gcsafe async.}) {.gcsafe.} =
   ##
   ##  register patch route:
   ##
@@ -513,7 +514,7 @@ proc patch*(
 proc head*(
   self: Router,
   path: string,
-  thenDo: proc (ctx: HttpContext) {.gcsafe async.}) {.gcsafe.} =
+  thenDo: proc (ctx: httpcontext.HttpContext) {.gcsafe async.}) {.gcsafe.} =
   ##
   ##  register head route:
   ##
@@ -554,7 +555,7 @@ proc head*(
 proc options*(
   self: Router,
   path: string,
-  thenDo: proc (ctx: HttpContext) {.gcsafe async.}) {.gcsafe.}=
+  thenDo: proc (ctx: httpcontext.HttpContext) {.gcsafe async.}) {.gcsafe.}=
   ##
   ##  register options route:
   ##
@@ -595,7 +596,7 @@ proc options*(
 proc trace*(
   self: Router,
   path: string,
-  thenDo: proc (ctx: HttpContext) {.gcsafe async.}) {.gcsafe.} =
+  thenDo: proc (ctx: httpcontext.HttpContext) {.gcsafe async.}) {.gcsafe.} =
   ##
   ##  register trace route:
   ##
@@ -636,7 +637,7 @@ proc trace*(
 proc connect*(
   self: Router,
   path: string,
-  thenDo: proc (ctx: HttpContext) {.gcsafe async.}) {.gcsafe.} =
+  thenDo: proc (ctx: httpcontext.HttpContext) {.gcsafe async.}) {.gcsafe.} =
   ##
   ##  register connect route:
   ##

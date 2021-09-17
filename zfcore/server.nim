@@ -7,7 +7,8 @@
 ##  Git: https://github.com/zendbit/nim.zfcore
 ##
 
-from zfblast import HttpContext, newZFBlast, ZFBlast, serve
+import zfblast/server as zfbserver
+from zfblast/server import HttpContext, newZFBlast, ZFBlast, serve
 
 import router, route, httpcontext, formdata, settings,
   fluentvalidation, respmsg, threadpool, macros
@@ -164,7 +165,7 @@ proc newZFCore*(): ZFCore {.gcsafe.} =
 ]#
 proc httpMethodNotFoundAsync(
   self: ZFCore,
-  ctx: zfblast.HttpContext) {.gcsafe async.} =
+  ctx: zfbserver.HttpContext) {.gcsafe async.} =
   ##
   ##  return response if not found.
   ##
@@ -181,7 +182,7 @@ proc httpMethodNotFoundAsync(
 ]#
 proc sendToRouter(
   self: ZFCore,
-  ctx: zfblast.HttpContext) {.gcsafe async.} =
+  ctx: zfbserver.HttpContext) {.gcsafe async.} =
   ##
   ##  send request data to the router
   ##
@@ -226,7 +227,7 @@ proc cleanupThread(settings: Settings) =
 ]#
 proc mainHandler(
   self: ZFCore,
-  ctx: zfblast.HttpContext) {.gcsafe async.} =
+  ctx: zfbserver.HttpContext) {.gcsafe async.} =
   ##
   ##  zfcore main handler for dispatch request.
   ##
@@ -264,7 +265,7 @@ proc serve*(self: ZFCore) {.gcsafe async.} =
   # start cleanup thread
   spawn cleanupThread(self.settings.deepCopy)
 
-  self.server.serve proc (ctx: zfblast.HttpContext) {.gcsafe async.} =
+  self.server.serve proc (ctx: zfbserver.HttpContext) {.gcsafe async.} =
     await self.mainHandler(ctx)
 
 # zfcore instance

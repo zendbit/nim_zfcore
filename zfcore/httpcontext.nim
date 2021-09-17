@@ -20,15 +20,16 @@ export net, tables, strtabs, cookies,
 import uri3, stdext.strutils_ext
 export uri3, strutils_ext
 
-# local
-import settings, formdata, websocket, respmsg
-export settings, formdata, websocket, respmsg
+import zfblast/server as zfbserver
+import zfblast/websocket
+export send, getValues, trace, Response, Request, websocket
 
-import zfblast
-export send, getValues, trace, Response, Request
+# local
+import settings, formdata, respmsg
+export settings, formdata, respmsg
 
 type
-  HttpContext* = ref object of zfblast.HttpContext
+  HttpContext* = ref object of zfbserver.HttpContext
     ## 
     ##  The field is widely used the zfblast HttpContext object but we add some field to its:
     ##  request -> Request object
@@ -60,7 +61,7 @@ proc staticFile*(
 
   result = self.staticFilePath
 
-proc newHttpContext*(self: zfblast.HttpContext): HttpContext {.gcsafe.} =
+proc newHttpContext*(self: zfbserver.HttpContext): HttpContext {.gcsafe.} =
   ##
   ##  new zfblast httpcontext:
   ##

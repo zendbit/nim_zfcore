@@ -10,7 +10,7 @@
 import os, sugar, sequtils, net, json
 export os, sugar, sequtils, net, json
 
-from zfblast import SslSettings
+from zfblast/server import SslSettings
 export SslSettings
 
 type
