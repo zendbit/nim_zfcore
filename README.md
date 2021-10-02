@@ -48,7 +48,7 @@ Example code, this is example code from web template of zendflow, for zendflow u
     zfmacros -> zfcore macros helper
 ]#
 
-import zfcore, example
+import zfcore/server, example
 
 #
 # configuration:
