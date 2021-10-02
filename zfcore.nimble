@@ -7,7 +7,7 @@ license     = "BSD"
 
 # Deps
 requires "nim >= 1.4.0"
-requires "zfblast >= 0.2.3"
+requires "zfblast >= 0.2.4"
 requires "uri3 >= 0.1.4"
 requires "stdext >= 0.0.8"
 requires "zip >= 0.3.1"
