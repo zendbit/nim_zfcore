@@ -7,9 +7,22 @@
 ##  Git: https://github.com/zendbit/nim.zfcore
 ##
 
-import os, sugar, sequtils, net, json
-export os, sugar, sequtils, net, json
+##  std import
+import
+  os,
+  sugar,
+  sequtils,
+  net,
+  json
 
+export
+  os,
+  sugar,
+  sequtils,
+  net,
+  json
+
+##  zfblast import
 from zfblast/server import SslSettings
 export SslSettings
 

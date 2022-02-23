@@ -9,18 +9,34 @@
 
 import nre except toSeq
 import mimetypes
+
 export mimetypes
 
 # nimble
-import uri3
-import respmsg
-import zfblast/server as zfbserver
-from zfblast/server import getValues, trace
-export trace, getValues
+import
+  uri3,
+  respmsg,
+  zfblast/Server as zfbserver
+from zfblast/Server import getValues, trace
+
+export
+  trace,
+  getValues
 
 # local
-import httpcontext, formdata, middleware, route, settings
-export httpcontext, formdata, middleware, route, settings
+import
+  httpcontext,
+  formdata,
+  middleware,
+  route,
+  settings
+
+export
+  httpcontext,
+  formdata,
+  middleware,
+  route,
+  settings
 
 type
   Router* = ref object of Middleware
@@ -251,7 +267,7 @@ proc handleDynamicRoute(
           success = false,
           error = %*{
             "msg": &"use Range header (partial request) " &
-            &"for response larger than {ctx.settings.maxResponseBodyLength div (1024*1024)} MB. " & 
+            &"for response larger than {ctx.settings.maxResponseBodyLength div (1024*1024)} MB. " &
             "https://developer.mozilla.org/en-US/docs/Web/HTTP/Range_requests"}))
       staticFile.close
     else:
@@ -274,7 +290,7 @@ proc executeProc*(
   ##  execute proc:
   ##
   ##  This proc will execute the registered callback procedure in route list.
-  ##  asynchttpserver Request will convert to HttpContext.
+  ##  asynchttpserver Request will convert to httpcontext.
   ##  beforeRoute and afterRoute middleware will evaluated here
   ##
   try:
@@ -313,7 +329,7 @@ proc get*(
   ##
   ##  register get route:
   ##
-  ##  let zf = newZfCore()
+  ##  let zf = newTZfCore()
   ##
   ##  Register the post route to the framework
   ##  example with regex to extract the segment
@@ -354,7 +370,7 @@ proc post*(
   ##
   ##  register post route:
   ##
-  ##  let zf = newZfCore()
+  ##  let zf = newTZfCore()
   ##
   ##  Register the post route to the framework
   ##  example with regex to extract the segment
@@ -395,7 +411,7 @@ proc put*(
   ##
   ##  register put route:
   ##
-  ##  let zf = newZfCore()
+  ##  let zf = newTZfCore()
   ##
   ##  Register the post route to the framework
   ##  example with regex to extract the segment
@@ -436,7 +452,7 @@ proc delete*(
   ##
   ##  register delete route:
   ##
-  ##  let zf = newZfCore()
+  ##  let zf = newTZfCore()
   ##
   ##  Register the post route to the framework
   ##  example with regex to extract the segment
@@ -477,7 +493,7 @@ proc patch*(
   ##
   ##  register patch route:
   ##
-  ##  let zf = newZfCore()
+  ##  let zf = newTZfCore()
   ##
   ##  Register the post route to the framework
   ##  example with regex to extract the segment
@@ -518,7 +534,7 @@ proc head*(
   ##
   ##  register head route:
   ##
-  ##  let zf = newZfCore()
+  ##  let zf = newTZfCore()
   ##
   ##  Register the post route to the framework
   ##  example with regex to extract the segment
@@ -559,7 +575,7 @@ proc options*(
   ##
   ##  register options route:
   ##
-  ##  let zf = newZfCore()
+  ##  let zf = newTZfCore()
   ##
   ##  Register the post route to the framework
   ##  example with regex to extract the segment
@@ -600,7 +616,7 @@ proc trace*(
   ##
   ##  register trace route:
   ##
-  ##  let zf = newZfCore()
+  ##  let zf = newTZfCore()
   ##
   ##  Register the post route to the framework
   ##  example with regex to extract the segment
@@ -641,7 +657,7 @@ proc connect*(
   ##
   ##  register connect route:
   ##
-  ##  let zf = newZfCore()
+  ##  let zf = newTZfCore()
   ##
   ##  Register the post route to the framework
   ##  example with regex to extract the segment
@@ -675,5 +691,3 @@ proc connect*(
     thenDo: thenDo,
     segments: path.parseSegmentsFromPath))
 
-export
-  middleware

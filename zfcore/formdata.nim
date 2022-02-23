@@ -7,8 +7,17 @@
 ##  Git: https://github.com/zendbit/nim.zfcore
 ##
 
-import streams, strutils, os, times
-export streams, strutils, os, times
+import
+  streams,
+  strutils,
+  os,
+  times
+
+export
+  streams,
+  strutils,
+  os,
+  times
 
 # local
 import settings
@@ -96,7 +105,7 @@ proc moveFileToDir*(
     self.content = destFilePath
 
 type
-  FormData* = ref object
+  FormData* = ref object of RootObj
     ##
     ##  form data type:
     ##

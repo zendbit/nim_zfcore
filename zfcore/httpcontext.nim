@@ -11,22 +11,59 @@
 when defined zlib:
   import zip/zlib
 
-import net, tables, strtabs, cookies,
-  strutils, httpcore, os, times, base64, strformat, json
-export net, tables, strtabs, cookies,
-  strutils, httpcore, os, times, base64, strformat, json
+import
+  net,
+  tables,
+  strtabs,
+  cookies,
+  strutils,
+  httpcore,
+  os,
+  times,
+  base64,
+  strformat,
+  json
+
+export
+  net,
+  tables,
+  strtabs,
+  cookies,
+  strutils,
+  httpcore,
+  os,
+  times,
+  base64,
+  strformat,
+  json
 
 # nimble
-import uri3, stdext.strutils_ext
-export uri3, strutils_ext
+import
+  uri3,
+  stdext/xstrutils
+
+export
+  uri3,
+  xstrutils
 
 import zfblast/server as zfbserver
 import zfblast/websocket
-export send, getValues, trace, Response, Request, websocket
+
+export send,
+  getValues,
+  trace,
+  Response,
+  Request,
+  WebSocket
 
 # local
-import settings, formdata, respmsg
-export settings, formdata, respmsg
+import settings,
+  formdata,
+  respmsg
+
+export settings,
+  formdata,
+  respmsg
 
 type
   HttpContext* = ref object of zfbserver.HttpContext

@@ -7,8 +7,13 @@
 ##  Git: https://github.com/zendbit/nim.zfcore
 ##
 
-import json, httpcore
-export json, httpcore
+import
+  json,
+  httpcore
+
+export
+  json,
+  httpcore
 
 type
   RespMsg* = ref object

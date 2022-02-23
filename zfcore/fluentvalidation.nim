@@ -18,9 +18,25 @@
 ##      .rangeLen(10, 255, "Min password length is 10, max is 255."))
 ##
 
-import strutils, strformat, nre, parseutils, json, macros, times
-export strutils, strformat, nre, parseutils, json
-import stdext/[strutils_ext]
+## std import
+import
+  strutils,
+  strformat,
+  nre,
+  parseutils,
+  json,
+  macros,
+  times
+
+export
+  strutils,
+  strformat,
+  nre,
+  parseutils,
+  json
+
+##  import stdext
+import stdext/xstrutils
 
 ##
 ##  FieldData is object model of field to be validated
@@ -41,6 +57,7 @@ type
 proc newFieldData*(
   name: string,
   value: string): FieldData {.discardable.} =
+
   # create new field data for validation
   return FieldData(
     name: name.strip(),
@@ -51,6 +68,7 @@ proc must*(
   self: FieldData,
   errMsg: string = "",
   okMsg:string = ""): FieldData =
+
   # set value as required
   # if value empty string
   # errMsg for error msg
@@ -75,6 +93,7 @@ proc datetime*(
   format: string,
   errMsg: string = "",
   okMsg:string = ""): FieldData {.discardable.} =
+
   # validate the value treat as datetime format
   # if value not datetime format will not valid
   # errMsg for error msg
@@ -99,6 +118,7 @@ proc num*(
   self: FieldData,
   errMsg: string = "",
   okMsg:string = ""): FieldData {.discardable.} =
+
   # validate the value treat as number
   # if value not number will not valid
   # errMsg for error msg
@@ -122,6 +142,7 @@ proc discardVal*(
   discardValue: string,
   errMsg: string = "",
   okMsg: string = ""): FieldData {.discardable.} =
+
   # validate the value treat as number
   # if value not number will not valid
   # errMsg for error msg
@@ -134,6 +155,7 @@ proc discardVal*(
   discardValues: seq[string],
   errMsg: string = "",
   okMsg: string = ""): FieldData {.discardable.} =
+
   # validate the value treat as number
   # if value not number will not valid
   # errMsg for error msg
@@ -145,13 +167,15 @@ proc dec*(
   self: FieldData,
   errMsg: string = "",
   okMsg:string = ""): FieldData {.discardable.} =
+
   # validate the value treat as decimal
   # if value not number will not valid
   # errMsg for error msg
   # okMsg for success msg 
   if self.msg == "":
     self.validationApplied &= "|dec"
-    self.isValid = self.value.tryParseBiggestFloat().ok and self.value != ""
+    self.isValid = self.value
+      .tryParseBiggestFloat().ok and self.value != ""
     if self.isValid:
       self.msg = okMsg
 
@@ -167,13 +191,15 @@ proc boolean*(
   self: FieldData,
   errMsg: string = "",
   okMsg:string = ""): FieldData {.discardable.} =
+
   # validate the value treat as number
   # if value not number will not valid
   # errMsg for error msg
   # okMsg for success msg 
   if self.msg == "":
     self.validationApplied &= "|bool"
-    self.isValid = self.value.tryParseBool().ok
+    self.isValid = self.value
+      .tryParseBool().ok
     if self.isValid:
       self.msg = okMsg
 
@@ -190,6 +216,7 @@ proc list*(
   list: openArray[string],
   errMsg: string = "",
   okMsg:string = ""): FieldData {.discardable.} =
+
   # validate the value in the range of given min and max
   # errMsg for error msg
   # okMsg for success msg 
@@ -217,6 +244,7 @@ proc list*(
   list: openArray[uint64],
   errMsg: string = "",
   okMsg:string = ""): FieldData {.discardable.} =
+
   # validate the value in the range of given min and max
   # errMsg for error msg
   # okMsg for success msg 
@@ -249,6 +277,7 @@ proc list*(
   list: openArray[BiggestInt],
   errMsg: string = "",
   okMsg:string = ""): FieldData {.discardable.} =
+
   # validate the value in the range of given min and max
   # errMsg for error msg
   # okMsg for success msg 
@@ -281,6 +310,7 @@ proc list*(
   list: openArray[int],
   errMsg: string = "",
   okMsg:string = ""): FieldData {.discardable.} =
+
   # validate the value in the range of given min and max
   # errMsg for error msg
   # okMsg for success msg 
@@ -313,6 +343,7 @@ proc list*(
   list: openArray[uint],
   errMsg: string = "",
   okMsg:string = ""): FieldData {.discardable.} =
+
   # validate the value in the range of given min and max
   # errMsg for error msg
   # okMsg for success msg 
@@ -345,6 +376,7 @@ proc list*(
   list: openArray[enum],
   errMsg: string = "",
   okMsg:string = ""): FieldData {.discardable.} =
+
   # validate the value in the range of given min and max
   # errMsg for error msg
   # okMsg for success msg 
@@ -377,6 +409,7 @@ proc list*(
   list: openArray[float64],
   errMsg: string = "",
   okMsg:string = ""): FieldData {.discardable.} =
+
   # validate the value in the range of given min and max
   # errMsg for error msg
   # okMsg for success msg 
@@ -409,6 +442,7 @@ proc list*(
   list: openArray[float32],
   errMsg: string = "",
   okMsg:string = ""): FieldData {.discardable.} =
+
   # validate the value in the range of given min and max
   # errMsg for error msg
   # okMsg for success msg 
@@ -442,6 +476,7 @@ proc range*(
   max: BiggestInt,
   errMsg: string = "",
   okMsg:string = ""): FieldData {.discardable.} =
+
   # validate the value in the range of given min and max
   # errMsg for error msg
   # okMsg for success msg 
@@ -475,6 +510,7 @@ proc range*(
   max: int,
   errMsg: string = "",
   okMsg:string = ""): FieldData {.discardable.} =
+
   # validate the value in the range of given min and max
   # errMsg for error msg
   # okMsg for success msg 
@@ -508,6 +544,7 @@ proc range*(
   max: uint,
   errMsg: string = "",
   okMsg:string = ""): FieldData {.discardable.} =
+
   # validate the value in the range of given min and max
   # errMsg for error msg
   # okMsg for success msg 
@@ -541,6 +578,7 @@ proc range*(
   max: uint64,
   errMsg: string = "",
   okMsg:string = ""): FieldData {.discardable.} =
+
   # validate the value in the range of given min and max
   # errMsg for error msg
   # okMsg for success msg 
@@ -574,6 +612,7 @@ proc range*(
   max: float,
   errMsg: string = "",
   okMsg:string = ""): FieldData {.discardable.} =
+
   # validate the value in the range of given min and max
   # errMsg for error msg
   # okMsg for success msg 
@@ -607,6 +646,7 @@ proc range*(
   max: float32,
   errMsg: string = "",
   okMsg:string = ""): FieldData {.discardable.} =
+
   # validate the value in the range of given min and max
   # errMsg for error msg
   # okMsg for success msg 
@@ -639,6 +679,7 @@ proc max*(
   max: BiggestInt,
   errMsg: string = "",
   okMsg:string = ""): FieldData {.discardable.} =
+
   # validate value must not larger than given max value
   # errMsg for error msg
   # okMsg for success msg 
@@ -671,6 +712,7 @@ proc max*(
   max: int,
   errMsg: string = "",
   okMsg:string = ""): FieldData {.discardable.} =
+
   # validate value must not larger than given max value
   # errMsg for error msg
   # okMsg for success msg 
@@ -703,6 +745,7 @@ proc max*(
   max: uint,
   errMsg: string = "",
   okMsg:string = ""): FieldData {.discardable.} =
+
   # validate value must not larger than given max value
   # errMsg for error msg
   # okMsg for success msg 
@@ -735,6 +778,7 @@ proc max*(
   max: uint64,
   errMsg: string = "",
   okMsg:string = ""): FieldData {.discardable.} =
+
   # validate value must not larger than given max value
   # errMsg for error msg
   # okMsg for success msg 
@@ -767,6 +811,7 @@ proc max*(
   max: float,
   errMsg: string = "",
   okMsg:string = ""): FieldData {.discardable.} =
+
   # validate value must not larger than given max value
   # errMsg for error msg
   # okMsg for success msg 
@@ -799,6 +844,7 @@ proc max*(
   max: float32,
   errMsg: string = "",
   okMsg:string = ""): FieldData {.discardable.} =
+
   # validate value must not larger than given max value
   # errMsg for error msg
   # okMsg for success msg 
@@ -831,6 +877,7 @@ proc min*(
   min: BiggestInt,
   errMsg: string = "",
   okMsg:string = ""): FieldData {.discardable.} =
+
   # validate value must not less than given min value
   # errMsg for error msg
   # okMsg for success msg
@@ -863,6 +910,7 @@ proc min*(
   min: int,
   errMsg: string = "",
   okMsg:string = ""): FieldData {.discardable.} =
+
   # validate value must not less than given min value
   # errMsg for error msg
   # okMsg for success msg
@@ -895,6 +943,7 @@ proc min*(
   min: uint,
   errMsg: string = "",
   okMsg:string = ""): FieldData {.discardable.} =
+
   # validate value must not less than given min value
   # errMsg for error msg
   # okMsg for success msg
@@ -927,6 +976,7 @@ proc min*(
   min: uint64,
   errMsg: string = "",
   okMsg:string = ""): FieldData {.discardable.} =
+
   # validate value must not less than given min value
   # errMsg for error msg
   # okMsg for success msg
@@ -959,6 +1009,7 @@ proc min*(
   min: float,
   errMsg: string = "",
   okMsg:string = ""): FieldData {.discardable.} =
+
   # validate value must not less than given min value
   # errMsg for error msg
   # okMsg for success msg
@@ -991,6 +1042,7 @@ proc min*(
   min: float32,
   errMsg: string = "",
   okMsg:string = ""): FieldData {.discardable.} =
+
   # validate value must not less than given min value
   # errMsg for error msg
   # okMsg for success msg
@@ -1021,6 +1073,7 @@ proc min*(
 proc customErr*(
   self: FieldData,
   errMsg: string = ""): FieldData =
+
   # create custom error message
   # errMsg for error msg
   self.msg =  errMsg
@@ -1031,6 +1084,7 @@ proc customErr*(
 proc customOk*(
   self: FieldData,
   okMsg: string = ""): FieldData =
+
   # create custom ok msg
   # okMsg for success msg 
   self.msg =  okMsg
@@ -1043,6 +1097,7 @@ proc minLen*(
   min: int,
   errMsg: string = "",
   okMsg: string = ""): FieldData {.discardable.} =
+
   # validate the value length not less than the given min len
   # errMsg for error msg
   # okMsg for success msg
@@ -1066,6 +1121,7 @@ proc maxLen*(
   max: int,
   errMsg: string = "",
   okMsg: string = ""): FieldData {.discardable.} =
+
   # validate the value length not larger than given max len
   # errMsg for error msg
   # okMsg for success msg
@@ -1089,6 +1145,7 @@ proc rangeLen*(
   max: int,
   errMsg: string = "",
   okMsg: string = ""): FieldData {.discardable.} =
+
   # validate the value length is in given range
   # errMsg for error msg
   # okMsg for success msg 
@@ -1112,6 +1169,7 @@ proc reMatch*(
   regex: string,
   errMsg: string = "",
   okMsg: string = ""): FieldData {.discardable.} =
+
   # validate the value with given regex
   # errMsg for error msg
   # okMsg for success msg 
@@ -1134,6 +1192,7 @@ proc email*(
   self: FieldData,
   errMsg: string = "",
   okMsg: string = ""): FieldData {.discardable.} =
+
   # validate the value is email format
   # errMsg for error msg
   # okMsg for success msg 
@@ -1155,6 +1214,7 @@ proc check*(
   cond: proc (): bool,
   errMsg: string = "",
   okMsg:string = ""): FieldData {.discardable.} =
+
   # check condition if true or false
   # errMsg for error msg
   # okMsg for success msg
@@ -1187,6 +1247,7 @@ type
     notValids*: JsonNode
 
 proc newFluentValidation*(): FluentValidation =
+
   # create new fluent validation
   var instance = FluentValidation()
   instance.valids = %*{}
@@ -1194,6 +1255,7 @@ proc newFluentValidation*(): FluentValidation =
   return instance
 
 proc `%`(self: FieldData): JsonNode =
+
   result = %*{
       "name": self.name,
       "msg": self.msg,
@@ -1210,12 +1272,14 @@ proc `%`(self: FieldData): JsonNode =
       result["value"] = %self.value.tryParseBool().val
 
 proc validPairs*(self: FluentValidation): JsonNode =
+
   # return valids validation result as JsonNode pairs key value
   result = %*{}
   for k, v in self.valids:
     result[k] = v{"value"}
 
 proc notValidPairs*(self: FluentValidation): JsonNode =
+
   # return not valids validation result as JsonNode pairs key value
   result = %*{}
   for k, v in self.valids:
@@ -1224,6 +1288,7 @@ proc notValidPairs*(self: FluentValidation): JsonNode =
 proc add*(
   self: FluentValidation,
   fieldData: FieldData): FluentValidation {.discardable.} =
+
   # add field data validation to the fluent validation
   #if fieldData.discardValue != fieldData.value or
   #  (fieldData.value notin fieldData.discardValues):
@@ -1235,11 +1300,13 @@ proc add*(
   result = self
 
 proc clear*(self: FluentValidation) =
+
   # clear fluent validation
   self.valids = %*{}
   self.notValids = %*{}
 
 proc isValid*(self: FluentValidation): bool =
+
   # check if validation success (valid all passes)
   result = self.notValids.len == 0
 
@@ -1247,6 +1314,7 @@ proc isValid*(self: FluentValidation): bool =
 ### macros for the fluent validation
 ###
 macro fluentValidation*(x: untyped): untyped =
+
   #
   # initialise fluent validation
   # make fluent validation more readable

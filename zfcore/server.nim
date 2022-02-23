@@ -7,13 +7,37 @@
 ##  Git: https://github.com/zendbit/nim.zfcore
 ##
 
+##  zfblast import
 import zfblast/server as zfbserver
-from zfblast/server import HttpContext, newZFBlast, ZFBlast, serve
+import zfblast/[
+  server,
+  websocket,
+  constants]
 
-import router, route, httpcontext, formdata, settings,
-  fluentvalidation, respmsg, threadpool, macros
-export httpcontext, router, route, formdata, settings,
-  fluentvalidation, respmsg
+import
+  router,
+  route,
+  httpcontext,
+  formdata,
+  settings,
+  fluentvalidation,
+  respmsg
+
+##  std import
+import
+  threadpool,
+  macros
+
+export
+  httpcontext,
+  router,
+  route,
+  formdata,
+  settings,
+  fluentvalidation,
+  respmsg,
+  websocket,
+  constants
 
 const ZF_SETTINGS_FILE* = "settings.json"
 

@@ -8,12 +8,21 @@
 ##
 
 # local
-import route, httpcontext, asyncdispatch
-export route, httpcontext, asyncdispatch
+import
+  route,
+  httpcontext,
+  asyncdispatch
+
+export
+  Route,
+  HttpContext,
+  asyncdispatch
 
 type
-  PreRoute* = proc (ctx: HttpContext): Future[bool] {.gcsafe async.}
-  PostRoute* = proc (ctx: HttpContext, route: Route): Future[bool] {.gcsafe async.}
+  PreRoute* = proc (ctx: HttpContext):
+    Future[bool] {.gcsafe async.}
+  PostRoute* = proc (ctx: HttpContext, route: Route):
+    Future[bool] {.gcsafe async.}
   Middleware* = ref object of RootObj
     ##
     ##  Middleware type:
