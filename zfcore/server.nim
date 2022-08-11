@@ -855,3 +855,16 @@ macro json*: JsonNode =
     newIdentNode("json")
   )
 
+macro siteUrl*: string =
+  ##
+  ##  get zfcore client information:
+  ##
+  ##  route:
+  ##    post "/json":
+  ##      echo json
+  ##      Http200.respHtml("Hello")
+  ##
+  result = nnkDotExpr.newTree(
+    newIdentNode("ctx"),
+    newIdentNode("baseUrl")
+  )

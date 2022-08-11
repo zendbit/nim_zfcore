@@ -392,3 +392,17 @@ proc respRedirect*(
   self.response.headers["Location"] = @[redirectTo]
   await self.doResp
 
+#proc baseUrl*(self: HttpContext): string =
+  ##
+  ##  baseUrl
+  ##
+  ##  get base url of the site
+  ##
+# result = &"{self.request.url.getScheme}://" &
+#   &"{self.request.url.getDomain}" &
+#   &":{self.request.url.getPort}"
+
+proc baseUrl*(self: HttpContext): string =
+  result = &"{self.request.url.getScheme}://" &
+    &"{self.request.url.getDomain}" &
+    &":{self.request.url.getPort}"
