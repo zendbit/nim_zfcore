@@ -81,7 +81,7 @@ proc newZFCore*(settings: Settings): ZFCore {.gcsafe.} =
     r: newRouter(),
     settings: settings)
 
-proc zfJsonSettings*() : JsonNode =
+proc zfJsonSettings*(): JsonNode =
   ##
   ##  json settings:
   ##
@@ -93,22 +93,18 @@ proc zfJsonSettings*() : JsonNode =
     sOp.close()
     result = parseJson(settingsJson)
 
-  except:
+  except Exception as ex:
     result = %*{}
 
-
-proc newZFCore*(): ZFCore {.gcsafe.} =
+proc configureSettings*(
+  settings: Settings,
+  settingsJson: JsonNode): Settings =
   ##
-  ##  new zfcore:
+  ##  settng configuration this is will populate core section
+  ##  on the settings.json file
   ##
-  ##  try read settings.json if not exists will use default settings.
-  ##
-  var settingsJson = zfJsonSettings(){"core"}
-  if settingsJson.isNil:
-    settingsJson = %*{}
-
+  
   if settingsJson.len != 0:
-    let settings = newSettings()
     settings.sslSettings = SslSettings()
     var appRootDir = settingsJson{"appRootDir"}.getStr
     if appRootDir != "":
@@ -147,7 +143,32 @@ proc newZFCore*(): ZFCore {.gcsafe.} =
           settings.sslSettings.keyFile = httpsSettings{"key"}.getStr
         if httpSettings.hasKey("verify"):
           settings.sslSettings.verify = httpSettings{"verify"}.getBool
+  
+  result = settings
 
+proc newZFCore*(): ZFCore {.gcsafe.} =
+  ##
+  ##  new zfcore:
+  ##
+  ##  try read settings.json if not exists will use default settings.
+  ##
+  var settingsJson = zfJsonSettings(){"core"}
+  if not settingsJson.isNil:
+    var settings = newSettings().configureSettings(settingsJson)
+
+    ##  check if release mode use the release setting in the
+    ##  core section
+    when defined(release):
+      let overrideSettingsJson = settingsJson{"release"}
+      if not overrideSettingsJson.isNil:
+        echo "Override configurations with release settings."
+        settings = settings.configureSettings(overrideSettingsJson)
+
+    else:
+      let overrideSettingsJson = settingsJson{"debug"}
+      if not overrideSettingsJson.isNil:
+        echo "Override configurations with debug settings."
+        settings = settings.configureSettings(overrideSettingsJson)
 
     result = ZFCore(
       server: newZFBlast(
