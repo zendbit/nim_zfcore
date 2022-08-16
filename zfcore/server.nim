@@ -348,160 +348,160 @@ macro routes*(group, body: untyped = nil): untyped =
 
   let stmtList = newStmtList()
   for child in x.children:
-    if child.kind == nnkCommentStmt:
-      stmtList.add(child)
-      continue
-
-    let childKind = (child[0].strVal).strip
-    case child.kind
-    of nnkCall:
-      var childStmtList: NimNode = child
-      if child.len > 1:
-        childStmtList = child[1]
-      case childKind
-      of "after":
-        stmtList.add(
-          nnkCall.newTree(
-            nnkDotExpr.newTree(
-              nnkDotExpr.newTree(
-                newIdentNode("zfcoreInstance"),
-                newIdentNode("r")
-              ),
-              newIdentNode("addAfterRoute")
-            ),
-            nnkLambda.newTree(
-              newEmptyNode(),
-              newEmptyNode(),
-              newEmptyNode(),
-              nnkFormalParams.newTree(
-                nnkBracketExpr.newTree(
-                  newIdentNode("Future"),
-                  nnkDotExpr.newTree(
-                    newIdentNode("system"),
-                    newIdentNode("bool")
-                  )
-                ),
-                nnkIdentDefs.newTree(
-                  newIdentNode("ctx"),
-                  newIdentNode("HttpContext"),
-                  newEmptyNode()
-                ),
-                nnkIdentDefs.newTree(
-                  newIdentNode("route"),
-                  newIdentNode("Route"),
-                  newEmptyNode()
-                )
-              ),
-              nnkPragma.newTree(
-                newIdentNode("gcsafe"),
-                newIdentNode("async")
-              ),
-              newEmptyNode(),
-              childStmtList
-            )
-          )
-        )
-
-      of "before":
-        stmtList.add(
-          nnkCall.newTree(
-            nnkDotExpr.newTree(
-              nnkDotExpr.newTree(
-                newIdentNode("zfcoreInstance"),
-                newIdentNode("r")
-              ),
-              newIdentNode("addBeforeRoute")
-            ),
-            nnkLambda.newTree(
-              newEmptyNode(),
-              newEmptyNode(),
-              newEmptyNode(),
-              nnkFormalParams.newTree(
-                nnkBracketExpr.newTree(
-                  newIdentNode("Future"),
-                  nnkDotExpr.newTree(
-                    newIdentNode("system"),
-                    newIdentNode("bool")
-                  )
-                ),
-                nnkIdentDefs.newTree(
-                  newIdentNode("ctx"),
-                  newIdentNode("HttpContext"),
-                  newEmptyNode()
-                )
-              ),
-              nnkPragma.newTree(
-                newIdentNode("gcsafe"),
-                newIdentNode("async")
-              ),
-              newEmptyNode(),
-              childStmtList
-            )
-          )
-        )
-
-      else:
-        stmtList.add(child)
-
-    of nnkCommand:
-      let route = routeGroup & (child[1].strVal).strip()
-      case childKind
-      of "get", "post", "head",
-        "patch", "delete", "put",
-        "options", "connect", "trace":
-
-        let childStmtList = child[2]
-        stmtList.add(
-          nnkCall.newTree(
-            nnkDotExpr.newTree(
-              nnkDotExpr.newTree(
-                newIdentNode("zfcoreInstance"),
-                newIdentNode("r")
-              ),
-              newIdentNode(childKind)
-            ),
-            newLit(route),
-            nnkLambda.newTree(
-              newEmptyNode(),
-              newEmptyNode(),
-              newEmptyNode(),
-              nnkFormalParams.newTree(
-                newEmptyNode(),
-                nnkIdentDefs.newTree(
-                  newIdentNode("ctx"),
-                  newIdentNode("HttpContext"),
-                  newEmptyNode()
-                )
-              ),
-              nnkPragma.newTree(
-                newIdentNode("gcsafe"),
-                newIdentNode("async")
-              ),
-              newEmptyNode(),
-              childStmtList
-            )
-          )
-        )
-
-      of "staticDir":
-        stmtList.add(
-          nnkStmtList.newTree(
+    if child.kind in [nnkCall, nnkCommand]:
+      let childKind = (child[0].strVal).strip
+      case child.kind
+      of nnkCall:
+        var childStmtList: NimNode = child
+        if child.len > 1:
+          childStmtList = child[1]
+        case childKind
+        of "after":
+          stmtList.add(
             nnkCall.newTree(
               nnkDotExpr.newTree(
                 nnkDotExpr.newTree(
                   newIdentNode("zfcoreInstance"),
                   newIdentNode("r")
                 ),
-                newIdentNode("static")
+                newIdentNode("addAfterRoute")
               ),
-              newLit(route)
+              nnkLambda.newTree(
+                newEmptyNode(),
+                newEmptyNode(),
+                newEmptyNode(),
+                nnkFormalParams.newTree(
+                  nnkBracketExpr.newTree(
+                    newIdentNode("Future"),
+                    nnkDotExpr.newTree(
+                      newIdentNode("system"),
+                      newIdentNode("bool")
+                    )
+                  ),
+                  nnkIdentDefs.newTree(
+                    newIdentNode("ctx"),
+                    newIdentNode("HttpContext"),
+                    newEmptyNode()
+                  ),
+                  nnkIdentDefs.newTree(
+                    newIdentNode("route"),
+                    newIdentNode("Route"),
+                    newEmptyNode()
+                  )
+                ),
+                nnkPragma.newTree(
+                  newIdentNode("gcsafe"),
+                  newIdentNode("async")
+                ),
+                newEmptyNode(),
+                childStmtList
+              )
             )
           )
-        )
+
+        of "before":
+          stmtList.add(
+            nnkCall.newTree(
+              nnkDotExpr.newTree(
+                nnkDotExpr.newTree(
+                  newIdentNode("zfcoreInstance"),
+                  newIdentNode("r")
+                ),
+                newIdentNode("addBeforeRoute")
+              ),
+              nnkLambda.newTree(
+                newEmptyNode(),
+                newEmptyNode(),
+                newEmptyNode(),
+                nnkFormalParams.newTree(
+                  nnkBracketExpr.newTree(
+                    newIdentNode("Future"),
+                    nnkDotExpr.newTree(
+                      newIdentNode("system"),
+                      newIdentNode("bool")
+                    )
+                  ),
+                  nnkIdentDefs.newTree(
+                    newIdentNode("ctx"),
+                    newIdentNode("HttpContext"),
+                    newEmptyNode()
+                  )
+                ),
+                nnkPragma.newTree(
+                  newIdentNode("gcsafe"),
+                  newIdentNode("async")
+                ),
+                newEmptyNode(),
+                childStmtList
+              )
+            )
+          )
+
+        else:
+          stmtList.add(child)
+
+      of nnkCommand:
+        let route = routeGroup & (child[1].strVal).strip()
+        case childKind
+        of "get", "post", "head",
+          "patch", "delete", "put",
+          "options", "connect", "trace":
+
+          let childStmtList = child[2]
+          stmtList.add(
+            nnkCall.newTree(
+              nnkDotExpr.newTree(
+                nnkDotExpr.newTree(
+                  newIdentNode("zfcoreInstance"),
+                  newIdentNode("r")
+                ),
+                newIdentNode(childKind)
+              ),
+              newLit(route),
+              nnkLambda.newTree(
+                newEmptyNode(),
+                newEmptyNode(),
+                newEmptyNode(),
+                nnkFormalParams.newTree(
+                  newEmptyNode(),
+                  nnkIdentDefs.newTree(
+                    newIdentNode("ctx"),
+                    newIdentNode("HttpContext"),
+                    newEmptyNode()
+                  )
+                ),
+                nnkPragma.newTree(
+                  newIdentNode("gcsafe"),
+                  newIdentNode("async")
+                ),
+                newEmptyNode(),
+                childStmtList
+              )
+            )
+          )
+
+        of "staticDir":
+          stmtList.add(
+            nnkStmtList.newTree(
+              nnkCall.newTree(
+                nnkDotExpr.newTree(
+                  nnkDotExpr.newTree(
+                    newIdentNode("zfcoreInstance"),
+                    newIdentNode("r")
+                  ),
+                  newIdentNode("static")
+                ),
+                newLit(route)
+              )
+            )
+          )
+
+        else:
+          stmtList.add(child)
 
       else:
         stmtList.add(child)
-
+      
     else:
       stmtList.add(child)
 
@@ -876,16 +876,9 @@ macro json*: JsonNode =
     newIdentNode("json")
   )
 
-macro siteUrl*: string =
+template siteUrl*: untyped =
   ##
-  ##  get zfcore client information:
+  ##  get site url of the site
   ##
-  ##  route:
-  ##    post "/json":
-  ##      echo json
-  ##      Http200.respHtml("Hello")
   ##
-  result = nnkDotExpr.newTree(
-    newIdentNode("ctx"),
-    newIdentNode("baseUrl")
-  )
+  zfbserver.getSiteUrl()
