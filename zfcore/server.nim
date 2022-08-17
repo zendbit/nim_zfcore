@@ -882,3 +882,11 @@ template siteUrl*: untyped =
   ##
   ##
   zfbserver.getSiteUrl()
+
+template buildMode*: untyped =
+  ##
+  ##  get build mode of the apps
+  ##
+  ##  will return string "debug" or "release"
+  ##
+  zfbserver.getBuildMode()
