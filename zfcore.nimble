@@ -1,5 +1,5 @@
 # Package
-version     = "1.1.12"
+version     = "1.1.13"
 author      = "Amru Rosyada"
 description = "High performance asynchttpserver and web framework for nim lang."
 license     = "BSD"

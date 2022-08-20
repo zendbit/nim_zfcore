@@ -560,6 +560,14 @@ macro resp*(
     )
   )
 
+template respJson*(respMsg: RespMsg): untyped =
+  ##
+  ##  respJson
+  ##  helper make easy to return json result
+  ##  using RespMsg object
+  ##
+  respMsg.status.resp(%respMsg)
+
 macro respHtml*(
   httpCode: HttpCode,
   body: string,
