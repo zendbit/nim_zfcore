@@ -823,7 +823,7 @@ macro ws*: untyped =
     newIdentNode("webSocket")
   )
 
-macro params*: untyped =
+macro ctxParams*: untyped =
   ##
   ##  get zfcore client information:
   ##
@@ -839,7 +839,7 @@ macro params*: untyped =
     newIdentNode("params")
   )
 
-macro reParams*: untyped =
+macro ctxReParams*: untyped =
   ##
   ##  get zfcore client information:
   ##
@@ -856,13 +856,13 @@ macro reParams*: untyped =
     newIdentNode("reParams")
   )
 
-macro formData*: untyped =
+macro ctxFormData*: untyped =
   ##
   ##  get zfcore client information:
   ##
   ##  route:
   ##    post "/formdata":
-  ##      let formData = formData
+  ##      let formData = formDataParams
   ##      Http200.respHtml("Hello")
   ##
   result = nnkDotExpr.newTree(
@@ -870,13 +870,13 @@ macro formData*: untyped =
     newIdentNode("formData")
   )
 
-macro json*: JsonNode =
+macro ctxJson*: untyped =
   ##
   ##  get zfcore client information:
   ##
   ##  route:
   ##    post "/json":
-  ##      echo json
+  ##      echo jsonParams
   ##      Http200.respHtml("Hello")
   ##
   result = nnkDotExpr.newTree(
