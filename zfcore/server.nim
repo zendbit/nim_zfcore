@@ -39,7 +39,7 @@ export
   websocket,
   constants
 
-const ZF_SETTINGS_FILE* = "settings.json"
+const ZF_SETTINGS_FILE* = "config".joinPath("settings.json")
 
 #[
   ZFCore object definition
@@ -87,14 +87,14 @@ proc zfJsonSettings*(): JsonNode =
   ##
   ##  will try to read settings.json, if not exists will use default setting.
   ##
-  try:
-    let sOp = open(getAppDir().joinPath(ZF_SETTINGS_FILE))
-    let settingsJson = sOp.readAll()
-    sOp.close()
-    result = parseJson(settingsJson)
+  {.cast(gcsafe).}:
+    try:
+      let settingsFile = getAppDir().joinPath(ZF_SETTINGS_FILE)
+      if settingsFile.fileExists:
+        result = parseFile(settingsFile)
 
-  except Exception as ex:
-    result = %*{}
+    except Exception as ex:
+      result = %*{}
 
 proc configureSettings*(
   settings: Settings,
@@ -187,6 +187,7 @@ proc newZFCore*(): ZFCore {.gcsafe.} =
   else:
     echo ""
     echo "Failed to load settings.json, using default settings."
+    echo "place settings.json into config folder"
     echo ""
     let settings = newSettings()
     settings.appRootDir = getAppDir()
