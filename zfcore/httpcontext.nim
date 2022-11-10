@@ -22,7 +22,9 @@ import
   times,
   base64,
   strformat,
-  json
+  json,
+  xmltree,
+  xmlparser
 
 export
   net,
@@ -35,7 +37,9 @@ export
   times,
   base64,
   strformat,
-  json
+  json,
+  xmltree,
+  xmlparser
 
 # nimble
 import
@@ -82,6 +86,7 @@ type
     reParams*: Table[string, seq[string]]
     formData*: FormData
     json*: JsonNode
+    xml*: XmlNode
     settings*: Settings
     staticFilePath: string
 
@@ -249,6 +254,9 @@ proc mapContentype*(self: HttpContext) =
 
     if contentType.find("application/json") != -1:
       self.json = parseJson(self.request.body.open().readAll)
+    
+    if contentType.find("application/xml") != -1:
+      self.xml = parseXml(self.request.body.open().readAll)
 
     # not need to keep the body after processing
     self.request.body = ""
@@ -359,6 +367,27 @@ proc resp*(
 
   await self.doResp
 
+proc resp*(
+  self: HttpContext,
+  httpCode: HttpCode,
+  body: XmlNode,
+  headers: HttpHeaders = nil) {.gcsafe async.} =
+  ##
+  ##  resp:
+  ##
+  ##  response as application/json to the client
+  ##  let msg = %*{"status": true}
+  ##  self.resp(Http200, msg)
+  ##
+  self.response.httpCode = httpCode
+  self.response.headers["Content-Type"] = @["application/xml"]
+  self.response.body = $body
+  if not headers.isNil:
+    for k, v in headers.pairs:
+      self.response.headers[k] = v
+
+  await self.doResp
+
 proc respHtml*(
   self: HttpContext,
   httpCode: HttpCode,
@@ -391,16 +420,6 @@ proc respRedirect*(
   self.response.httpCode = Http303
   self.response.headers["Location"] = @[redirectTo]
   await self.doResp
-
-#proc baseUrl*(self: HttpContext): string =
-  ##
-  ##  baseUrl
-  ##
-  ##  get base url of the site
-  ##
-# result = &"{self.request.url.getScheme}://" &
-#   &"{self.request.url.getDomain}" &
-#   &":{self.request.url.getPort}"
 
 proc baseUrl*(self: HttpContext): string =
   result = &"{self.request.url.getScheme}://" &
