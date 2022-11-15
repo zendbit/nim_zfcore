@@ -24,7 +24,8 @@ import
   strformat,
   json,
   xmltree,
-  xmlparser
+  xmlparser,
+  re
 
 export
   net,
@@ -243,7 +244,7 @@ proc mapContentype*(self: HttpContext) =
         self.request.body,
         self.settings)
 
-    if contentType.find("application/x-www-form-urlencoded") != -1:
+    elif contentType.find("application/x-www-form-urlencoded") != -1:
       var query = initTable[string, string]()
       var uriToParse = self.request.body.open().readAll
       if self.request.body.find("?") == -1: uriToParse = &"?{uriToParse}"
@@ -252,10 +253,10 @@ proc mapContentype*(self: HttpContext) =
 
       self.params = query
 
-    if contentType.find("application/json") != -1:
+    elif re.find(contentType, re "\\/.*.json") != -1:
       self.json = parseJson(self.request.body.open().readAll)
-    
-    if contentType.find("application/xml") != -1:
+
+    elif re.find(contentType, re "\\/.*.xml") != -1:
       self.xml = parseXml(self.request.body.open().readAll)
 
     # not need to keep the body after processing
@@ -274,10 +275,14 @@ proc isSupportGz*(
     let accept =
       self.request.headers.getValues("accept-encoding").toLower
     let typeToZip = contentType.toLower
-    return (accept.startsWith("gzip") or accept.contains("gzip")) and
-      (typeToZip.startsWith("text/") or typeToZip.startsWith("message/") or
-      typeToZip in ["application/json", "application/xml", "application/xhtml",
-      "application/javascript", "application/xhtml+xml", "application/ld+json"])
+    return
+      re.find(accept, re "gzip") != -1 and
+      (
+        re.find(typeToZip, re "text\\/.*") != -1 or
+        re.find(typeToZip, re "message\\/.*") != -1 or
+        re.find(typeToZip, re "\\/.*.json") != -1 or
+        re.find(typeToZip, re "\\/.*.xml") != -1
+      )
 
 proc gzCompress(content: string): string =
   ##
@@ -359,7 +364,10 @@ proc resp*(
   ##  self.resp(Http200, msg)
   ##
   self.response.httpCode = httpCode
-  self.response.headers["Content-Type"] = @["application/json"]
+
+  if not self.response.headers.hasKey("Content-Type"):
+    self.response.headers["Content-Type"] = @["application/json"]
+
   self.response.body = $body
   if not headers.isNil:
     for k, v in headers.pairs:
@@ -380,7 +388,10 @@ proc resp*(
   ##  self.resp(Http200, msg)
   ##
   self.response.httpCode = httpCode
-  self.response.headers["Content-Type"] = @["application/xml"]
+
+  if not self.response.headers.hasKey("Content-Type"):
+    self.response.headers["Content-Type"] = @["application/xml"]
+
   self.response.body = $body
   if not headers.isNil:
     for k, v in headers.pairs:
@@ -400,7 +411,10 @@ proc respHtml*(
   ##  self.respHtml(Http200, """<html><body>Nice...</body></html>""")
   ##
   self.response.httpCode = httpCode
-  self.response.headers["Content-Type"] = @["text/html", "charset=utf-8"]
+  
+  if not self.response.headers.hasKey("Content-Type"):
+    self.response.headers["Content-Type"] = @["text/html", "charset=utf-8"]
+
   self.response.body = $body
   if not headers.isNil:
     for k, v in headers.pairs:
