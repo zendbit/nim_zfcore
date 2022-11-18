@@ -832,7 +832,7 @@ macro ctxParams*: untyped =
   ##    # param from query string
   ##    # /param?hello=world
   ##    get "/param":
-  ##      # echo %param
+  ##      # echo %ctxParams
   ##      Http200.respHtml("Hello")
   ##
   result = nnkDotExpr.newTree(
@@ -849,7 +849,7 @@ macro ctxReParams*: untyped =
   ##    # accept /reparam/1
   ##    # accept /reparam/2
   ##    get "/reparam/<id:[0-9]>":
-  ##      echo %reParam
+  ##      echo %ctxReParams
   ##      Http200.respHtml("Hello")
   ##
   result = nnkDotExpr.newTree(
@@ -863,7 +863,7 @@ macro ctxFormData*: untyped =
   ##
   ##  route:
   ##    post "/formdata":
-  ##      let formData = formDataParams
+  ##      let formData = ctxFormData
   ##      Http200.respHtml("Hello")
   ##
   result = nnkDotExpr.newTree(
@@ -877,12 +877,26 @@ macro ctxJson*: untyped =
   ##
   ##  route:
   ##    post "/json":
-  ##      echo jsonParams
+  ##      echo ctxJson
   ##      Http200.respHtml("Hello")
   ##
   result = nnkDotExpr.newTree(
     newIdentNode("ctx"),
     newIdentNode("json")
+  )
+
+macro ctxXml*: untyped =
+  ##
+  ##  get zfcore client information:
+  ##
+  ##  route:
+  ##    post "/xml":
+  ##      echo ctxXml
+  ##      Http200.respHtml("Hello")
+  ##
+  result = nnkDotExpr.newTree(
+    newIdentNode("ctx"),
+    newIdentNode("xml")
   )
 
 template siteUrl*: untyped =
