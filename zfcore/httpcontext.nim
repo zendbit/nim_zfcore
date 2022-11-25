@@ -91,6 +91,12 @@ type
     settings*: Settings
     staticFilePath: string
 
+proc getContentType*(headers: HttpHeaders): string {.gcsafe.} =
+  ##
+  ##  get content type from headers
+  ##
+  result = headers.getValues("Content-Type")
+
 proc staticFile*(
   self: HttpContext,
   path: string = ""): string {.discardable.} =
@@ -365,7 +371,7 @@ proc resp*(
   ##
   self.response.httpCode = httpCode
 
-  if not self.response.headers.hasKey("Content-Type"):
+  if re.find(self.response.headers.getContentType, re "\\/.*.json") == -1:
     self.response.headers["Content-Type"] = @["application/json"]
 
   self.response.body = $body
@@ -389,7 +395,7 @@ proc resp*(
   ##
   self.response.httpCode = httpCode
 
-  if not self.response.headers.hasKey("Content-Type"):
+  if re.find(self.response.headers.getContentType, re "\\/.*.xml") == -1:
     self.response.headers["Content-Type"] = @["application/xml"]
 
   self.response.body = $body
@@ -412,7 +418,7 @@ proc respHtml*(
   ##
   self.response.httpCode = httpCode
   
-  if not self.response.headers.hasKey("Content-Type"):
+  if re.find(self.response.headers.getContentType, re "\\/.*.html") == -1:
     self.response.headers["Content-Type"] = @["text/html", "charset=utf-8"]
 
   self.response.body = $body
