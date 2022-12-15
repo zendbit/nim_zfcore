@@ -613,9 +613,9 @@ macro respRedirect*(redirectTo: string) =
   )
 
 macro setCookie*(
-  cookies: StringTableRef, domain: untyped = "",
-  path: untyped = "", expires: untyped = "",
-  secure: untyped = false) =
+  cookies: StringTableRef, domain: string = "",
+  path: string = "", expires: string = "",
+  secure: bool = false) =
   ##
   ##  get cookie:
   ##
@@ -638,7 +638,7 @@ macro setCookie*(
     secure
   )
 
-macro getCookie*(): untyped =
+macro getCookie*(): StringTableRef =
   ##
   ##  get cookie:
   ##
@@ -656,7 +656,7 @@ macro getCookie*(): untyped =
     )
   )
 
-macro clearCookie*(cookies: untyped) =
+macro clearCookie*(cookies: StringTableRef) =
   ##
   ##  clear cookie:
   ##
@@ -677,14 +677,14 @@ macro clearCookie*(cookies: untyped) =
     cookies
   )
 
-macro req*: untyped =
+macro request*: Request =
   ##
   ##  get request information:
   ##
   ##  route:
   ##    get "/":
   ##      # req type is zfcore Request
-  ##      let request = req
+  ##      let request = request
   ##      echo %request.headers
   ##      Http200.respHtml("Hello")
   ##
@@ -693,14 +693,13 @@ macro req*: untyped =
     newIdentNode("request")
   )
 
-macro res*: untyped =
+macro response*: Response =
   ##
   ##  get response information:
   ##
   ##  route:
   ##    get "/":
   ##      # res type is zfcore Response
-  ##      let response = res
   ##      echo %reponse.headers
   ##      Http200.respHtml("Hello")
   ##
@@ -709,7 +708,7 @@ macro res*: untyped =
     newIdentNode("response")
   )
 
-macro config*: untyped =
+macro config*: Settings =
   ##
   ##  get zfcore config information:
   ##
@@ -723,7 +722,7 @@ macro config*: untyped =
     newIdentNode("settings")
   )
 
-macro client*: untyped =
+macro client*: AsyncSocket =
   ##
   ##  get zfcore client information:
   ##
@@ -738,7 +737,7 @@ macro client*: untyped =
     newIdentNode("client")
   )
 
-macro ws*: untyped =
+macro ws*: WebSocket =
   ##  # websocket example :-)
   ##  get "/ws":
   ##    #
@@ -824,7 +823,7 @@ macro ws*: untyped =
     newIdentNode("webSocket")
   )
 
-macro ctxParams*: untyped =
+macro params*: Table[string, string] =
   ##
   ##  get zfcore client information:
   ##
@@ -832,7 +831,7 @@ macro ctxParams*: untyped =
   ##    # param from query string
   ##    # /param?hello=world
   ##    get "/param":
-  ##      # echo %ctxParams
+  ##      # echo %params
   ##      Http200.respHtml("Hello")
   ##
   result = nnkDotExpr.newTree(
@@ -840,7 +839,7 @@ macro ctxParams*: untyped =
     newIdentNode("params")
   )
 
-macro ctxReParams*: untyped =
+macro reParams*: Table[string, seq[string]] =
   ##
   ##  get zfcore client information:
   ##
@@ -849,7 +848,7 @@ macro ctxReParams*: untyped =
   ##    # accept /reparam/1
   ##    # accept /reparam/2
   ##    get "/reparam/<id:[0-9]>":
-  ##      echo %ctxReParams
+  ##      echo %reParams
   ##      Http200.respHtml("Hello")
   ##
   result = nnkDotExpr.newTree(
@@ -857,13 +856,13 @@ macro ctxReParams*: untyped =
     newIdentNode("reParams")
   )
 
-macro ctxFormData*: untyped =
+macro formData*: FormData =
   ##
   ##  get zfcore client information:
   ##
   ##  route:
   ##    post "/formdata":
-  ##      let formData = ctxFormData
+  ##      echo formData
   ##      Http200.respHtml("Hello")
   ##
   result = nnkDotExpr.newTree(
@@ -871,13 +870,13 @@ macro ctxFormData*: untyped =
     newIdentNode("formData")
   )
 
-macro ctxJson*: untyped =
+macro json*: JsonNode =
   ##
   ##  get zfcore client information:
   ##
   ##  route:
   ##    post "/json":
-  ##      echo ctxJson
+  ##      echo json
   ##      Http200.respHtml("Hello")
   ##
   result = nnkDotExpr.newTree(
@@ -885,13 +884,13 @@ macro ctxJson*: untyped =
     newIdentNode("json")
   )
 
-macro ctxXml*: untyped =
+macro xml*: XmlNode =
   ##
   ##  get zfcore client information:
   ##
   ##  route:
   ##    post "/xml":
-  ##      echo ctxXml
+  ##      echo xml
   ##      Http200.respHtml("Hello")
   ##
   result = nnkDotExpr.newTree(
@@ -899,14 +898,14 @@ macro ctxXml*: untyped =
     newIdentNode("xml")
   )
 
-template siteUrl*: untyped =
+template siteUrl*: string =
   ##
   ##  get site url of the site
   ##
   ##
   zfbserver.getSiteUrl()
 
-template buildMode*: untyped =
+template buildMode*: string =
   ##
   ##  get build mode of the apps
   ##
