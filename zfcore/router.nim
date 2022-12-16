@@ -192,7 +192,7 @@ proc handleDynamicRoute(
   ##
   ##  handle dynamic route from the path, midleware action, static routes.
   ##
-  
+
   ##  redirect to base url if last page contains /
   let reqPath = ctx.request.url.getPath()
   if reqPath.endsWith("/") and reqPath != "/":
@@ -235,16 +235,13 @@ proc handleDynamicRoute(
 
       ctx.reParams = matchesUri.reParams
 
-  if route != nil:
+  if not route.isNil or staticFound:
     # execute middleware after routing before response
     #if self.execAfterRoute(ctx, route): return
     for post in self.afterRoutes:
       if await post(ctx, route): return
 
-    # execute route callback
-    await route.thenDo(ctx)
-
-  elif staticFound:
+  if staticFound:
     let fileInfo = staticFilePath.getFileInfo
     ctx.response.headers["Content-Type"] = staticContentType
     if ctx.response.headers.getValues("Cache-Control") == "":
@@ -276,6 +273,10 @@ proc handleDynamicRoute(
         await ctx.resp(Http206, contentRange.content, contentRange.headers)
       else:
         await ctx.resp(Http406, %contentRange.errMsg)
+
+  elif not route.isNil:
+    # execute route callback
+    await route.thenDo(ctx)
 
   else:
     # default response if route does not match
