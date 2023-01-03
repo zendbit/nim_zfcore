@@ -1,5 +1,5 @@
 # Package
-version     = "1.1.19"
+version     = "1.1.20"
 author      = "Amru Rosyada"
 description = "High performance asynchttpserver and web framework for nim lang."
 license     = "BSD"
@@ -9,5 +9,5 @@ license     = "BSD"
 requires "nim >= 1.4.0"
 requires "zfblast >= 0.2.8"
 requires "uri3 >= 0.1.7"
-requires "stdext >= 0.0.14"
+requires "stdext >= 0.0.15"
 requires "zip >= 0.3.1"

@@ -9,7 +9,8 @@
 
 import
   json,
-  httpcore
+  httpcore,
+  strutils
 
 export
   json,
@@ -54,3 +55,16 @@ proc newRespMsg*(
     success: success,
     error: error,
     data: data)
+
+proc toHttpCode*(code: int): HttpCode =
+  ##
+  ##  parse int code to http code
+  ##
+  result = cast[HttpCode](code)
+
+proc toHttpCode*(code: string): HttpCode =
+  ##
+  ##  parse string code to http code
+  ##
+  result = cast[HttpCode](code.split(" ")[0].parseInt)
+
