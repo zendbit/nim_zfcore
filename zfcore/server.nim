@@ -37,7 +37,8 @@ export
   fluentvalidation,
   respmsg,
   websocket,
-  constants
+  constants,
+  isProductionMode
 
 const ZF_SETTINGS_FILE* = "config".joinPath("settings.json")
 
