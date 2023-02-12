@@ -50,7 +50,7 @@ const ZF_SETTINGS_FILE* = "config".joinPath("settings.json")
     settings: is setting for the server contain setup for port, bind address, staticDir etc.
 ]#
 type
-  ZFCore* = ref object
+  ZFCore* = ref object of RootObj
     ##
     ##  port to zfblast server
     ##  server: AsyncHttpServer

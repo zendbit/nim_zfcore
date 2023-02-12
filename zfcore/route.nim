@@ -15,7 +15,7 @@ import asyncdispatch
 from httpcontext import HttpContext
 
 type
-  Route* = ref object
+  Route* = ref object of RootObj
     ##
     ##  Route type:
     ##

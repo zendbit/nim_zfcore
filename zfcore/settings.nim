@@ -27,7 +27,7 @@ from zfblast/server import SslSettings
 export SslSettings
 
 type
-  Settings* = ref object
+  Settings* = ref object of RootObj
     ##
     ##  This is setting definition
     ##  will be much changes on the future:

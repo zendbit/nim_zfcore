@@ -17,7 +17,7 @@ export
   httpcore
 
 type
-  RespMsg* = ref object
+  RespMsg* = ref object of RootObj
     ##
     ## api msg type:
     ##

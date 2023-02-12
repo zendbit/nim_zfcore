@@ -46,7 +46,7 @@ import stdext/xstrutils
 ##
 
 type
-  FieldData* = ref object
+  FieldData* = ref object of RootObj
     name: string
     value: string
     discardValues: seq[string]
