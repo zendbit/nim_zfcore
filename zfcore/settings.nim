@@ -62,48 +62,32 @@ type
     tmpGzDir*: string
     readBodyBuffer*: int
     responseRangeBuffer*: int
-    tmpCleanupDir*: seq[tuple[dirName: string, interval: int64]]
+    tmpCleanupDir*: seq[CleanupDir]
 
-proc `%`*(seqTuple: seq[tuple[dirName: string, interval: int64]]): JsonNode =
-  result = newJArray()
-  for tpl in seqTuple:
-    result.add(%*{tpl.dirName: tpl.interval})
+  CleanupDir* = ref object of RootObj
+    dirName*: string
+    expired*: int64
 
 proc `%`*(port: Port): JsonNode =
   result = % port.int
 
-proc `%`*(settings: Settings): JsonNode =
-  result = %*{
-    "port": settings.port,
-    "address": settings.address,
-    "reuseAddress": settings.reuseAddress,
-    "reusePort": settings.reusePort,
-    "maxBodyLength": settings.maxBodyLength,
-    "maxResponseBodyLength": settings.maxResponseBodyLength,
-    "trace": settings.trace,
-    "appRootDir": settings.appRootDir,
-    "sslSettings": settings.sslSettings,
-    "keepAlive": settings.keepAlive,
-    "staticDir": settings.staticDir,
-    "tmpDir": settings.tmpDir,
-    "tmpUploadDir": settings.tmpUploadDir,
-    "tmpBodyDir": settings.tmpBodyDir,
-    "tmpGzDir": settings.tmpGzDir,
-    "readBodyBuffer": settings.readBodyBuffer,
-    "tmpCleanupDir": settings.tmpCleanupDir}
-
 proc addTmpCleanupDir*(
   self: Settings,
   dirName: string,
-  interval: int64 = 3600) =
+  expired: int64 = 3600) =
   ##
   ##  add cleanup dir:
   ##
   ##  register directory for cleanup.
-  ##  the system using folder .tmp for cache the data and will check and cleanup the folder with interval in seconds.
+  ##  the system using folder .tmp for cache the data and will check and cleanup the folder with expired in seconds.
   ##
-  if filter(self.tmpCleanupDir, (x: tuple[dirName: string, interval: int64]) => x.dirName == dirName).len == 0:
-    self.tmpCleanupDir.add((dirName, interval))
+  if filter(self.tmpCleanupDir, (x: CleanupDir) => x.dirName == dirName).len == 0:
+    self.tmpCleanupDir.add(
+      CleanupDir(
+        dirName: dirName,
+        expired: expired
+      )
+    )
 
 proc removeTmpCleanupDir*(
   self: Settings,
@@ -113,7 +97,7 @@ proc removeTmpCleanupDir*(
   ##
   ##  remove direcotory from cleanup.
   ##
-  self.tmpCleanupDir = filter(self.tmpCleanupDir, (x: tuple[dirName: string, interval: int64]) => x.dirName != dirname)
+  self.tmpCleanupDir = filter(self.tmpCleanupDir, (x: CleanupDir) => x.dirName != dirname)
 
 proc newSettings*(
   appRootDir:string = getAppDir(),
@@ -128,7 +112,7 @@ proc newSettings*(
   trace: bool = false,
   keepAlive: bool = false,
   sslSettings: SslSettings = nil,
-  tmpCleanupDir: seq[tuple[dirName: string, interval: int64]] = @[]): Settings =
+  tmpCleanupDir: seq[CleanupDir] = @[]): Settings =
 
   ##
   ##  this for instantiate new Settings with default parameter is:
@@ -164,9 +148,9 @@ proc newSettings*(
   if not instance.tmpGzDir.existsDir:
     instance.tmpGzDir.createDir
 
-  instance.addTmpCleanupDir("upload")
-  instance.addTmpCleanupDir("body")
-  instance.addTmpCleanupDir("gzip")
+  instance.addTmpCleanupDir("upload", 86400)
+  instance.addTmpCleanupDir("body", 86400)
+  instance.addTmpCleanupDir("gzip", 86400)
 
   result = instance
 

@@ -70,6 +70,8 @@ export settings,
   formdata,
   respmsg
 
+const CookieDateFormat = "ddd, dd MMM yyyy HH:mm:ss"
+
 type
   HttpContext* = ref object of zfbserver.HttpContext
     ## 
@@ -129,6 +131,19 @@ proc newHttpContext*(self: zfbserver.HttpContext): HttpContext {.gcsafe.} =
     settings: newSettings(),
     keepAlive: self.keepAlive)
 
+proc toCookieDateFormat*(dt: DateTime): string =
+  ##
+  ##  convert datetime to cookie date format
+  ##  ddd, dd MMM yyyy HH:mm:ss GMT
+  ##
+  result = dt.format(CookieDateFormat) & " GMT"
+
+proc parseFromCookieDateFormat*(st: string): DateTime =
+  ##
+  ##  parse cookie string date format to datetime
+  ##
+  result = parse(st.replace("GMT", "").strip, CookieDateFormat)
+
 proc setCookie*(
   self: HttpContext,
   cookies: StringTableRef,
@@ -152,6 +167,8 @@ proc setCookie*(
     cookieList.add("path=" & path)
   if expires != "":
     cookieList.add("expires=" & expires)
+  else:
+    cookieList.add("expires=" & (now().utc + 7.days).toCookieDateFormat)
   if secure:
     cookieList.add("secure=" & $secure)
 
@@ -404,6 +421,17 @@ proc resp*(
       self.response.headers[k] = v
 
   await self.doResp
+
+proc resp*(
+  self: HttpContext,
+  respMsg: RespMsg,
+  headers: HttpHeaders = nil) {.gcsafe async.} =
+  ##
+  ##  resp json
+  ##
+  ##  parameter is RespMsg object
+  ##
+  await self.resp(respMsg.status, %respMsg, headers)
 
 proc respHtml*(
   self: HttpContext,

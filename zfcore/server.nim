@@ -58,6 +58,35 @@ type
     server: ZFBlast
     r*: Router
     settings*: Settings
+    tasksPool*: Table[string, TasksPoolAction]
+
+  TasksPoolAction* = ref object of RootObj
+    action*: proc (param: JsonNode)
+    param*: JsonNode
+
+proc initSystemTasksPool(self: ZFCore) =
+  ##
+  ##  init system taskspool
+  ##  this will execute every time taskspool checked
+  ##
+  self.tasksPool["zfcore"] = TasksPoolAction(
+    action: proc (param: JsonNode) =
+      let settings = param.to(Settings)
+      for dir in settings.tmpCleanupDir:
+        var toCleanup = settings.tmpDir.joinPath(dir.dirName, "*")
+        if dir.dirName == settings.tmpDir:
+          toCleanup = settings.tmpDir
+        for file in toCleanup.walkFiles:
+          # get all files
+          let timeGap = getTime().toUnix - file.getLastAccessTime().toUnix
+
+          # if interval set to 0, don't cleanup the file
+          # default action cleanup if no action procedure on cleanup
+          if timeGap > dir.expired and dir.expired > 0:
+            discard file.tryRemoveFile
+    ,
+    param: %self.settings
+  )
 
 #[
   newZFCore is for instantiate the zendflow framework contain parameter settings.
@@ -69,7 +98,7 @@ proc newZFCore*(settings: Settings): ZFCore {.gcsafe.} =
   ##
   ##  create zfcore object with given settings.
   ##
-  return ZFCore(
+  result = ZFCore(
     server: newZFBlast(
       address = settings.address,
       port = settings.port,
@@ -80,7 +109,10 @@ proc newZFCore*(settings: Settings): ZFCore {.gcsafe.} =
       trace = settings.trace,
       sslSettings = settings.sslSettings),
     r: newRouter(),
-    settings: settings)
+    settings: settings,
+    tasksPool: initTable[string, TasksPoolAction]())
+
+  result.initSystemTasksPool
 
 proc zfJsonSettings*(): JsonNode =
   ##
@@ -88,13 +120,14 @@ proc zfJsonSettings*(): JsonNode =
   ##
   ##  will try to read settings.json, if not exists will use default setting.
   ##
-  {.cast(gcsafe).}:
+  {.gcsafe.}:
     try:
       let settingsFile = getAppDir().joinPath(ZF_SETTINGS_FILE)
       if settingsFile.fileExists:
         result = parseFile(settingsFile)
 
     except Exception as ex:
+      echo ex.msg
       result = %*{}
 
 proc configureSettings*(
@@ -183,7 +216,10 @@ proc newZFCore*(): ZFCore {.gcsafe.} =
         sslSettings = settings.sslSettings,
         readBodyBuffer = settings.readBodyBuffer),
       r: newRouter(),
-      settings: settings)
+      settings: settings,
+      tasksPool: initTable[string, TasksPoolAction]())
+
+    result.initSystemTasksPool
 
   else:
     echo ""
@@ -245,27 +281,16 @@ proc sendToRouter(
         echo "#== end"
         echo ""
 
-#[
-  clean Tmp folder may take resource
-  todo: should be have better approach for this method
-]#
-
-proc cleanupThread(settings: Settings) =
+proc tasksPooling(self: ZFCore) {.gcsafe.} =
   ##
-  ##  cleanup process will spawn new thread if not exist
-  ##  to check folder to cleanup
+  ##  task pooling will check each 60 seconds
   ##
   while true:
-    for dir in settings.tmpCleanupDir:
-      var toCleanup = settings.tmpDir.joinPath(dir.dirName, "*")
-      if dir.dirName == settings.tmpDir:
-        toCleanup = settings.tmpDir
-      for file in toCleanup.walkFiles:
-        # get all files
-        let timeInterval = getTime().toUnix - file.getLastAccessTime().toUnix
-        # if interval set to 0, don't cleanup the file
-        if timeInterval > dir.interval and dir.interval > 0:
-          discard file.tryRemoveFile
+    {.gcsafe.}:
+      for k in self.tasksPool.keys:
+        self.tasksPool[k].action(
+          self.tasksPool[k].param.deepCopy
+        )
 
     60000.sleep
 
@@ -310,7 +335,7 @@ proc serve*(self: ZFCore) {.gcsafe async.} =
   echo "Enjoy and take a cup of coffe :-)"
 
   # start cleanup thread
-  spawn cleanupThread(self.settings.deepCopy)
+  spawn self.tasksPooling()
 
   self.server.serve proc (ctx: zfbserver.HttpContext) {.gcsafe async.} =
     await self.mainHandler(ctx)
@@ -562,13 +587,15 @@ macro resp*(
     )
   )
 
-template respJson*(respMsg: RespMsg): untyped =
+template resp*(
+  respMsg: RespMsg,
+  headers: HttpHeaders = nil): untyped =
   ##
-  ##  respJson
+  ##  resp
   ##  helper make easy to return json result
   ##  using RespMsg object
   ##
-  respMsg.status.resp(%respMsg)
+  respMsg.status.resp(%respMsg, headers)
 
 macro respHtml*(
   httpCode: HttpCode,
