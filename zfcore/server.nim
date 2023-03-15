@@ -621,7 +621,9 @@ macro respHtml*(
     )
   )
 
-macro respRedirect*(redirectTo: string) =
+macro respRedirect*(
+  redirectTo: string,
+  httpCode: HttpCode = Http303) =
   ##
   ##  resp redirect macro:
   ##
@@ -636,14 +638,19 @@ macro respRedirect*(redirectTo: string) =
         newIdentNode("ctx"),
         newIdentNode("respRedirect")
       ),
-      redirectTo
+      redirectTo,
+      httpCode
     )
   )
 
 macro setCookie*(
-  cookies: StringTableRef, domain: string = "",
-  path: string = "", expires: string = "",
-  secure: bool = false) =
+  cookies: StringTableRef,
+  domain: string = "",
+  path: string = "",
+  expires: string = "",
+  secure: bool = false,
+  sameSite: string = "Lax",
+  httpOnly: bool = true) =
   ##
   ##  get cookie:
   ##
@@ -663,7 +670,9 @@ macro setCookie*(
     domain,
     path,
     expires,
-    secure
+    secure,
+    sameSite,
+    httpOnly
   )
 
 macro getCookie*(): StringTableRef =

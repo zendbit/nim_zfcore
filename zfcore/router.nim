@@ -196,8 +196,15 @@ proc handleDynamicRoute(
   ##  redirect to base url if last page contains /
   let reqPath = ctx.request.url.getPath()
   if reqPath.endsWith("/") and reqPath != "/":
-    await ctx.respRedirect(reqPath.clearPath)
-    return
+    ctx.request.url = ($ctx.request.url).clearPath.parseURI3
+  
+  # 
+  # execute middleware before routing
+  # handle dynamic route
+  #
+  #if self.execBeforeRoute(ctx): return
+  for pre in self.beforeRoutes:
+    if await pre(ctx): return
 
   # call static route before the dynamic route
   let (staticFound, staticFilePath, staticContentType) =
@@ -206,13 +213,6 @@ proc handleDynamicRoute(
     # set static file path
     ctx.staticFile(staticFilePath)
 
-  # 
-  # execute middleware before routing
-  # handle dynamic route
-  #
-  #if self.execBeforeRoute(ctx): return
-  for pre in self.beforeRoutes:
-    if await pre(ctx): return
   # map content type
   # extract and map based on content type
   ctx.mapContentype

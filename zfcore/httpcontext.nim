@@ -150,7 +150,9 @@ proc setCookie*(
   domain: string = "",
   path: string = "/",
   expires: string = "",
-  secure: bool = false) =
+  secure: bool = false,
+  sameSite: string = "Lax",
+  httpOnly: bool = true) =
   ##
   ##  create cookie
   ##
@@ -163,14 +165,23 @@ proc setCookie*(
 
   if domain != "":
     cookieList.add("domain=" & domain)
+  
   if path != "":
     cookieList.add("path=" & path)
-  if expires != "":
-    cookieList.add("expires=" & expires)
-  else:
+
+  if expires == "":
     cookieList.add("expires=" & (now().utc + 7.days).toCookieDateFormat)
+
+  else:
+    cookieList.add("expires=" & expires)
+
+  cookieList.add("SameSite=" & sameSite)
+
   if secure:
-    cookieList.add("secure=" & $secure)
+    cookieList.add("Secure")
+
+  if httpOnly:
+    cookieList.add("HttpOnly")
 
   self.response.headers.add("Set-Cookie", join(cookieList, ";"))
 
@@ -458,14 +469,15 @@ proc respHtml*(
 
 proc respRedirect*(
   self: HttpContext,
-  redirectTo: string) {.gcsafe async.} =
+  redirectTo: string,
+  httpCode: HttpCode = Http303) {.gcsafe async.} =
   ##
   ##  resp redirect:
   ##
   ##  response redirect to the client
   ##  self.respRedirect("https://google.com")
   ##
-  self.response.httpCode = Http303
+  self.response.httpCode = httpCode
   self.response.headers["Location"] = @[redirectTo]
   await self.doResp
 
