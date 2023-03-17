@@ -287,10 +287,10 @@ proc mapContentype*(self: HttpContext) =
 
       self.params = query
 
-    elif re.find(contentType, re "\\/.*.json") != -1:
+    elif re.find(contentType, re ".*\\/json.*") != -1:
       self.json = parseJson(self.request.body.open().readAll)
 
-    elif re.find(contentType, re "\\/.*.xml") != -1:
+    elif re.find(contentType, re ".*\\/xml.*") != -1:
       self.xml = parseXml(self.request.body.open().readAll)
 
     # not need to keep the body after processing

@@ -860,7 +860,7 @@ macro ws*: WebSocket =
     newIdentNode("webSocket")
   )
 
-macro params*: Table[string, string] =
+macro paramsData*: Table[string, string] =
   ##
   ##  get zfcore client information:
   ##
@@ -868,7 +868,7 @@ macro params*: Table[string, string] =
   ##    # param from query string
   ##    # /param?hello=world
   ##    get "/param":
-  ##      # echo %params
+  ##      # echo %paramsData
   ##      Http200.respHtml("Hello")
   ##
   result = nnkDotExpr.newTree(
@@ -876,7 +876,7 @@ macro params*: Table[string, string] =
     newIdentNode("params")
   )
 
-macro reParams*: Table[string, seq[string]] =
+macro reParamsData*: Table[string, seq[string]] =
   ##
   ##  get zfcore client information:
   ##
@@ -885,7 +885,7 @@ macro reParams*: Table[string, seq[string]] =
   ##    # accept /reparam/1
   ##    # accept /reparam/2
   ##    get "/reparam/<id:[0-9]>":
-  ##      echo %reParams
+  ##      echo %reParamsData
   ##      Http200.respHtml("Hello")
   ##
   result = nnkDotExpr.newTree(
@@ -907,13 +907,13 @@ macro formData*: FormData =
     newIdentNode("formData")
   )
 
-macro json*: JsonNode =
+macro jsonData*: JsonNode =
   ##
   ##  get zfcore client information:
   ##
   ##  route:
   ##    post "/json":
-  ##      echo json
+  ##      echo jsonData
   ##      Http200.respHtml("Hello")
   ##
   result = nnkDotExpr.newTree(
@@ -921,13 +921,13 @@ macro json*: JsonNode =
     newIdentNode("json")
   )
 
-macro xml*: XmlNode =
+macro xmlData*: XmlNode =
   ##
   ##  get zfcore client information:
   ##
   ##  route:
   ##    post "/xml":
-  ##      echo xml
+  ##      echo xmlData
   ##      Http200.respHtml("Hello")
   ##
   result = nnkDotExpr.newTree(
