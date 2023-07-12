@@ -55,7 +55,7 @@ type
     ##  port to zfblast server
     ##  server: AsyncHttpServer
     ##
-    server: ZFBlast
+    server*: ZFBlast
     r*: Router
     settings*: Settings
     tasksPool*: Table[string, TasksPoolAction]
@@ -137,7 +137,7 @@ proc configureSettings*(
   ##  settng configuration this is will populate core section
   ##  on the settings.json file
   ##
-  
+
   if settingsJson.len != 0:
     settings.sslSettings = SslSettings()
     var appRootDir = settingsJson{"appRootDir"}.getStr
@@ -180,6 +180,46 @@ proc configureSettings*(
   
   result = settings
 
+proc mergeSettings*(
+  settings: Settings,
+  settingsJson: JsonNode): Settings =
+  ##  check if release mode use the release setting in the
+  ##  core section
+  
+  var mergedSettings: Settings = settings
+
+  if not settingsJson.isNil:
+    when defined(release):
+      let overrideSettingsJson = settingsJson{"release"}
+      if not overrideSettingsJson.isNil:
+        echo "Override configurations with release settings."
+        mergedSettings = mergedSettings.configureSettings(overrideSettingsJson)
+
+    else:
+      let overrideSettingsJson = settingsJson{"debug"}
+      if not overrideSettingsJson.isNil:
+        echo "Override configurations with debug settings."
+        mergedSettings = mergedSettings.configureSettings(overrideSettingsJson)
+
+  result = mergedSettings
+
+proc applySettings*(
+  zfcore:ZFCore,
+  settings: Settings) =
+
+  zfcore.settings = settings
+  zfcore.server.port = settings.port
+  zfcore.server.address = settings.address
+  zfcore.server.reuseAddress = settings.reuseAddress
+  zfcore.server.reusePort = settings.reusePort
+  zfcore.server.trace = settings.trace
+  zfcore.server.sslSettings = settings.sslSettings
+  zfcore.server.keepAlive = settings.keepAlive
+  zfcore.server.maxBodyLength = settings.maxBodyLength
+  zfcore.server.tmpDir = settings.tmpDir
+  zfcore.server.readBodyBuffer = settings.readBodyBuffer
+  zfcore.server.tmpBodyDir = settings.tmpBodyDir
+
 proc newZFCore*(): ZFCore {.gcsafe.} =
   ##
   ##  new zfcore:
@@ -188,21 +228,22 @@ proc newZFCore*(): ZFCore {.gcsafe.} =
   ##
   var settingsJson = zfJsonSettings(){"core"}
   if not settingsJson.isNil:
-    var settings = newSettings().configureSettings(settingsJson)
+    #var settings = newSettings().configureSettings(settingsJson)
 
     ##  check if release mode use the release setting in the
     ##  core section
-    when defined(release):
-      let overrideSettingsJson = settingsJson{"release"}
-      if not overrideSettingsJson.isNil:
-        echo "Override configurations with release settings."
-        settings = settings.configureSettings(overrideSettingsJson)
+    #when defined(release):
+    # let overrideSettingsJson = settingsJson{"release"}
+    # if not overrideSettingsJson.isNil:
+    #   echo "Override configurations with release settings."
+    #   settings = settings.configureSettings(overrideSettingsJson)
 
-    else:
-      let overrideSettingsJson = settingsJson{"debug"}
-      if not overrideSettingsJson.isNil:
-        echo "Override configurations with debug settings."
-        settings = settings.configureSettings(overrideSettingsJson)
+    #else:
+    # let overrideSettingsJson = settingsJson{"debug"}
+    # if not overrideSettingsJson.isNil:
+    #   echo "Override configurations with debug settings."
+    #   settings = settings.configureSettings(overrideSettingsJson)
+    let settings = newSettings().mergeSettings(settingsJson)
 
     result = ZFCore(
       server: newZFBlast(
@@ -543,7 +584,7 @@ macro routes*(group, body: untyped = nil): untyped =
 
   return stmtList
 
-macro emitServer*() =
+template emitServer*(jsonSettings: JsonNode = nil) =
   ##
   ##  start server:
   ##  routes:
@@ -552,15 +593,19 @@ macro emitServer*() =
   ##
   ##    emitServer
   ##
-  nnkCommand.newTree(
-    newIdentNode("waitFor"),
-    nnkCall.newTree(
-        nnkDotExpr.newTree(
-          newIdentNode("zfcoreInstance"),
-          newIdentNode("serve")
-        )
-      )
-  )
+  #nnkCommand.newTree(
+  # newIdentNode("waitFor"),
+  # nnkCall.newTree(
+  #     nnkDotExpr.newTree(
+  #       newIdentNode("zfcoreInstance"),
+  #       newIdentNode("serve")
+  #     )
+  #   )
+  #)
+  if not jsonSettings.isNil:
+    zfcoreInstance.applySettings(zfcoreInstance.settings.mergeSettings(jsonSettings))
+
+  waitFor zfcoreInstance.serve
 
 macro resp*(
   httpCode: HttpCode,
