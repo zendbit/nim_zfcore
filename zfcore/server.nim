@@ -138,70 +138,62 @@ proc configureSettings*(
   ##  on the settings.json file
   ##
 
-  if settingsJson.len != 0:
-    settings.sslSettings = SslSettings()
+  var mergeSettings: Settings = settings
+
+  if not settingsJson.isNil:
+    if mergeSettings.sslSettings.isNil:
+      mergeSettings.sslSettings = SslSettings()
+
     var appRootDir = settingsJson{"appRootDir"}.getStr
     if appRootDir != "":
-      settings.appRootDir = appRootDir
+      mergeSettings.appRootDir = appRootDir
     else:
-      settings.appRootDir = getAppDir()
+      mergeSettings.appRootDir = getAppDir()
     if settingsJson.hasKey("keepAlive"):
-      settings.keepAlive = settingsJson{"keepAlive"}.getBool
+      mergeSettings.keepAlive = settingsJson{"keepAlive"}.getBool
     if settingsJson.hasKey("maxBodyLength"):
-      settings.maxBodyLength = settingsJson{"maxBodyLength"}.getInt
+      mergeSettings.maxBodyLength = settingsJson{"maxBodyLength"}.getInt
     if settingsJson.hasKey("readBodyBuffer"):
-      settings.readBodyBuffer = settingsJson{"readBodyBuffer"}.getInt
+      mergeSettings.readBodyBuffer = settingsJson{"readBodyBuffer"}.getInt
     if settingsJson.hasKey("responseRangeBuffer"):
-      settings.responseRangeBuffer = settingsJson{"responseRangeBuffer"}.getInt
+      mergeSettings.responseRangeBuffer = settingsJson{"responseRangeBuffer"}.getInt
     if settingsJson.hasKey("maxResponseBodyLength"):
-      settings.maxResponseBodyLength = settingsJson{"maxResponseBodyLength"}.getBiggestInt
+      mergeSettings.maxResponseBodyLength = settingsJson{"maxResponseBodyLength"}.getBiggestInt
     if settingsjson.hasKey("trace"):
-      settings.trace = settingsjson{"trace"}.getBool
+      mergeSettings.trace = settingsjson{"trace"}.getBool
     if settingsJson.hasKey("http"):
       let httpSettings = settingsJson{"http"}
       if httpSettings.hasKey("port"):
-        settings.port = httpSettings{"port"}.getInt.Port
+        mergeSettings.port = httpSettings{"port"}.getInt.Port
       if httpSettings.hasKey("address"):
-        settings.address = httpSettings{"address"}.getStr
+        mergeSettings.address = httpSettings{"address"}.getStr
       if httpSettings.hasKey("reuseAddress"):
-        settings.reuseAddress = httpSettings{"reuseAddress"}.getBool
+        mergeSettings.reuseAddress = httpSettings{"reuseAddress"}.getBool
       if httpSettings.hasKey("reusePort"):
-        settings.reusePort = httpSettings{"reusePort"}.getBool
+        mergeSettings.reusePort = httpSettings{"reusePort"}.getBool
       if httpSettings.hasKey("secure"):
         let httpsSettings = httpSettings{"secure"}
         if httpsSettings.hasKey("port"):
-          settings.sslSettings.port = httpsSettings{"port"}.getInt.Port
+          mergeSettings.sslSettings.port = httpsSettings{"port"}.getInt.Port
         if httpsSettings.hasKey("cert"):
-          settings.sslSettings.certFile = httpsSettings{"cert"}.getStr
+          mergeSettings.sslSettings.certFile = httpsSettings{"cert"}.getStr
         if httpsSettings.hasKey("key"):
-          settings.sslSettings.keyFile = httpsSettings{"key"}.getStr
-        if httpSettings.hasKey("verify"):
-          settings.sslSettings.verify = httpSettings{"verify"}.getBool
-  
-  result = settings
+          mergeSettings.sslSettings.keyFile = httpsSettings{"key"}.getStr
+        if httpsSettings.hasKey("verify"):
+          mergeSettings.sslSettings.verify = httpsSettings{"verify"}.getBool
 
-proc mergeSettings*(
-  settings: Settings,
-  settingsJson: JsonNode): Settings =
-  ##  check if release mode use the release setting in the
-  ##  core section
-  
-  var mergedSettings: Settings = settings
+  var settingsToMerge: JsonNode
 
-  if not settingsJson.isNil:
-    when defined(release):
-      let overrideSettingsJson = settingsJson{"release"}
-      if not overrideSettingsJson.isNil:
-        echo "Override configurations with release settings."
-        mergedSettings = mergedSettings.configureSettings(overrideSettingsJson)
+  when defined(release):
+    settingsToMerge = settingsJson{"release"}
 
-    else:
-      let overrideSettingsJson = settingsJson{"debug"}
-      if not overrideSettingsJson.isNil:
-        echo "Override configurations with debug settings."
-        mergedSettings = mergedSettings.configureSettings(overrideSettingsJson)
+  else:
+    settingsToMerge = settingsJson{"debug"}
 
-  result = mergedSettings
+  if not settingsToMerge.isNil:
+    mergeSettings = mergeSettings.configureSettings(settingsToMerge)
+
+  result = mergeSettings
 
 proc applySettings*(
   zfcore:ZFCore,
@@ -228,23 +220,8 @@ proc newZFCore*(): ZFCore {.gcsafe.} =
   ##
   var settingsJson = zfJsonSettings(){"core"}
   if not settingsJson.isNil:
-    #var settings = newSettings().configureSettings(settingsJson)
-
-    ##  check if release mode use the release setting in the
-    ##  core section
-    #when defined(release):
-    # let overrideSettingsJson = settingsJson{"release"}
-    # if not overrideSettingsJson.isNil:
-    #   echo "Override configurations with release settings."
-    #   settings = settings.configureSettings(overrideSettingsJson)
-
-    #else:
-    # let overrideSettingsJson = settingsJson{"debug"}
-    # if not overrideSettingsJson.isNil:
-    #   echo "Override configurations with debug settings."
-    #   settings = settings.configureSettings(overrideSettingsJson)
-    let settings = newSettings().mergeSettings(settingsJson)
-
+    let settings = newSettings().configureSettings(settingsJson)
+    
     result = ZFCore(
       server: newZFBlast(
         address = settings.address,
@@ -602,8 +579,9 @@ template emitServer*(jsonSettings: JsonNode = nil) =
   #     )
   #   )
   #)
+
   if not jsonSettings.isNil:
-    zfcoreInstance.applySettings(zfcoreInstance.settings.mergeSettings(jsonSettings))
+    zfcoreInstance.applySettings(zfcoreInstance.settings.configureSettings(jsonSettings))
 
   waitFor zfcoreInstance.serve
 
