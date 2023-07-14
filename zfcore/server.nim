@@ -181,6 +181,12 @@ proc configureSettings*(
           mergeSettings.sslSettings.keyFile = httpsSettings{"key"}.getStr
         if httpsSettings.hasKey("verify"):
           mergeSettings.sslSettings.verify = httpsSettings{"verify"}.getBool
+        if httpsSettings.hasKey("useEnv"):
+          mergeSettings.sslSettings.useEnv = httpsSettings{"useEnv"}.getBool
+        if httpsSettings.hasKey("caDir"):
+          mergeSettings.sslSettings.caDir = httpsSettings{"caDir"}.getStr
+        if httpsSettings.hasKey("ca"):
+          mergeSettings.sslSettings.caFile = httpsSettings{"ca"}.getStr
 
   var settingsToMerge: JsonNode
 
