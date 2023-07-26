@@ -76,6 +76,7 @@ proc initSystemTasksPool(self: ZFCore) =
         var toCleanup = settings.tmpDir.joinPath(dir.dirName, "*")
         if dir.dirName == settings.tmpDir:
           toCleanup = settings.tmpDir
+
         for file in toCleanup.walkFiles:
           # get all files
           let timeGap = getTime().toUnix - file.getLastAccessTime().toUnix

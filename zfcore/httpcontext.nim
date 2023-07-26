@@ -25,7 +25,8 @@ import
   json,
   xmltree,
   xmlparser,
-  re
+  re,
+  std/oids
 
 export
   net,
@@ -360,6 +361,11 @@ proc doResp(self: HttpContext) {.gcsafe async.} =
     self.response.body = ""
 
   await self.send(self)
+  ##
+  ##  remove buffer if response already sent
+  ##
+  if self.request.body.fileExists():
+    self.request.body.removeFile()
 
 proc resp*(
   self: HttpContext,
