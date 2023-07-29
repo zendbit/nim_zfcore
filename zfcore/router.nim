@@ -197,6 +197,10 @@ proc handleDynamicRoute(
   let reqPath = ctx.request.url.getPath()
   if reqPath.endsWith("/") and reqPath != "/":
     ctx.request.url = ($ctx.request.url).clearPath.parseURI3
+
+  # map content type
+  # extract and map based on content type
+  ctx.mapContentype
   
   # 
   # execute middleware before routing
@@ -213,10 +217,6 @@ proc handleDynamicRoute(
     # set static file path
     ctx.staticFile(staticFilePath)
 
-  # map content type
-  # extract and map based on content type
-  ctx.mapContentype
-  
   # route to potensial uri
   # also extract the uri parameter
   let ctxSegments = reqPath.parseSegmentsFromPath
