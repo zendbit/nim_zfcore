@@ -94,7 +94,7 @@ proc datetime*(
   self: FieldData,
   format: string,
   errMsg: string = "",
-  okMsg:string = ""): FieldData {.discardable.} =
+  okMsg: string = ""): FieldData {.discardable.} =
 
   # validate the value treat as datetime format
   # if value not datetime format will not valid
@@ -119,7 +119,7 @@ proc datetime*(
 proc num*(
   self: FieldData,
   errMsg: string = "",
-  okMsg:string = ""): FieldData {.discardable.} =
+  okMsg: string = ""): FieldData {.discardable.} =
 
   # validate the value treat as number
   # if value not number will not valid
@@ -168,7 +168,7 @@ proc discardVal*(
 proc dec*(
   self: FieldData,
   errMsg: string = "",
-  okMsg:string = ""): FieldData {.discardable.} =
+  okMsg: string = ""): FieldData {.discardable.} =
 
   # validate the value treat as decimal
   # if value not number will not valid
@@ -192,7 +192,7 @@ proc dec*(
 proc boolean*(
   self: FieldData,
   errMsg: string = "",
-  okMsg:string = ""): FieldData {.discardable.} =
+  okMsg: string = ""): FieldData {.discardable.} =
 
   # validate the value treat as number
   # if value not number will not valid
@@ -213,20 +213,60 @@ proc boolean*(
 
   result = self
 
-proc list*(
+proc list*[T](
   self: FieldData,
-  list: openArray[string],
+  list: openArray[T],
   errMsg: string = "",
-  okMsg:string = ""): FieldData {.discardable.} =
+  okMsg: string = ""): FieldData {.discardable.} =
 
   # validate the value in the range of given min and max
   # errMsg for error msg
   # okMsg for success msg 
   if self.msg == "":
-    self.validationApplied &= "|listStr"
+    var ok: bool
+    var val: T
+    var validationType = "listNum"
+
+    if type list is openArray[string]:
+      validationType = "|listStr"
+      val = self.value
+      ok = true
+    elif type list is openArray[BiggestUInt] or
+      type list is openArray[uint64]:
+      let res = self.value.tryParseBiggestUInt()
+      ok = res.ok
+      val = res.val
+    elif type list is openArray[BiggestInt] or
+      list is openArray[int64]:
+      let res = self.value.tryParseBiggestInt()
+      ok = res.ok
+      val = res.val
+    elif type list is openArray[int]:
+      let res = self.value.tryParseInt()
+      ok = res.ok
+      val = res.val
+    elif type list is openArray[uint]:
+      let res = self.value.tryParseUInt()
+      ok = res.ok
+      val = res.val
+    elif type list is openArray[float]:
+      let res = self.value.tryParseBiggestFloat()
+      ok = res.ok
+      val = res.val
+    elif type list is openArray[float32]:
+      let res = self.value.tryParseFloat()
+      ok = res.ok
+      val = res.val
+    elif type list is openArray[enum]:
+      let res = self.value.tryParseEnum()
+      ok = res.ok
+      val = res.val
+
     var err = ""
     self.isValid = false
-    if self.value notin list:
+    self.validationApplied &= validationType
+
+    if val notin list:
       if errMsg != "":
           err = errMsg
       else:
@@ -241,251 +281,50 @@ proc list*(
 
   result = self
 
-proc list*(
+proc range*[T](
   self: FieldData,
-  list: openArray[uint64],
+  min: T,
+  max: T,
   errMsg: string = "",
-  okMsg:string = ""): FieldData {.discardable.} =
+  okMsg: string = ""): FieldData {.discardable.} =
 
   # validate the value in the range of given min and max
   # errMsg for error msg
   # okMsg for success msg 
   if self.msg == "":
-    self.validationApplied &= "|listNum"
-    var err = ""
-    let (ok, val) = self.value.tryParseBiggestUInt()
-    self.isValid = false
-    if ok and self.value != "":
-      if val notin list:
-        if errMsg != "":
-            err = errMsg
-        else:
-            err = &"not in {list}."
+    var ok: bool
+    var val: T
 
-      else:
-        self.isValid = true
-        self.msg = okMsg
+    if type list is openArray[BiggestUInt] or
+      type list is openArray[uint64]:
+      let res = self.value.tryParseBiggestUInt()
+      ok = res.ok
+      val = res.val
+    elif type list is openArray[BiggestInt] or
+      list is openArray[int64]:
+      let res = self.value.tryParseBiggestInt()
+      ok = res.ok
+      val = res.val
+    elif type list is openArray[int]:
+      let res = self.value.tryParseInt()
+      ok = res.ok
+      val = res.val
+    elif type list is openArray[uint]:
+      let res = self.value.tryParseUInt()
+      ok = res.ok
+      val = res.val
+    elif type list is openArray[float]:
+      let res = self.value.tryParseBiggestFloat()
+      ok = res.ok
+      val = res.val
+    elif type list is openArray[float32]:
+      let res = self.value.tryParseFloat()
+      ok = res.ok
+      val = res.val
 
-    else:
-      err = &"not in {list}."
-
-    if err != "":
-      self.msg = err
-
-  result = self
-
-proc list*(
-  self: FieldData,
-  list: openArray[BiggestInt],
-  errMsg: string = "",
-  okMsg:string = ""): FieldData {.discardable.} =
-
-  # validate the value in the range of given min and max
-  # errMsg for error msg
-  # okMsg for success msg 
-  if self.msg == "":
-    self.validationApplied &= "|listNum"
-    var err = ""
-    let (ok, val) = self.value.tryParseBiggestInt()
-    self.isValid = false
-    if ok and self.value != "":
-      if val notin list:
-        if errMsg != "":
-            err = errMsg
-        else:
-            err = &"not in {list}."
-
-      else:
-        self.isValid = true
-        self.msg = okMsg
-
-    else:
-      err = &"not in {list}."
-
-    if err != "":
-      self.msg = err
-
-  result = self
-
-proc list*(
-  self: FieldData,
-  list: openArray[int],
-  errMsg: string = "",
-  okMsg:string = ""): FieldData {.discardable.} =
-
-  # validate the value in the range of given min and max
-  # errMsg for error msg
-  # okMsg for success msg 
-  if self.msg == "":
-    self.validationApplied &= "|listNum"
-    var err = ""
-    let (ok, val) = self.value.tryParseInt()
-    self.isValid = false
-    if ok and self.value != "":
-      if val notin list:
-        if errMsg != "":
-            err = errMsg
-        else:
-            err = &"not in {list}."
-
-      else:
-        self.isValid = true
-        self.msg = okMsg
-
-    else:
-      err = &"not in {list}."
-
-    if err != "":
-      self.msg = err
-
-  result = self
-
-proc list*(
-  self: FieldData,
-  list: openArray[uint],
-  errMsg: string = "",
-  okMsg:string = ""): FieldData {.discardable.} =
-
-  # validate the value in the range of given min and max
-  # errMsg for error msg
-  # okMsg for success msg 
-  if self.msg == "":
-    self.validationApplied &= "|listNum"
-    var err = ""
-    let (ok, val) = self.value.tryParseUInt()
-    self.isValid = false
-    if ok and self.value != "":
-      if val notin list:
-        if errMsg != "":
-            err = errMsg
-        else:
-            err = &"not in {list}."
-
-      else:
-        self.isValid = true
-        self.msg = okMsg
-
-    else:
-      err = &"not in {list}."
-
-    if err != "":
-      self.msg = err
-
-  result = self
-
-proc list*(
-  self: FieldData,
-  list: openArray[enum],
-  errMsg: string = "",
-  okMsg:string = ""): FieldData {.discardable.} =
-
-  # validate the value in the range of given min and max
-  # errMsg for error msg
-  # okMsg for success msg 
-  if self.msg == "":
-    self.validationApplied &= "|listNum"
-    var err = ""
-    let (ok, val) = self.value.tryParseEnum()
-    self.isValid = false
-    if ok and self.value != "":
-      if val notin list:
-        if errMsg != "":
-            err = errMsg
-        else:
-            err = &"not in {list}."
-
-      else:
-        self.isValid = true
-        self.msg = okMsg
-
-    else:
-      err = &"not in {list}."
-
-    if err != "":
-      self.msg = err
-
-  result = self
-
-proc list*(
-  self: FieldData,
-  list: openArray[float64],
-  errMsg: string = "",
-  okMsg:string = ""): FieldData {.discardable.} =
-
-  # validate the value in the range of given min and max
-  # errMsg for error msg
-  # okMsg for success msg 
-  if self.msg == "":
-    self.validationApplied &= "|listDec"
-    var err = ""
-    let (ok, val) = self.value.tryParseBiggestFloat()
-    self.isValid = false
-    if ok and self.value != "":
-      if val notin list:
-        if errMsg != "":
-            err = errMsg
-        else:
-            err = &"not in {list}."
-
-      else:
-        self.isValid = true
-        self.msg = okMsg
-
-    else:
-      err = &"not in {list}."
-
-    if err != "":
-      self.msg = err
-
-  result = self
-
-proc list*(
-  self: FieldData,
-  list: openArray[float32],
-  errMsg: string = "",
-  okMsg:string = ""): FieldData {.discardable.} =
-
-  # validate the value in the range of given min and max
-  # errMsg for error msg
-  # okMsg for success msg 
-  if self.msg == "":
-    self.validationApplied &= "|listDec"
-    var err = ""
-    let (ok, val) = self.value.tryParseFloat()
-    self.isValid = false
-    if ok and self.value != "":
-      if val notin list:
-        if errMsg != "":
-            err = errMsg
-        else:
-            err = &"not in {list}."
-
-      else:
-        self.isValid = true
-        self.msg = okMsg
-
-    else:
-      err = &"not in {list}."
-
-    if err != "":
-      self.msg = err
-
-  result = self
-
-proc range*(
-  self: FieldData,
-  min: BiggestInt,
-  max: BiggestInt,
-  errMsg: string = "",
-  okMsg:string = ""): FieldData {.discardable.} =
-
-  # validate the value in the range of given min and max
-  # errMsg for error msg
-  # okMsg for success msg 
-  if self.msg == "":
     self.validationApplied &= "|rangeNum"
     var err = ""
-    let (ok, val) = self.value.tryParseBiggestInt()
+
     self.isValid = false
     if ok and self.value != "":
       if val < min or val > max:
@@ -506,190 +345,50 @@ proc range*(
 
   result = self
 
-proc range*(
+proc max*[T](
   self: FieldData,
-  min: int,
-  max: int,
+  max: T,
   errMsg: string = "",
-  okMsg:string = ""): FieldData {.discardable.} =
-
-  # validate the value in the range of given min and max
-  # errMsg for error msg
-  # okMsg for success msg 
-  if self.msg == "":
-    self.validationApplied &= "|rangeNum"
-    var err = ""
-    let (ok, val) = self.value.tryParseInt()
-    self.isValid = false
-    if ok and self.value != "":
-      if val < min or val > max:
-        if errMsg != "":
-            err = errMsg
-        else:
-            err = &"not in range ({min}-{max})."
-
-      else:
-        self.isValid = true
-        self.msg = okMsg
-
-    else:
-      err = &"not in range ({min}-{max})."
-
-    if err != "":
-      self.msg = err
-
-  result = self
-
-proc range*(
-  self: FieldData,
-  min: uint,
-  max: uint,
-  errMsg: string = "",
-  okMsg:string = ""): FieldData {.discardable.} =
-
-  # validate the value in the range of given min and max
-  # errMsg for error msg
-  # okMsg for success msg 
-  if self.msg == "":
-    self.validationApplied &= "|rangeNum"
-    var err = ""
-    let (ok, val) = self.value.tryParseUInt()
-    self.isValid = false
-    if ok and self.value != "":
-      if val < min or val > max:
-        if errMsg != "":
-            err = errMsg
-        else:
-            err = &"not in range ({min}-{max})."
-
-      else:
-        self.isValid = true
-        self.msg = okMsg
-
-    else:
-      err = &"not in range ({min}-{max})."
-
-    if err != "":
-      self.msg = err
-
-  result = self
-
-proc range*(
-  self: FieldData,
-  min: uint64,
-  max: uint64,
-  errMsg: string = "",
-  okMsg:string = ""): FieldData {.discardable.} =
-
-  # validate the value in the range of given min and max
-  # errMsg for error msg
-  # okMsg for success msg 
-  if self.msg == "":
-    self.validationApplied &= "|rangeNum"
-    var err = ""
-    let (ok, val) = self.value.tryParseBiggestUInt()
-    self.isValid = false
-    if ok and self.value != "":
-      if val < min or val > max:
-        if errMsg != "":
-            err = errMsg
-        else:
-            err = &"not in range ({min}-{max})."
-
-      else:
-        self.isValid = true
-        self.msg = okMsg
-
-    else:
-      err = &"not in range ({min}-{max})."
-
-    if err != "":
-      self.msg = err
-
-  result = self
-
-proc range*(
-  self: FieldData,
-  min: float,
-  max: float,
-  errMsg: string = "",
-  okMsg:string = ""): FieldData {.discardable.} =
-
-  # validate the value in the range of given min and max
-  # errMsg for error msg
-  # okMsg for success msg 
-  if self.msg == "":
-    self.validationApplied &= "|rangeDec"
-    var err = ""
-    let (ok, val) = self.value.tryParseBiggestFloat()
-    self.isValid = false
-    if ok and self.value != "":
-      if val < min or val > max:
-        if errMsg != "":
-            err = errMsg
-        else:
-            err = &"not in range ({min}-{max})."
-
-      else:
-        self.isValid = true
-        self.msg = okMsg
-
-    else:
-      err = &"not in range ({min}-{max})."
-
-    if err != "":
-      self.msg = err
-
-  result = self
-
-proc range*(
-  self: FieldData,
-  min: float32,
-  max: float32,
-  errMsg: string = "",
-  okMsg:string = ""): FieldData {.discardable.} =
-
-  # validate the value in the range of given min and max
-  # errMsg for error msg
-  # okMsg for success msg 
-  if self.msg == "":
-    self.validationApplied &= "|rangeDec"
-    var err = ""
-    let (ok, val) = self.value.tryParseFloat()
-    self.isValid = false
-    if ok and self.value != "":
-      if val < min or val > max:
-        if errMsg != "":
-            err = errMsg
-        else:
-            err = &"not in range ({min}-{max})."
-
-      else:
-        self.isValid = true
-        self.msg = okMsg
-
-    else:
-      err = &"not in range ({min}-{max})."
-
-    if err != "":
-      self.msg = err
-
-  result = self
-
-proc max*(
-  self: FieldData,
-  max: BiggestInt,
-  errMsg: string = "",
-  okMsg:string = ""): FieldData {.discardable.} =
+  okMsg: string = ""): FieldData {.discardable.} =
 
   # validate value must not larger than given max value
   # errMsg for error msg
   # okMsg for success msg 
   if self.msg == "":
+    var ok: bool
+    var val: T
+
+    if type list is openArray[BiggestUInt] or
+      type list is openArray[uint64]:
+      let res = self.value.tryParseBiggestUInt()
+      ok = res.ok
+      val = res.val
+    elif type list is openArray[BiggestInt] or
+      list is openArray[int64]:
+      let res = self.value.tryParseBiggestInt()
+      ok = res.ok
+      val = res.val
+    elif type list is openArray[int]:
+      let res = self.value.tryParseInt()
+      ok = res.ok
+      val = res.val
+    elif type list is openArray[uint]:
+      let res = self.value.tryParseUInt()
+      ok = res.ok
+      val = res.val
+    elif type list is openArray[float]:
+      let res = self.value.tryParseBiggestFloat()
+      ok = res.ok
+      val = res.val
+    elif type list is openArray[float32]:
+      let res = self.value.tryParseFloat()
+      ok = res.ok
+      val = res.val
+
     self.validationApplied &= "|maxNum"
     self.isValid = false
     var err = ""
-    var (ok, val) = self.value.tryParseBiggestInt()
+
     if ok and self.value != "":
       if val > max:
         if errMsg != "":
@@ -709,350 +408,50 @@ proc max*(
 
   result = self
 
-proc max*(
+proc min*[T](
   self: FieldData,
-  max: int,
+  min: T,
   errMsg: string = "",
-  okMsg:string = ""): FieldData {.discardable.} =
-
-  # validate value must not larger than given max value
-  # errMsg for error msg
-  # okMsg for success msg 
-  if self.msg == "":
-    self.validationApplied &= "|maxNum"
-    self.isValid = false
-    var err = ""
-    var (ok, val) = self.value.tryParseInt()
-    if ok and self.value != "":
-      if val > max:
-        if errMsg != "":
-          err = errMsg
-        else:
-          err = &"not allowed (>{max})."
-
-      else:
-        self.isValid = true
-        self.msg = okMsg
-
-    else:
-      err = &"not allowed (>{max})."
-
-    if err != "":
-      self.msg = err
-
-  result = self
-
-proc max*(
-  self: FieldData,
-  max: uint,
-  errMsg: string = "",
-  okMsg:string = ""): FieldData {.discardable.} =
-
-  # validate value must not larger than given max value
-  # errMsg for error msg
-  # okMsg for success msg 
-  if self.msg == "":
-    self.validationApplied &= "|maxNum"
-    self.isValid = false
-    var err = ""
-    var (ok, val) = self.value.tryParseUInt()
-    if ok and self.value != "":
-      if val > max:
-        if errMsg != "":
-          err = errMsg
-        else:
-          err = &"not allowed (>{max})."
-
-      else:
-        self.isValid = true
-        self.msg = okMsg
-
-    else:
-      err = &"not allowed (>{max})."
-
-    if err != "":
-      self.msg = err
-
-  result = self
-
-proc max*(
-  self: FieldData,
-  max: uint64,
-  errMsg: string = "",
-  okMsg:string = ""): FieldData {.discardable.} =
-
-  # validate value must not larger than given max value
-  # errMsg for error msg
-  # okMsg for success msg 
-  if self.msg == "":
-    self.validationApplied &= "|maxNum"
-    self.isValid = false
-    var err = ""
-    var (ok, val) = self.value.tryParseBiggestUInt()
-    if ok and self.value != "":
-      if val > max:
-        if errMsg != "":
-          err = errMsg
-        else:
-          err = &"not allowed (>{max})."
-
-      else:
-        self.isValid = true
-        self.msg = okMsg
-
-    else:
-      err = &"not allowed (>{max})."
-
-    if err != "":
-      self.msg = err
-
-  result = self
-
-proc max*(
-  self: FieldData,
-  max: float,
-  errMsg: string = "",
-  okMsg:string = ""): FieldData {.discardable.} =
-
-  # validate value must not larger than given max value
-  # errMsg for error msg
-  # okMsg for success msg 
-  if self.msg == "":
-    self.validationApplied &= "|maxDec"
-    self.isValid = false
-    var err = ""
-    var (ok, val) = self.value.tryParseBiggestFloat()
-    if ok and self.value != "":
-      if val > max:
-        if errMsg != "":
-          err = errMsg
-        else:
-          err = &"not allowed (>{max})."
-
-      else:
-        self.isValid = true
-        self.msg = okMsg
-
-    else:
-      err = &"not allowed (>{max})."
-
-    if err != "":
-      self.msg = err
-
-  result = self
-
-proc max*(
-  self: FieldData,
-  max: float32,
-  errMsg: string = "",
-  okMsg:string = ""): FieldData {.discardable.} =
-
-  # validate value must not larger than given max value
-  # errMsg for error msg
-  # okMsg for success msg 
-  if self.msg == "":
-    self.validationApplied &= "|maxDec"
-    self.isValid = false
-    var err = ""
-    var (ok, val) = self.value.tryParseFloat()
-    if ok and self.value != "":
-      if val > max:
-        if errMsg != "":
-          err = errMsg
-        else:
-          err = &"not allowed (>{max})."
-
-      else:
-        self.isValid = true
-        self.msg = okMsg
-
-    else:
-      err = &"not allowed (>{max})."
-
-    if err != "":
-      self.msg = err
-
-  result = self
-
-proc min*(
-  self: FieldData,
-  min: BiggestInt,
-  errMsg: string = "",
-  okMsg:string = ""): FieldData {.discardable.} =
+  okMsg: string = ""): FieldData {.discardable.} =
 
   # validate value must not less than given min value
   # errMsg for error msg
   # okMsg for success msg
   if self.msg == "":
+    var ok: bool
+    var val: T
+
+    if type list is openArray[BiggestUInt] or
+      type list is openArray[uint64]:
+      let res = self.value.tryParseBiggestUInt()
+      ok = res.ok
+      val = res.val
+    elif type list is openArray[BiggestInt] or
+      list is openArray[int64]:
+      let res = self.value.tryParseBiggestInt()
+      ok = res.ok
+      val = res.val
+    elif type list is openArray[int]:
+      let res = self.value.tryParseInt()
+      ok = res.ok
+      val = res.val
+    elif type list is openArray[uint]:
+      let res = self.value.tryParseUInt()
+      ok = res.ok
+      val = res.val
+    elif type list is openArray[float]:
+      let res = self.value.tryParseBiggestFloat()
+      ok = res.ok
+      val = res.val
+    elif type list is openArray[float32]:
+      let res = self.value.tryParseFloat()
+      ok = res.ok
+      val = res.val
+
     self.validationApplied &= "|minNum"
     self.isValid = false
     var err = ""
-    let (ok, val) = self.value.tryParseBiggestInt()
-    if ok and self.value != "":
-      if val < min:
-        if errMsg != "":
-          err = errMsg
-        else:
-          err = &"not allowed (<{min})."
 
-      else:
-        self.isValid = true
-        self.msg = okMsg
-
-    else:
-      err = &"not allowed (<{min})."
-
-    if err != "":
-      self.msg = err
-
-  result = self
-
-proc min*(
-  self: FieldData,
-  min: int,
-  errMsg: string = "",
-  okMsg:string = ""): FieldData {.discardable.} =
-
-  # validate value must not less than given min value
-  # errMsg for error msg
-  # okMsg for success msg
-  if self.msg == "":
-    self.validationApplied &= "|minNum"
-    self.isValid = false
-    var err = ""
-    let (ok, val) = self.value.tryParseInt()
-    if ok and self.value != "":
-      if val < min:
-        if errMsg != "":
-          err = errMsg
-        else:
-          err = &"not allowed (<{min})."
-
-      else:
-        self.isValid = true
-        self.msg = okMsg
-
-    else:
-      err = &"not allowed (<{min})."
-
-    if err != "":
-      self.msg = err
-
-  result = self
-
-proc min*(
-  self: FieldData,
-  min: uint,
-  errMsg: string = "",
-  okMsg:string = ""): FieldData {.discardable.} =
-
-  # validate value must not less than given min value
-  # errMsg for error msg
-  # okMsg for success msg
-  if self.msg == "":
-    self.validationApplied &= "|minNum"
-    self.isValid = false
-    var err = ""
-    let (ok, val) = self.value.tryParseUInt()
-    if ok and self.value != "":
-      if val < min:
-        if errMsg != "":
-          err = errMsg
-        else:
-          err = &"not allowed (<{min})."
-
-      else:
-        self.isValid = true
-        self.msg = okMsg
-
-    else:
-      err = &"not allowed (<{min})."
-
-    if err != "":
-      self.msg = err
-
-  result = self
-
-proc min*(
-  self: FieldData,
-  min: uint64,
-  errMsg: string = "",
-  okMsg:string = ""): FieldData {.discardable.} =
-
-  # validate value must not less than given min value
-  # errMsg for error msg
-  # okMsg for success msg
-  if self.msg == "":
-    self.validationApplied &= "|minNum"
-    self.isValid = false
-    var err = ""
-    let (ok, val) = self.value.tryParseBiggestUInt()
-    if ok and self.value != "":
-      if val < min:
-        if errMsg != "":
-          err = errMsg
-        else:
-          err = &"not allowed (<{min})."
-
-      else:
-        self.isValid = true
-        self.msg = okMsg
-
-    else:
-      err = &"not allowed (<{min})."
-
-    if err != "":
-      self.msg = err
-
-  result = self
-
-proc min*(
-  self: FieldData,
-  min: float,
-  errMsg: string = "",
-  okMsg:string = ""): FieldData {.discardable.} =
-
-  # validate value must not less than given min value
-  # errMsg for error msg
-  # okMsg for success msg
-  if self.msg == "":
-    self.validationApplied &= "|minDec"
-    self.isValid = false
-    var err = ""
-    let (ok, val) = self.value.tryParseBiggestFloat()
-    if ok and self.value != "":
-      if val < min:
-        if errMsg != "":
-          err = errMsg
-        else:
-          err = &"not allowed (<{min})."
-
-      else:
-        self.isValid = true
-        self.msg = okMsg
-
-    else:
-      err = &"not allowed (<{min})."
-
-    if err != "":
-      self.msg = err
-
-  result = self
-
-proc min*(
-  self: FieldData,
-  min: float32,
-  errMsg: string = "",
-  okMsg:string = ""): FieldData {.discardable.} =
-
-  # validate value must not less than given min value
-  # errMsg for error msg
-  # okMsg for success msg
-  if self.msg == "":
-    self.validationApplied &= "|minDec"
-    self.isValid = false
-    var err = ""
-    let (ok, val) = self.value.tryParseFloat()
     if ok and self.value != "":
       if val < min:
         if errMsg != "":
@@ -1201,7 +600,7 @@ proc email*(
   if self.msg == "":
     self.validationApplied &= "|email"
     var localErrMsg = errMsg
-    if localErrMsg != "":
+    if localErrMsg == "":
       localErrMsg = "not valid email address."
 
     self.reMatch(
@@ -1215,7 +614,7 @@ proc check*(
   self: FieldData,
   cond: proc (): bool,
   errMsg: string = "",
-  okMsg:string = ""): FieldData {.discardable.} =
+  okMsg: string = ""): FieldData {.discardable.} =
 
   # check condition if true or false
   # errMsg for error msg
