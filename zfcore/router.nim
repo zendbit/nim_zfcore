@@ -7,8 +7,8 @@
 ##  Git: https://github.com/zendbit/nim.zfcore
 ##
 
-import nre except toSeq
 import mimetypes
+import regex
 
 export mimetypes
 
@@ -94,29 +94,44 @@ proc matchesUri(
       let currentPathSeg = pathSeg[i].decodeUri(false)
       let currentUriSeg = uriSeg[i].decodeUri(false)
 
-      let paramTag = currentPathSeg.match(re"<([\w\W]+)>$")
-      if paramTag.isSome:
-        let reParamsTag = paramTag.get.captures[0].match(re"(\w+):re\[([\w\W]*)\]$")
-        if reParamsTag.isSome:
-          var reParamsSegmentTag: seq[string]
-          let reParamToCapture = re reParamsTag.get.captures[1]
-          let reParamCount = captureCount(reParamToCapture)
-          let reParamCaptured = currentUriSeg.match(reParamToCapture)
-          if reParamCount != 0:
-            for i in 0..(reParamCount - 1):
-              reParamsSegmentTag.add(reParamCaptured.get.captures[i])
-            reParams.add(reParamsTag.get.captures[0], @ reParamsSegmentTag)
-          
+      #let paramTag = currentPathSeg.match(re"<([\w\W]+)>$")
+      var regMatch: RegexMatch
+      #let paramTag = currentPathSeg.match(re"<([\w\W]+)>$", regMatch)
+      #if paramTag.isSome:
+      #if paramTag:
+      ##
+      ##  check segment with /api/<capturedSegment>/test
+      ##
+      if currentPathSeg.match(re"<([\w\W]+)>$", regMatch):
+        let capturedSeg = regMatch.groupFirstCapture(0, currentPathSeg)
+        ##
+        ##  check if segment contains regex pattern
+        ##  try to capture given regex
+        ##
+        if capturedSeg.match(re"(\w+):re\[([\w\W]*)\]$", regMatch):
+          ##
+          ##  capture pattern with regex
+          ##  ex: /req/<ids:re[([0-9]+)_([0-9]+)]>
+          ##
+          let capturedReSegIds = regMatch.groupFirstCapture(0, capturedSeg)
+          let capturedReSeg = regMatch.groupFirstCapture(1, capturedSeg)
+          var capturedReParamSeg: seq[string]
+
+          var capturedParamReSeg: seq[string]
+          if currentUriSeg.match(re capturedReSeg, regMatch):
+            for i in 0..regMatch.groupsCount() - 1:
+              capturedParamReSeg.add(regMatch.groupFirstCapture(i, currentUriSeg))
+            reParams.add(capturedReSegIds, @ capturedParamReSeg)
           else:
             success = false
-
         else:
-          params.add(paramTag.get.captures[0], currentUriSeg)
-
+          params.add(capturedSeg, currentUriSeg)
       elif currentPathSeg != currentUriSeg:
         success = false
 
-      # break and continue if current route not match
+      ##
+      ##  break and continue if current route not match
+      ##
       if not success: break
 
   result = (success: success, params: params, reParams: reParams)
@@ -168,13 +183,12 @@ proc handleStaticRoute(
           # default is "application/octet-stream"
           var contentType = "application/octet-stream"
           # define extension of the requested file
-          #var ext: array[1, string]
-          #if match(staticPath, re"[\w\W]+\.([\w]+)$", ext):
-          let ext = staticPath.match(re"[\w\W]+\.([\w]+)$")
-          if ext.isSome:
+          var regMatch: RegexMatch
+          if staticPath.match(re"[\w\W]+\.([\w]+)$", regMatch):
+            let ext = regMatch.groupFirstCapture(0, staticPath)
             # if extension is defined then try to search the contentType
             let mimeType = newMimeTypes().getMimeType(
-              (ext.get.captures[0]).toLower)
+              ext.toLower())
             # override the contentType if we found it
             if mimeType != "":
               contentType = mimeType

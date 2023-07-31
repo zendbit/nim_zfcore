@@ -22,18 +22,20 @@
 import
   strutils,
   strformat,
-  nre,
+  regex,
   parseutils,
   json,
   macros,
-  times
+  times,
+  options
 
 export
   strutils,
   strformat,
-  nre,
+  regex,
   parseutils,
-  json
+  json,
+  options
 
 ##  import stdext
 import stdext/xstrutils
@@ -1176,7 +1178,7 @@ proc reMatch*(
   if self.msg == "":
     self.validationApplied &= "|reMatch"
     self.isValid = false
-    if not self.value.match(re(regex)).isSome:
+    if not self.value.match(re(regex)):
       if errMsg != "":
         self.msg = errMsg
       else:
