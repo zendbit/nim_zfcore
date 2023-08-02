@@ -795,24 +795,24 @@ macro fluentValidation*(x: untyped): untyped =
             let vChildKind = vChild[0].strVal
             case vChildKind
             of "bool", "must", "num", "email", "dec":
-              var ok = ""
-              var err = ""
+              var ok: NimNode = "".newLit
+              var err: NimNode = "".newLit
               for msg in vChild[1]:
                 case msg[0].strVal
                 of "ok":
                   if not msg[1].isNil:
-                    ok = msg[1].strVal
+                    ok = msg[1]
                 of "err":
                   if not msg[1].isNil:
-                    err = msg[1].strVal
+                    err = msg[1]
 
               fvData = nnkCall.newTree(
                 nnkDotExpr.newTree(
                   fvData,
                   newIdentNode(vChildKind)
                 ),
-                err.newLit,
-                ok.newLit
+                err,
+                ok
               )
 
           of nnkCommand:
@@ -835,17 +835,17 @@ macro fluentValidation*(x: untyped): untyped =
               let maxLen = vChild[1][1]
               case vChild[1].kind
               of nnkCommand:
-                var ok = ""
-                var err = ""
+                var ok: NimNode = "".newLit
+                var err: NimNode = "".newLit
                 if vChild.len >= 3:
                   for msg in vChild[2]:
                     case msg[0].strVal
                     of "ok":
                       if not msg[1].isNil:
-                        ok = msg[1].strVal
+                        ok = msg[1]
                     of "err":
                       if not msg[1].isNil:
-                        err = msg[1].strVal
+                        err = msg[1]
               
                 fvData = nnkCall.newTree(
                   nnkDotExpr.newTree(
@@ -854,8 +854,8 @@ macro fluentValidation*(x: untyped): untyped =
                   ),
                   minLen,
                   maxLen,
-                  err.newLit,
-                  ok.newLit
+                  err,
+                  ok
                 )
 
               else:
@@ -873,26 +873,26 @@ macro fluentValidation*(x: untyped): untyped =
               case vChild.kind
               of nnkCommand:
                 let val = vChild[1]
-                var ok = ""
-                var err = ""
+                var ok: NimNode = "".newLit
+                var err: NimNode = "".newLit
                 if vChild.len >= 3:
                   for msg in vChild[2]:
                     case msg[0].strVal
                     of "ok":
                       if not msg[1].isNil:
-                        ok = msg[1].strVal
+                        ok = msg[1]
                     of "err":
                       if not msg[1].isNil:
-                        err = msg[1].strVal
-                
+                        err = msg[1]
+
                 fvData = nnkCall.newTree(
                   nnkDotExpr.newTree(
                     fvData,
                     newIdentNode(vChildKind)
                   ),
                   val,
-                  err.newLit,
-                  ok.newLit
+                  err,
+                  ok
                 )
 
               else:
