@@ -655,6 +655,27 @@ proc newFluentValidation*(): FluentValidation =
   instance.notValids = %*{}
   return instance
 
+proc `&`*(self: FluentValidation, mergeWith: FluentValidation): FluentValidation =
+  result = newFluentValidation()
+  for k, v in self.valids:
+    result.valids[k] = v
+
+  for k, v in mergeWith.valids:
+    result.valids[k] = v
+
+  for k, v in self.notValids:
+    result.notValids[k] = v
+
+  for k, v in mergeWith.notValids:
+    result.notValids[k] = v
+
+template `&=`*(self: var FluentValidation, mergeWith: FluentValidation): untyped =
+  for k, v in mergeWith.valids:
+    self.valids[k] = v
+
+  for k, v in mergeWith.notValids:
+    self.notValids[k] = v
+
 proc `%`(self: FieldData): JsonNode =
 
   result = %*{
@@ -744,9 +765,9 @@ macro fluentValidation*(x: untyped): untyped =
       stmtList.add(child)
       continue
 
-    let childKind = child[0].strVal
     case child.kind
     of nnkCommand:
+      let childKind = child[0].strVal
       case childKind
       of "data":
         #
@@ -833,10 +854,10 @@ macro fluentValidation*(x: untyped): untyped =
             of "rangeLen", "range":
               let minLen = vChild[1][0]
               let maxLen = vChild[1][1]
+              var ok: NimNode = "".newLit
+              var err: NimNode = "".newLit
               case vChild[1].kind
               of nnkCommand:
-                var ok: NimNode = "".newLit
-                var err: NimNode = "".newLit
                 if vChild.len >= 3:
                   for msg in vChild[2]:
                     case msg[0].strVal
@@ -846,35 +867,27 @@ macro fluentValidation*(x: untyped): untyped =
                     of "err":
                       if not msg[1].isNil:
                         err = msg[1]
-              
-                fvData = nnkCall.newTree(
-                  nnkDotExpr.newTree(
-                    fvData,
-                    newIdentNode(vChildKind)
-                  ),
-                  minLen,
-                  maxLen,
-                  err,
-                  ok
-                )
-
               else:
-                fvData = nnkCall.newTree(
-                  nnkDotExpr.newTree(
-                    fvData,
-                    newIdentNode(vChildKind)
-                  ),
-                  minLen,
-                  maxLen
-                )
+                discard
+
+              fvData = nnkCall.newTree(
+                nnkDotExpr.newTree(
+                  fvData,
+                  newIdentNode(vChildKind)
+                ),
+                minLen,
+                maxLen,
+                err,
+                ok
+              )
             
             of "minLen", "maxLen", "max", "min", "list",
               "datetime", "discardVal", "reMatch", "customErr", "customOk", "check":
+              let val = vChild[1]
+              var ok: NimNode = "".newLit
+              var err: NimNode = "".newLit
               case vChild.kind
               of nnkCommand:
-                let val = vChild[1]
-                var ok: NimNode = "".newLit
-                var err: NimNode = "".newLit
                 if vChild.len >= 3:
                   for msg in vChild[2]:
                     case msg[0].strVal
@@ -884,29 +897,22 @@ macro fluentValidation*(x: untyped): untyped =
                     of "err":
                       if not msg[1].isNil:
                         err = msg[1]
-
-                fvData = nnkCall.newTree(
-                  nnkDotExpr.newTree(
-                    fvData,
-                    newIdentNode(vChildKind)
-                  ),
-                  val,
-                  err,
-                  ok
-                )
-
               else:
-                let val = vChild[1]
-                fvData = nnkCall.newTree(
-                  nnkDotExpr.newTree(
-                    fvData,
-                    newIdentNode(vChildKind)
-                  ),
-                  val
-                )
-             
+                discard
+
+              fvData = nnkCall.newTree(
+                nnkDotExpr.newTree(
+                  fvData,
+                  newIdentNode(vChildKind)
+                ),
+                val,
+                err,
+                ok
+              )
             else:
               echo &"{vChildKind} not found in fluent validation."
+              stmtList.add(vChild)
+              
 
           else:
             stmtList.add(vChild)

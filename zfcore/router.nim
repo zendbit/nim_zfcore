@@ -212,6 +212,12 @@ proc handleDynamicRoute(
   if reqPath.endsWith("/") and reqPath != "/":
     ctx.request.url = ($ctx.request.url).clearPath.parseURI3
 
+  ##
+  ##  collect query params
+  ##
+  for (k, v) in ctx.request.url.getAllQueries():
+    ctx.qParams.add(k.strip(), v.strip())
+
   # map content type
   # extract and map based on content type
   ctx.mapContentype
@@ -243,9 +249,6 @@ proc handleDynamicRoute(
       route = r
       for k, v in matchesUri.params:
         ctx.params.add(k, v)
-
-      for qStr in ctx.request.url.getAllQueries():
-        ctx.params.add(qStr[0], qStr[1].decodeUri())
 
       ctx.reParams = matchesUri.reParams
 

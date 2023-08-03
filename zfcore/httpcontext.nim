@@ -87,6 +87,7 @@ type
     ##  json -> this will capture the application/json body from the post/put/patch method
     ##
     params*: Table[string, string]
+    qParams*: Table[string, string]
     reParams*: Table[string, seq[string]]
     formData*: FormData
     json*: JsonNode
@@ -126,6 +127,7 @@ proc newHttpContext*(self: zfbserver.HttpContext): HttpContext {.gcsafe.} =
     send: self.send,
     webSocket: self.webSocket,
     params: initTable[string, string](),
+    qParams: initTable[string, string](),
     reParams: initTable[string, seq[string]](),
     formData: newFormData(),
     json: newJObject(),
