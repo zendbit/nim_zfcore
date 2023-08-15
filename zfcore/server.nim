@@ -979,3 +979,4 @@ template buildMode*: string =
   ##  will return string "debug" or "release"
   ##
   zfbserver.getBuildMode()
+

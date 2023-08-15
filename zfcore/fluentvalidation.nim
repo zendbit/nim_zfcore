@@ -227,37 +227,37 @@ proc list*[T](
     var val: T
     var validationType = "listNum"
 
-    if type list is openArray[string]:
+    when T is openArray[string]:
       validationType = "|listStr"
       val = self.value
       ok = true
-    elif type list is openArray[BiggestUInt] or
-      type list is openArray[uint64]:
+    elif T is openArray[BiggestUInt] or
+      T is openArray[uint64]:
       let res = self.value.tryParseBiggestUInt()
       ok = res.ok
       val = res.val
-    elif type list is openArray[BiggestInt] or
-      list is openArray[int64]:
+    elif T is openArray[BiggestInt] or
+      T is openArray[int64]:
       let res = self.value.tryParseBiggestInt()
       ok = res.ok
       val = res.val
-    elif type list is openArray[int]:
+    elif T is openArray[int]:
       let res = self.value.tryParseInt()
       ok = res.ok
       val = res.val
-    elif type list is openArray[uint]:
+    elif T is openArray[uint]:
       let res = self.value.tryParseUInt()
       ok = res.ok
       val = res.val
-    elif type list is openArray[float]:
+    elif T is openArray[float]:
       let res = self.value.tryParseBiggestFloat()
       ok = res.ok
       val = res.val
-    elif type list is openArray[float32]:
+    elif T is openArray[float32]:
       let res = self.value.tryParseFloat()
       ok = res.ok
       val = res.val
-    elif type list is openArray[enum]:
+    elif T is openArray[enum]:
       let res = self.value.tryParseEnum()
       ok = res.ok
       val = res.val
@@ -283,8 +283,8 @@ proc list*[T](
 
 proc range*[T](
   self: FieldData,
-  min: T,
-  max: T,
+  minValue: T,
+  maxValue: T,
   errMsg: string = "",
   okMsg: string = ""): FieldData {.discardable.} =
 
@@ -295,29 +295,29 @@ proc range*[T](
     var ok: bool
     var val: T
 
-    if type list is openArray[BiggestUInt] or
-      type list is openArray[uint64]:
+    when T is BiggestUInt or
+      T is uint64:
       let res = self.value.tryParseBiggestUInt()
       ok = res.ok
       val = res.val
-    elif type list is openArray[BiggestInt] or
+    elif T is BiggestInt or
       list is openArray[int64]:
       let res = self.value.tryParseBiggestInt()
       ok = res.ok
       val = res.val
-    elif type list is openArray[int]:
+    elif T is int:
       let res = self.value.tryParseInt()
       ok = res.ok
       val = res.val
-    elif type list is openArray[uint]:
+    elif T is uint:
       let res = self.value.tryParseUInt()
       ok = res.ok
       val = res.val
-    elif type list is openArray[float]:
+    elif T is float:
       let res = self.value.tryParseBiggestFloat()
       ok = res.ok
       val = res.val
-    elif type list is openArray[float32]:
+    elif T is float32:
       let res = self.value.tryParseFloat()
       ok = res.ok
       val = res.val
@@ -327,11 +327,11 @@ proc range*[T](
 
     self.isValid = false
     if ok and self.value != "":
-      if val < min or val > max:
+      if val < minValue or val > maxValue:
         if errMsg != "":
             err = errMsg
         else:
-            err = &"not in range ({min}-{max})."
+            err = &"not in range ({minValue}-{maxValue})."
 
       else:
         self.isValid = true
@@ -345,9 +345,9 @@ proc range*[T](
 
   result = self
 
-proc max*[T](
+proc maxVal*[T](
   self: FieldData,
-  max: T,
+  value: T,
   errMsg: string = "",
   okMsg: string = ""): FieldData {.discardable.} =
 
@@ -358,29 +358,29 @@ proc max*[T](
     var ok: bool
     var val: T
 
-    if type list is openArray[BiggestUInt] or
-      type list is openArray[uint64]:
+    when T is BiggestUInt or
+      T is uint64:
       let res = self.value.tryParseBiggestUInt()
       ok = res.ok
       val = res.val
-    elif type list is openArray[BiggestInt] or
-      list is openArray[int64]:
+    elif T is BiggestInt or
+      T is int64:
       let res = self.value.tryParseBiggestInt()
       ok = res.ok
       val = res.val
-    elif type list is openArray[int]:
+    elif T is int:
       let res = self.value.tryParseInt()
       ok = res.ok
       val = res.val
-    elif type list is openArray[uint]:
+    elif T is uint:
       let res = self.value.tryParseUInt()
       ok = res.ok
       val = res.val
-    elif type list is openArray[float]:
+    elif T is float:
       let res = self.value.tryParseBiggestFloat()
       ok = res.ok
       val = res.val
-    elif type list is openArray[float32]:
+    elif T is float32:
       let res = self.value.tryParseFloat()
       ok = res.ok
       val = res.val
@@ -390,27 +390,27 @@ proc max*[T](
     var err = ""
 
     if ok and self.value != "":
-      if val > max:
+      if val > value:
         if errMsg != "":
           err = errMsg
         else:
-          err = &"not allowed (>{max})."
+          err = &"not allowed (>{value})."
 
       else:
         self.isValid = true
         self.msg = okMsg
 
     else:
-      err = &"not allowed (>{max})."
+      err = &"not allowed (>{value})."
 
     if err != "":
       self.msg = err
 
   result = self
 
-proc min*[T](
+proc minVal*[T](
   self: FieldData,
-  min: T,
+  value: T,
   errMsg: string = "",
   okMsg: string = ""): FieldData {.discardable.} =
 
@@ -421,29 +421,29 @@ proc min*[T](
     var ok: bool
     var val: T
 
-    if type list is openArray[BiggestUInt] or
-      type list is openArray[uint64]:
+    when T is BiggestUInt or
+      T is uint64:
       let res = self.value.tryParseBiggestUInt()
       ok = res.ok
       val = res.val
-    elif type list is openArray[BiggestInt] or
-      list is openArray[int64]:
+    elif T is BiggestInt or
+      T is int64:
       let res = self.value.tryParseBiggestInt()
       ok = res.ok
       val = res.val
-    elif type list is openArray[int]:
+    elif T is int:
       let res = self.value.tryParseInt()
       ok = res.ok
       val = res.val
-    elif type list is openArray[uint]:
+    elif T is uint:
       let res = self.value.tryParseUInt()
       ok = res.ok
       val = res.val
-    elif type list is openArray[float]:
+    elif T is float:
       let res = self.value.tryParseBiggestFloat()
       ok = res.ok
       val = res.val
-    elif type list is openArray[float32]:
+    elif T is float32:
       let res = self.value.tryParseFloat()
       ok = res.ok
       val = res.val
@@ -453,18 +453,18 @@ proc min*[T](
     var err = ""
 
     if ok and self.value != "":
-      if val < min:
+      if val < value:
         if errMsg != "":
           err = errMsg
         else:
-          err = &"not allowed (<{min})."
+          err = &"not allowed (<{value})."
 
       else:
         self.isValid = true
         self.msg = okMsg
 
     else:
-      err = &"not allowed (<{min})."
+      err = &"not allowed (<{value})."
 
     if err != "":
       self.msg = err
@@ -495,7 +495,7 @@ proc customOk*(
 
 proc minLen*(
   self: FieldData,
-  min: int,
+  value: int,
   errMsg: string = "",
   okMsg: string = ""): FieldData {.discardable.} =
 
@@ -505,11 +505,11 @@ proc minLen*(
   if self.msg == "":
     self.validationApplied &= "|minLen"
     self.isValid = false
-    if self.value.len < min:
+    if self.value.len < value:
       if errMsg != "":
         self.msg = errMsg
       else:
-        self.msg = &"not allowed (<{min})."
+        self.msg = &"not allowed (<{value})."
 
     else:
       self.isValid = true
@@ -519,7 +519,7 @@ proc minLen*(
 
 proc maxLen*(
   self: FieldData,
-  max: int,
+  value: int,
   errMsg: string = "",
   okMsg: string = ""): FieldData {.discardable.} =
 
@@ -529,11 +529,11 @@ proc maxLen*(
   if self.msg == "":
     self.validationApplied &= "|maxLen"
     self.isValid = false
-    if self.value.len > max:
+    if self.value.len > value:
       if errMsg != "":
         self.msg = errMsg
       else:
-        self.msg = &"not allowed (>{max})."
+        self.msg = &"not allowed (>{value})."
 
     else:
       self.isValid = true
@@ -542,8 +542,8 @@ proc maxLen*(
 
 proc rangeLen*(
   self: FieldData,
-  min: int,
-  max: int,
+  minValue: int,
+  maxValue: int,
   errMsg: string = "",
   okMsg: string = ""): FieldData {.discardable.} =
 
@@ -553,11 +553,11 @@ proc rangeLen*(
   if self.msg == "":
     self.validationApplied &= "|rangeLen"
     self.isValid = false
-    if self.value.len > max or self.value.len < min:
+    if self.value.len > maxValue or self.value.len < minValue:
       if errMsg != "":
         self.msg = errMsg
       else:
-        self.msg = &"not in range ({min}-{max})."
+        self.msg = &"not in range ({minValue}-{maxValue})."
 
     else:
       self.isValid = true
@@ -881,7 +881,7 @@ macro fluentValidation*(x: untyped): untyped =
                 ok
               )
             
-            of "minLen", "maxLen", "max", "min", "list",
+            of "minLen", "maxLen", "maxVal", "minVal", "list",
               "datetime", "discardVal", "reMatch", "customErr", "customOk", "check":
               let val = vChild[1]
               var ok: NimNode = "".newLit
