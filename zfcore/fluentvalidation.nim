@@ -567,7 +567,7 @@ proc rangeLen*(
 
 proc reMatch*(
   self: FieldData,
-  regex: string,
+  pattern: string,
   errMsg: string = "",
   okMsg: string = ""): FieldData {.discardable.} =
 
@@ -577,11 +577,11 @@ proc reMatch*(
   if self.msg == "":
     self.validationApplied &= "|reMatch"
     self.isValid = false
-    if not self.value.match(re(regex)):
+    if not self.value.match(re2 pattern):
       if errMsg != "":
         self.msg = errMsg
       else:
-        self.msg = &"not match with pattern ({regex})."
+        self.msg = &"not match with pattern ({pattern})."
 
     else:
       self.isValid = true

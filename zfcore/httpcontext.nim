@@ -25,7 +25,7 @@ import
   json,
   xmltree,
   xmlparser,
-  re,
+  regex,
   std/oids
 
 export
@@ -276,6 +276,7 @@ proc mapContentype*(self: HttpContext) =
   ##
   let contentType = self.request.headers.getValues("Content-Type").toLower
   if self.request.httpMethod in [HttpPost, HttpPut, HttpPatch, HttpDelete]:
+    var regexMatch: RegexMatch2
     if contentType.find("multipart/form-data") != -1:
       self.formData = newFormData().parse(
         self.request.body,
@@ -290,10 +291,10 @@ proc mapContentype*(self: HttpContext) =
 
       self.params = query
 
-    elif re.find(contentType, re ".*\\/json.*") != -1:
+    elif regex.find(contentType, re2 ".*\\/json.*", regexMatch):
       self.json = parseJson(self.request.body.open().readAll)
 
-    elif re.find(contentType, re ".*\\/xml.*") != -1:
+    elif regex.find(contentType, re2 ".*\\/xml.*", regexMatch):
       self.xml = parseXml(self.request.body.open().readAll)
 
     # not need to keep the body after processing
@@ -312,13 +313,14 @@ proc isSupportGz*(
     let accept =
       self.request.headers.getValues("accept-encoding").toLower
     let typeToZip = contentType.toLower
+    var regexMatch: RegexMatch2
     return
-      re.find(accept, re "gzip") != -1 and
+      regex.find(accept, re2 "gzip", regexMatch) and
       (
-        re.find(typeToZip, re "text\\/.*") != -1 or
-        re.find(typeToZip, re "message\\/.*") != -1 or
-        re.find(typeToZip, re "\\/.*.json") != -1 or
-        re.find(typeToZip, re "\\/.*.xml") != -1
+        regex.find(typeToZip, re2 "text\\/.*", regexMatch) or
+        regex.find(typeToZip, re2 "message\\/.*", regexMatch) or
+        regex.find(typeToZip, re2 "\\/.*.json", regexMatch) or
+        regex.find(typeToZip, re2 "\\/.*.xml", regexMatch)
       )
 
 proc gzCompress(content: string): string =
@@ -407,7 +409,8 @@ proc resp*(
   ##
   self.response.httpCode = httpCode
 
-  if re.find(self.response.headers.getContentType, re "\\/.*.json") == -1:
+  var regexMatch: RegexMatch2
+  if regex.find(self.response.headers.getContentType, re2 "\\/.*.json", regexMatch):
     self.response.headers["Content-Type"] = @["application/json"]
 
   self.response.body = $body
@@ -431,7 +434,8 @@ proc resp*(
   ##
   self.response.httpCode = httpCode
 
-  if re.find(self.response.headers.getContentType, re "\\/.*.xml") == -1:
+  var regexMatch: RegexMatch2
+  if regex.find(self.response.headers.getContentType, re2 "\\/.*.xml", regexMatch):
     self.response.headers["Content-Type"] = @["application/xml"]
 
   self.response.body = $body
@@ -465,7 +469,8 @@ proc respHtml*(
   ##
   self.response.httpCode = httpCode
   
-  if re.find(self.response.headers.getContentType, re "\\/.*.html") == -1:
+  var regexMatch: RegexMatch2
+  if regex.find(self.response.headers.getContentType, re2 "\\/.*.html", regexMatch):
     self.response.headers["Content-Type"] = @["text/html", "charset=utf-8"]
 
   self.response.body = $body

@@ -95,32 +95,32 @@ proc matchesUri(
       let currentUriSeg = uriSeg[i].decodeUri(false)
 
       #let paramTag = currentPathSeg.match(re"<([\w\W]+)>$")
-      var regMatch: RegexMatch
+      var regMatch: RegexMatch2
       #let paramTag = currentPathSeg.match(re"<([\w\W]+)>$", regMatch)
       #if paramTag.isSome:
       #if paramTag:
       ##
       ##  check segment with /api/<capturedSegment>/test
       ##
-      if currentPathSeg.match(re"<([\w\W]+)>$", regMatch):
-        let capturedSeg = regMatch.groupFirstCapture(0, currentPathSeg)
+      if currentPathSeg.match(re2"<([\w\W]+)>$", regMatch):
+        let capturedSeg = currentPathSeg[regMatch.group(0)]
         ##
         ##  check if segment contains regex pattern
         ##  try to capture given regex
         ##
-        if capturedSeg.match(re"(\w+):re\[([\w\W]*)\]$", regMatch):
+        if capturedSeg.match(re2"(\w+):re\[([\w\W]*)\]$", regMatch):
           ##
           ##  capture pattern with regex
           ##  ex: /req/<ids:re[([0-9]+)_([0-9]+)]>
           ##
-          let capturedReSegIds = regMatch.groupFirstCapture(0, capturedSeg)
-          let capturedReSeg = regMatch.groupFirstCapture(1, capturedSeg)
+          let capturedReSegIds = capturedSeg[regMatch.group(0)]
+          let capturedReSeg = capturedSeg[regMatch.group(1)]
           var capturedReParamSeg: seq[string]
 
           var capturedParamReSeg: seq[string]
-          if currentUriSeg.match(re capturedReSeg, regMatch):
+          if currentUriSeg.match(re2 capturedReSeg, regMatch):
             for i in 0..regMatch.groupsCount() - 1:
-              capturedParamReSeg.add(regMatch.groupFirstCapture(i, currentUriSeg))
+              capturedParamReSeg.add(currentUriSeg[regMatch.group(i)])
             reParams.add(capturedReSegIds, @ capturedParamReSeg)
           else:
             success = false
@@ -183,9 +183,9 @@ proc handleStaticRoute(
           # default is "application/octet-stream"
           var contentType = "application/octet-stream"
           # define extension of the requested file
-          var regMatch: RegexMatch
-          if staticPath.match(re"[\w\W]+\.([\w]+)$", regMatch):
-            let ext = regMatch.groupFirstCapture(0, staticPath)
+          var regMatch: RegexMatch2
+          if staticPath.match(re2"[\w\W]+\.([\w]+)$", regMatch):
+            let ext = staticPath[regMatch.group(0)]
             # if extension is defined then try to search the contentType
             let mimeType = newMimeTypes().getMimeType(
               ext.toLower())
