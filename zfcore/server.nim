@@ -26,7 +26,8 @@ import
 ##  std import
 import
   threadpool,
-  macros
+  macros,
+  stdext/xsystem
 
 export
   httpcontext,
@@ -145,49 +146,51 @@ proc configureSettings*(
     if mergeSettings.sslSettings.isNil:
       mergeSettings.sslSettings = SslSettings()
 
-    var appRootDir = settingsJson{"appRootDir"}.getStr
+    var appRootDir = settingsJson{$@Settings.appRootDir}.getStr
     if appRootDir != "":
       mergeSettings.appRootDir = appRootDir
     else:
       mergeSettings.appRootDir = getAppDir()
-    if settingsJson.hasKey("keepAlive"):
-      mergeSettings.keepAlive = settingsJson{"keepAlive"}.getBool
-    if settingsJson.hasKey("maxBodyLength"):
-      mergeSettings.maxBodyLength = settingsJson{"maxBodyLength"}.getInt
-    if settingsJson.hasKey("readBodyBuffer"):
-      mergeSettings.readBodyBuffer = settingsJson{"readBodyBuffer"}.getInt
-    if settingsJson.hasKey("responseRangeBuffer"):
-      mergeSettings.responseRangeBuffer = settingsJson{"responseRangeBuffer"}.getInt
-    if settingsJson.hasKey("maxResponseBodyLength"):
-      mergeSettings.maxResponseBodyLength = settingsJson{"maxResponseBodyLength"}.getBiggestInt
-    if settingsjson.hasKey("trace"):
-      mergeSettings.trace = settingsjson{"trace"}.getBool
+    if settingsJson.hasKey($@Settings.keepAlive):
+      mergeSettings.keepAlive = settingsJson{$@Settings.keepAlive}.getBool
+    if settingsJson.hasKey($@Settings.maxBodyLength):
+      mergeSettings.maxBodyLength = settingsJson{$@Settings.maxBodyLength}.getInt
+    if settingsJson.hasKey($@Settings.readBodyBuffer):
+      mergeSettings.readBodyBuffer = settingsJson{$@Settings.readBodyBuffer}.getInt
+    if settingsJson.hasKey($@Settings.responseRangeBuffer):
+      mergeSettings.responseRangeBuffer = settingsJson{$@Settings.responseRangeBuffer}.getInt
+    if settingsJson.hasKey($@Settings.maxResponseBodyLength):
+      mergeSettings.maxResponseBodyLength = settingsJson{$@Settings.maxResponseBodyLength}.getBiggestInt
+    if settingsjson.hasKey($@Settings.trace):
+      mergeSettings.trace = settingsjson{$@Settings.trace}.getBool
+    if settingsjson.hasKey($@Settings.contentTypeToCompress):
+      mergeSettings.contentTypeToCompress = settingsjson{$@Settings.contentTypeToCompress}.to(seq[string])
     if settingsJson.hasKey("http"):
       let httpSettings = settingsJson{"http"}
-      if httpSettings.hasKey("port"):
-        mergeSettings.port = httpSettings{"port"}.getInt.Port
-      if httpSettings.hasKey("address"):
-        mergeSettings.address = httpSettings{"address"}.getStr
-      if httpSettings.hasKey("reuseAddress"):
-        mergeSettings.reuseAddress = httpSettings{"reuseAddress"}.getBool
-      if httpSettings.hasKey("reusePort"):
-        mergeSettings.reusePort = httpSettings{"reusePort"}.getBool
+      if httpSettings.hasKey($@Settings.port):
+        mergeSettings.port = httpSettings{$@Settings.port}.getInt.Port
+      if httpSettings.hasKey($@Settings.address):
+        mergeSettings.address = httpSettings{$@Settings.address}.getStr
+      if httpSettings.hasKey($@Settings.reuseAddress):
+        mergeSettings.reuseAddress = httpSettings{$@Settings.reuseAddress}.getBool
+      if httpSettings.hasKey($@Settings.reusePort):
+        mergeSettings.reusePort = httpSettings{$@Settings.reusePort}.getBool
       if httpSettings.hasKey("secure"):
         let httpsSettings = httpSettings{"secure"}
-        if httpsSettings.hasKey("port"):
-          mergeSettings.sslSettings.port = httpsSettings{"port"}.getInt.Port
-        if httpsSettings.hasKey("cert"):
-          mergeSettings.sslSettings.certFile = httpsSettings{"cert"}.getStr
-        if httpsSettings.hasKey("key"):
-          mergeSettings.sslSettings.keyFile = httpsSettings{"key"}.getStr
-        if httpsSettings.hasKey("verify"):
-          mergeSettings.sslSettings.verify = httpsSettings{"verify"}.getBool
-        if httpsSettings.hasKey("useEnv"):
-          mergeSettings.sslSettings.useEnv = httpsSettings{"useEnv"}.getBool
-        if httpsSettings.hasKey("caDir"):
-          mergeSettings.sslSettings.caDir = httpsSettings{"caDir"}.getStr
-        if httpsSettings.hasKey("ca"):
-          mergeSettings.sslSettings.caFile = httpsSettings{"ca"}.getStr
+        if httpsSettings.hasKey($@SslSettings.port):
+          mergeSettings.sslSettings.port = httpsSettings{$@SslSettings.port}.getInt.Port
+        if httpsSettings.hasKey($@SslSettings.certFile):
+          mergeSettings.sslSettings.certFile = httpsSettings{$@SslSettings.certFile}.getStr
+        if httpsSettings.hasKey($@SslSettings.keyFile):
+          mergeSettings.sslSettings.keyFile = httpsSettings{$@SslSettings.keyFile}.getStr
+        if httpsSettings.hasKey($@SslSettings.verify):
+          mergeSettings.sslSettings.verify = httpsSettings{$@SslSettings.verify}.getBool
+        if httpsSettings.hasKey($@SslSettings.useEnv):
+          mergeSettings.sslSettings.useEnv = httpsSettings{$@SslSettings.useEnv}.getBool
+        if httpsSettings.hasKey($@SslSettings.caDir):
+          mergeSettings.sslSettings.caDir = httpsSettings{$@SslSettings.caDir}.getStr
+        if httpsSettings.hasKey($@SslSettings.caFile):
+          mergeSettings.sslSettings.caFile = httpsSettings{$@SslSettings.caFile}.getStr
 
   var settingsToMerge: JsonNode
 

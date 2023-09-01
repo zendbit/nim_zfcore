@@ -63,6 +63,7 @@ type
     readBodyBuffer*: int
     responseRangeBuffer*: int
     tmpCleanupDir*: seq[CleanupDir]
+    contentTypeToCompress*: seq[string]
 
   CleanupDir* = ref object of RootObj
     dirName*: string
@@ -112,7 +113,8 @@ proc newSettings*(
   trace: bool = false,
   keepAlive: bool = false,
   sslSettings: SslSettings = nil,
-  tmpCleanupDir: seq[CleanupDir] = @[]): Settings =
+  tmpCleanupDir: seq[CleanupDir] = @[],
+  contentTypeToCompress: seq[string] = @[]): Settings =
 
   ##
   ##  this for instantiate new Settings with default parameter is:
@@ -137,7 +139,8 @@ proc newSettings*(
     maxResponseBodyLength: maxResponseBodyLength,
     trace: trace,
     keepAlive: keepAlive,
-    sslSettings: sslSettings)
+    sslSettings: sslSettings,
+    contentTypeToCompress: contentTypeToCompress)
 
   if not instance.tmpDir.existsDir:
     instance.tmpDir.createDir

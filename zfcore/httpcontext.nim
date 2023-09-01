@@ -302,7 +302,8 @@ proc mapContentype*(self: HttpContext) =
 
 proc isSupportGz*(
   self: HttpContext,
-  contentType: string): bool =
+  contentType: string,
+  patternToZip: seq[string] = @[]): bool =
   ##
   ##  is support gz:
   ##
@@ -313,15 +314,24 @@ proc isSupportGz*(
     let accept =
       self.request.headers.getValues("accept-encoding").toLower
     let typeToZip = contentType.toLower
+    let patternToZipList = @[
+        "text\\/.*",
+        "\\/.*javascript",
+        "\\/.*ecmascript",
+        "\\/.*css",
+        "\\/.*xml",
+        "\\/.*json",
+        "message\\/.*"
+      ] & patternToZip
+
     var regexMatch: RegexMatch2
-    return
-      regex.find(accept, re2 "gzip", regexMatch) and
-      (
-        regex.find(typeToZip, re2 "text\\/.*", regexMatch) or
-        regex.find(typeToZip, re2 "message\\/.*", regexMatch) or
-        regex.find(typeToZip, re2 "\\/.*.json", regexMatch) or
-        regex.find(typeToZip, re2 "\\/.*.xml", regexMatch)
-      )
+
+    var shouldZipped = false
+    for pattern in patternToZipList:
+      shouldZipped = regex.find(typeToZip, re2 "[(text\\/.*)|(message\\/.*)]", regexMatch)
+      if shouldZipped: break
+
+    return regex.find(accept, re2 "gzip", regexMatch) and shouldZipped
 
 proc gzCompress(content: string): string =
   ##
@@ -345,7 +355,7 @@ proc doResp(self: HttpContext) {.gcsafe async.} =
     self.response.headers["Content-Type"] = "application/octet-stream"
 
   # check if compile with gzip support or not
-  if self.isSupportGz(contentType):
+  if self.isSupportGz(contentType, self.settings.contentTypeToCompress):
     let gzContent = self.response.body.gzCompress
     if self.request.httpMethod != HttpHead:
       self.response.body = gzContent
@@ -408,10 +418,7 @@ proc resp*(
   ##  self.resp(Http200, msg)
   ##
   self.response.httpCode = httpCode
-
-  var regexMatch: RegexMatch2
-  if regex.find(self.response.headers.getContentType, re2 "\\/.*.json", regexMatch):
-    self.response.headers["Content-Type"] = @["application/json"]
+  self.response.headers["Content-Type"] = @["application/json"]
 
   self.response.body = $body
   if not headers.isNil:
@@ -435,8 +442,7 @@ proc resp*(
   self.response.httpCode = httpCode
 
   var regexMatch: RegexMatch2
-  if regex.find(self.response.headers.getContentType, re2 "\\/.*.xml", regexMatch):
-    self.response.headers["Content-Type"] = @["application/xml"]
+  self.response.headers["Content-Type"] = @["application/xml"]
 
   self.response.body = $body
   if not headers.isNil:
@@ -470,8 +476,7 @@ proc respHtml*(
   self.response.httpCode = httpCode
   
   var regexMatch: RegexMatch2
-  if regex.find(self.response.headers.getContentType, re2 "\\/.*.html", regexMatch):
-    self.response.headers["Content-Type"] = @["text/html", "charset=utf-8"]
+  self.response.headers["Content-Type"] = @["text/html", "charset=utf-8"]
 
   self.response.body = $body
   if not headers.isNil:
