@@ -1,3 +1,5 @@
+# This page is deprecated, and merged to [Katalis framework](https://github.com/zendbit/katalis)
+
 # zfcore
 zfcore is high performance http server and web framework for nim lang
 we replace asynchttpserver with zfblast server https://github.com/zendbit/nim.zfblast
